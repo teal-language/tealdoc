@@ -43,6 +43,7 @@ local record tealdoc
         parser_registry: {string: Parser} -- file extension to parser
         tag_handler_registry: {string: TagHandler} -- tag name to handler
         registry: {string: Item} 
+        modules: {string}
 
         add_parser: function(self, parser: Parser)
         add_tag_handler: function(self, handler: TagHandler)
@@ -76,6 +77,7 @@ local record tealdoc
             "global"
             "record"
             "macroexp"
+            "metamethod"
         end
         
         params: {Param}
@@ -99,6 +101,7 @@ local record tealdoc
         enum Type
             "local"
             "global"
+            "record"
         end
     
         typename: string
@@ -115,16 +118,17 @@ local record tealdoc
             "record"
         end
 
+        enum TypeKind -- TODO: better name?
+            "record"
+            "interface"
+            "enum"
+            "type"
+        end
+
         typename: string
         type: Type
         typeargs: {Typearg}
-    end
-
-    record FieldItem 
-        is Item
-        where self.kind == "field"
-
-        typename: string
+        typekind: TypeKind
     end
 
     process_file: function(path: string, env: Env)
@@ -136,6 +140,7 @@ function tealdoc.Env.init(): tealdoc.Env
         parser_registry = {},
         tag_handler_registry = {},
         registry = {},
+        modules = {},
         add_parser = tealdoc.Env.add_parser,
         add_tag_handler = tealdoc.Env.add_tag_handler,
     }

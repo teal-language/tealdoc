@@ -453,7 +453,7 @@ end
 local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.TypeDeclType, typ: tealdoc.TypeItem.Type, state: VisitState)
     local def = t.def
     local typeargs: {tealdoc.Typearg}
-
+    
     if def is tl.GenericType and def.typeargs then
         typeargs = {}
         for i, typearg in ipairs(def.typeargs) do
@@ -462,15 +462,28 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
                 constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint) 
             }
         end
+        def = def.t
     end
     
+    local typekind: tealdoc.TypeItem.TypeKind
+    if def is tl.RecordType then
+        typekind = "record"
+    elseif def is tl.EnumType then
+        typekind = "enum"
+    elseif def is tl.InterfaceType then
+        typekind = "interface"
+    else
+        typekind = "type"
+    end
+
     local item: tealdoc.TypeItem = {
         kind = "type",
         name = name,
         typename = type_to_string(state.type_report, def),
         typeargs = typeargs,
         type = typ,
-        location = location_for_type(t)
+        location = location_for_type(t),
+        typekind = typekind,
     }
 
     local path = store_item(item, state)
@@ -502,7 +515,7 @@ local function type_is_function(t: tl.Type): boolean
 end
 
 record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
-    local function field_visitor(name: string, field_type: tl.Type, comments: {{tl.Comment}})
+    local function field_visitor(name: string, field_type: tl.Type, comments: {{tl.Comment}}, meta?: boolean)
         -- inner type declarations
         if field_type is tl.TypeDeclType then
             local c: {tl.Comment}
@@ -533,7 +546,7 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
                     param_types[param_idx] = param.type
                 end
                  
-                local path = base_path.."("..table.concat(param_types, ",")..")"
+                local path = base_path.."("..table.concat(param_types, ", ")..")"
                 store_item_at_path(item, path, state)
                 item.parent = base_path
                 table.insert(overload_item.children, path)
@@ -548,10 +561,11 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
         local item: tealdoc.Item
 
         if type_is_function(field_type) then
-            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", state)
+            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, meta and "metamethod" or "record", state)
         else
-            local field_item: tealdoc.FieldItem = {
-                kind = "field",
+            local field_item: tealdoc.VariableItem = {
+                kind = "variable",
+                type = "record",
                 typename = type_to_string(state.type_report, field_type),
                 location = location_for_type(field_type)
             }
@@ -567,7 +581,8 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
         store_item(item, state)
     end
 
-    for field_name, field_type in pairs(t.fields) do
+    for _, field_name in ipairs(t.field_order) do
+        local field_type = t.fields[field_name]
         local comments: {{tl.Comment}}
         if t.field_comments then
             comments = t.field_comments[field_name]
@@ -576,17 +591,25 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
         field_visitor(field_name, field_type, comments)
     end
     if t.meta_fields then
+        local metafields_item: tealdoc.Item = { -- we need a special item for metafields to avoid name conflicts
+            kind = "metafields",
+            name = "$meta",
+        }
         local old_path = state.path
-        state.path = state.path..".$meta." -- to avoid clashes with regular members
-        for field_name, field_type in pairs(t.meta_fields) do
+        local old_parent = state.parent_item 
+        state.path = store_item(metafields_item, state) .. "."
+        state.parent_item = metafields_item
+        for _, field_name in ipairs(t.meta_field_order) do
+            local field_type = t.meta_fields[field_name]
             local comments: {{tl.Comment}}
             if t.field_comments then
                 comments = t.field_comments[field_name]
             end
 
-            field_visitor(field_name, field_type, comments)
+            field_visitor(field_name, field_type, comments, true)
         end
         state.path = old_path
+        state.parent_item = old_parent
     end
 end 
 
@@ -753,6 +776,7 @@ function TealParser.process(text: string, filename: string, env: tealdoc.Env)
         typenum_to_path = {},
         parent_item = module_item
     }
+    table.insert(env.modules, module_item.module_name)
     env.registry[module_item.path] = module_item
     visit_node(result.ast, state)
 end

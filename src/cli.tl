@@ -1,5 +1,6 @@
 local argparse = require("argparse")
 local DumpTool = require("tool.dump")
+local MarkdownGenerator = require("tool.markdown")
 local tealdoc = require("tealdoc")
 
 local record CLI
@@ -35,7 +36,22 @@ function CLI:add_default_commands()
             DumpTool.run(self._env.registry)
         end
     }
+
+    local md_command: CLI.Command = {
+        name = "md",
+        setup = function(command: argparse.Command)
+            command:argument("files", "input files"):args("+")
+        end,
+        handler = function(args: argparse.Args)
+            local files = args.files as {string} -- TODO: bulletproof
+            for _, file in ipairs(files) do
+                tealdoc.process_file(file, self._env)
+            end
+            MarkdownGenerator:run("doc.md", self._env)
+        end
+    }
     self:add_command(dump_command)
+    self:add_command(md_command)
 end
 
 function CLI:init(env: tealdoc.Env, skip_default_commands?: boolean)

@@ -2,6 +2,8 @@ local log = require("log")
 local tealdoc = require("tealdoc")
 local TealParser = require("parser.teal")
 
+local Generator = require("tool.generator")
+
 local record DefaultEnv
 end
 
@@ -149,6 +151,247 @@ function DefaultEnv.init(): tealdoc.Env
     env:add_tag_handler(param_tag_handler)
     env:add_tag_handler(typearg_tag_handler)
     
+    -- TODO: better place for this
+    local module_header_phase: Generator.Phase = {
+        name = "module_header",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.DirectiveItem and item.module_name)
+
+            local b = generator.builder
+
+            b:h1("Module: " .. item.module_name)
+            b:line(item.text or "")
+        end
+    }
+
+    local header_phase: Generator.Phase = {
+        name = "header",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            local path = item.path
+            -- should we construct the display path in parser?
+            local display_path = path:gsub("%$[^%.]*%.", "")
+
+            generator.builder:h2(display_path)
+        end
+    }
+
+    local text_phase: Generator.Phase = {
+        name = "text",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            if item.text then
+                generator.builder:line(item.text)
+            end
+        end
+    }
+
+    local function_signature_phase: Generator.Phase = {
+        name = "function_signature",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+
+            local params: {string} = {}
+            for _, param in ipairs(item.params) do
+                if not param.name then
+                    table.insert(params, param.type or "?")
+                else
+                    table.insert(params, param.name .. ": " .. (param.type or "?"))
+                end
+            end
+            local returns: {string} = {}
+            for _, ret in ipairs(item.returns) do
+                table.insert(returns, ret.type or "?")
+            end
+
+            local typeargs: {string} = {}
+            if item.typeargs and #item.typeargs > 0 then
+                for _, typearg in ipairs(item.typeargs) do
+                    if typearg.constraint then
+                        table.insert(typeargs, typearg.name .. " is " .. typearg.constraint or "?")
+                    else
+                        table.insert(typeargs, typearg.name)
+                    end
+                end
+            end
+
+            local b = generator.builder
+
+            b:code_block(function()
+                if item.type ~= "record" then
+                    b:text(item.type, " ")
+                end
+
+                if item.type == "record" then -- TODO: metamethods!
+                    local parent = item.parent
+                    local parent_item = env.registry[parent]
+                    if parent_item and parent_item.kind == "overload" then 
+                        -- signature fix for overloaded functions so we don't repeat the params
+                        b:text(parent_item.path)
+                    else
+                        b:text(item.path)
+                    end
+                else
+                    b:text(item.type, " ", item.name)
+                end
+
+                if #typeargs > 0 then
+                    b:text("<", table.concat(typeargs, ", "), ">")
+                end
+
+                b:text("(", table.concat(params, ", "), ")")
+                if #returns > 0 then
+                    b:text(": ", table.concat(returns, ", "))
+                end
+                b:line()
+            end)
+        end
+    }
+
+    local variable_signature_phase: Generator.Phase = {
+        name = "variable_signature",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.VariableItem)
+
+            local b = generator.builder
+            b:code_block(function()
+                if item.type ~= "record" then
+                    b:text(item.type, " ", item.name)
+                else
+                    b:text(item.path)
+                end
+                b:text(": ", item.typename)
+                b:line()
+            end)
+        end
+    }
+
+    local type_signature_phase: Generator.Phase = {
+        name = "type_signature",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.TypeItem)
+
+            local b = generator.builder
+            b:code_block(function()
+                if item.type ~= "record" then
+                    b:text(item.type, " ")
+                end
+
+                b:text(item.typekind, " ")
+
+                if item.type == "record" then
+                    b:text(item.path)
+                else
+                    b:text(item.name)
+                end
+
+                if item.typekind == "type" then
+                    b:text(" = ", item.typename)
+                end
+
+                if item.typeargs and item.typekind ~= "type" then -- don't repeat typeargs from type
+                    local typeargs: {string} = {}
+                    for _, typearg in ipairs(item.typeargs) do
+                        if typearg.constraint then
+                            table.insert(typeargs, typearg.name .. " is " .. typearg.constraint or "?")
+                        else
+                            table.insert(typeargs, typearg.name)
+                        end
+                    end
+                    b:text("<", table.concat(typeargs, ", "), ">")
+                end
+
+                b:line("")
+            end)
+        end
+    }
+
+    local type_params_phase: Generator.Phase = {
+        name = "type_params",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.TypeItem or item is tealdoc.FunctionItem)
+
+            if not item.typeargs or #item.typeargs == 0 then
+                return
+            end
+
+            local b = generator.builder
+
+            b:h4("Type Parameters")
+            b:unordered_list(function(list_item: function(content: function))
+                for _, typearg in ipairs(item.typeargs) do
+                    list_item(function()
+                        b:text(b:b(b:code(typearg.name or "?")))
+
+                        if typearg.constraint then
+                            b:text(" ( is ", b:code(typearg.constraint), ")")
+                        end                                 
+                    
+                        if typearg.description then
+                            b:text(" — ",typearg.description)
+                        end
+                    end)
+                end
+            end)
+        end
+    }
+
+    local function_params_phase: Generator.Phase = {
+        name = "function_params",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+
+            if not item.params or #item.params == 0 then
+                return
+            end
+
+            local b = generator.builder
+
+            b:h4("Parameters")
+            b:unordered_list(function(list_item: function(content: function)) -- TODO!
+                for _, param in ipairs(item.params) do
+                    list_item(function()
+                        b:text(b:b(b:code(param.name or "?")), " (", b:code(param.type or "?"), ")")
+                        if param.description then
+                            b:text(" — ", param.description)
+                        end
+                    end)
+                end
+            end)
+        end
+    }
+
+    local function_returns_phase: Generator.Phase = {
+        name = "function_returns",
+        run = function(generator: Generator.Base, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+
+            if not item.returns or #item.returns == 0 then
+                return
+            end
+
+            local b = generator.builder
+
+            b:h4("Returns")
+
+            b:ordered_list(function(list_item: function(content: function))
+                for _, ret in ipairs(item.returns) do
+                    list_item(function()
+                        b:text("(", b:code(ret.type or "?"), ")")
+                        
+                        if ret.description then
+                            b:text(" — ", ret.description)
+                        end
+                    end)
+                end
+            end)
+        end
+    }
+
+    Generator.item_phases["directive"] = {module_header_phase}
+    Generator.item_phases["function"] = {header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase}
+    Generator.item_phases["variable"] = {header_phase, variable_signature_phase, text_phase}
+    Generator.item_phases["type"] = {header_phase, type_signature_phase, text_phase, type_params_phase}
+    Generator.item_phases["enumvalue"] = {header_phase, text_phase}
+
     return env
 end
 
