@@ -138,41 +138,18 @@ local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
     return typeinfo_to_string(typeinfo_for_type(report, typ))
 end
 
-local function is_item_local(item: tealdoc.Item): boolean
-    if item is tealdoc.FunctionItem then
-        return item.type == "local" or item.type == "macroexp"
-    elseif item is tealdoc.VariableItem then
-        return item.type == "local"
-    elseif item is tealdoc.TypeItem then
-        return item.type == "local"
-    else
-        return false
-    end
-end
-
-local function is_item_global(item: tealdoc.Item): boolean
-    if item is tealdoc.FunctionItem then
-        return item.type == "global"
-    elseif item is tealdoc.VariableItem then
-        return item.type == "global"
-    elseif item is tealdoc.TypeItem then
-        return item.type == "global"
-    else
-        return false
-    end
-end
 
 local function store_item_at_path(item: tealdoc.Item, path: string, state: VisitState): string
     -- this code is a mess!
     local old_item = state.env.registry[path]
     if old_item then
-        if is_item_local(item) then
+        if tealdoc.is_item_local(item) then
             if old_item.kind == "shadowed" then -- TODO: better name?
                 assert(old_item.children)
                 path = path.."#"..tostring(#old_item.children + 1)
                 table.insert(old_item.children, path)
             else 
-                assert(is_item_local(old_item))
+                assert(tealdoc.is_item_local(old_item))
                 local shadowed_path = old_item.path
                 old_item.path = old_item.path.."#1"
                 path = path.."#2"
@@ -189,8 +166,8 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 old_item.parent = shadowed_path
                 item.parent = shadowed_path
             end
-        elseif is_item_global(item) then
-            assert(is_item_global(old_item))
+        elseif tealdoc.is_item_global(item) then
+            assert(tealdoc.is_item_global(old_item))
             if old_item.text then
                 -- TODO: better warning message
                 log:warning(

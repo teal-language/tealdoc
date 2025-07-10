@@ -1,4 +1,7 @@
+--- Main module for Tealdoc
 --- @module tealdoc
+
+
 local log = require("log")
 
 local record tealdoc
@@ -44,6 +47,8 @@ local record tealdoc
         tag_handler_registry: {string: TagHandler} -- tag name to handler
         registry: {string: Item} 
         modules: {string}
+
+        include_all: boolean
 
         add_parser: function(self, parser: Parser)
         add_tag_handler: function(self, handler: TagHandler)
@@ -133,6 +138,30 @@ local record tealdoc
 
     process_file: function(path: string, env: Env)
     process_text: function(text: string, filename: string, env: Env)
+end
+
+function tealdoc.is_item_local(item: tealdoc.Item): boolean
+    if item is tealdoc.FunctionItem then
+        return item.type == "local" or item.type == "macroexp"
+    elseif item is tealdoc.VariableItem then
+        return item.type == "local"
+    elseif item is tealdoc.TypeItem then
+        return item.type == "local"
+    else
+        return false
+    end
+end
+
+function tealdoc.is_item_global(item: tealdoc.Item): boolean
+    if item is tealdoc.FunctionItem then
+        return item.type == "global"
+    elseif item is tealdoc.VariableItem then
+        return item.type == "global"
+    elseif item is tealdoc.TypeItem then
+        return item.type == "global"
+    else
+        return false
+    end
 end
 
 function tealdoc.Env.init(): tealdoc.Env

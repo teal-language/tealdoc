@@ -49,14 +49,20 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
                     has_tag = true
                     start_tag(handler, param, rest, item)
                 end
-            else
+            elseif handler.has_description then
                 local pattern = "@" .. tag_name .. "%s+(.*)"
                 local description = trimmed:match(pattern)
                 if description then 
                     has_tag = true
                     start_tag(handler, nil, description, item)
                 end
-            end 
+            else 
+                local pattern = "@" .. tag_name
+                if trimmed:match(pattern) then
+                    has_tag = true
+                    start_tag(handler, nil, nil, item)
+                end
+            end
         end
 
         if has_tag and in_text then

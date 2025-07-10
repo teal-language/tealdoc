@@ -105,7 +105,7 @@ MarkdownGenerator.builder = MarkdownBuilder.init()
 
 MarkdownGenerator.run = function(self: MarkdownGenerator, filename: string, env: tealdoc.Env)
     for _, module in ipairs(env.modules) do
-        local module_item = env.registry["$"..module] as tealdoc.DirectiveItem
+        local module_item = env.registry["$"..module]
         assert(module_item)
         Generator.generate_for_item(self, module_item, env)
     end

@@ -1,6 +1,7 @@
 local log = require("log")
 local tealdoc = require("tealdoc")
 local TealParser = require("parser.teal")
+local MarkdownInput = require("parser.markdown")
 
 local Generator = require("tool.generator")
 
@@ -11,6 +12,7 @@ function DefaultEnv.init(): tealdoc.Env
     local env = tealdoc.Env.init()
 
     env:add_parser(TealParser)
+    env:add_parser(MarkdownInput)
 
     -- TODO: better place for this
     local module_tag_handler: tealdoc.TagHandler = {
@@ -34,6 +36,8 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    -- TODO: should we check if all params and typeargs are documented?
+
     local param_tag_handler: tealdoc.TagHandler = {
         name = "param",
         has_param = true,
@@ -41,36 +45,102 @@ function DefaultEnv.init(): tealdoc.Env
         handle = function(ctx: tealdoc.TagHandler.Context)
             local item = ctx.item
             if not item is tealdoc.FunctionItem then
-                -- better error!
-                log:error("param tag can only exists in function comments")
+                log:error(
+                    "@param tag can only exist in function comments (%s:%s:%s)",
+                    item.location.filename,
+                    item.location.y,
+                    item.location
+                )
                 return
             end
 
             local param: tealdoc.FunctionItem.Param
             if item.params then
                 for _, p in ipairs(item.params) do
-                    if p.name == nil or p.name == ctx.param then -- TODO: temp!
+                    if p.description == nil then
                         param = p
                         break
                     end
                 end
             end
-            param.name = ctx.param
             if not param then
-                log:error(
-                    "param tag for parameter '%s' does not match any parameter in function '%s' declaration!",
-                    ctx.param,
-                    ctx.item.attributes and ctx.item.attributes["name"] or "<unknown>"
+                log:warning(
+                    "Found more @param tags than declared parameters in function '%s' (%s:%s:%s)",
+                    item.name,
+                    item.location.filename,
+                    item.location.y,
+                    item.location.x
                 )
+                return 
             end
-            if param.description then
-                log:error(
-                    "Duplicate @param tag for parameter '%s' in function '%s'. Each parameter should only have one @param tag.",
+
+            if param.name and param.name ~= ctx.param then
+                log:warning(
+                    "Parameter name mismatch: expected '%s', got '%s' in function '%s' (%s:%s:%s)",
+                    param.name,
                     ctx.param,
-                    ctx.item.attributes and ctx.item.attributes["name"] or "<unknown>"
+                    item.name,
+                    item.location.filename,
+                    item.location.y,
+                    item.location.x
                 )
+                return
             end
+            param.name = ctx.param
             param.description = ctx.description
+        end
+    }
+
+    local typearg_tag_handler: tealdoc.TagHandler = { -- TODO: improve!
+        name = "typearg",
+        has_param = true,
+        has_description = true,
+        handle = function(ctx: tealdoc.TagHandler.Context)
+            local item = ctx.item
+            if not item is tealdoc.FunctionItem and not item is tealdoc.TypeItem then
+                log:error(
+                    "@typearg tag can only exist in function or type comments (%s:%s:%s)",
+                    item.location.filename,
+                    item.location.y,
+                    item.location
+                )
+                return
+            end
+
+            local typearg: tealdoc.Typearg
+            if item.typeargs then
+                for _, t in ipairs(item.typeargs) do
+                    if t.description == nil then
+                        typearg = t
+                        break
+                    end
+                end
+            end
+            if not typearg then
+                log:warning(
+                    "Found more @typearg tags than declared type arguments in '%s' (%s:%s:%s)",
+                    item.name,
+                    item.location.filename,
+                    item.location.y,
+                    item.location.x
+                )
+                return 
+            end
+
+            if typearg.name and typearg.name ~= ctx.param then
+                log:warning(
+                    "Typearg name mismatch: expected '%s', got '%s' in '%s' (%s:%s:%s)",
+                    typearg.name,
+                    ctx.param,
+                    item.name,
+                    item.location.filename,
+                    item.location.y,
+                    item.location.x
+                )
+                return
+            end
+            typearg.name = ctx.param
+            typearg.description = ctx.description
         end
     }
 
@@ -103,46 +173,14 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-
-    local typearg_tag_handler: tealdoc.TagHandler = { -- TODO: improve!
-        name = "typearg",
-        has_param = true,
-        has_description = true,
+    local local_tag_handler: tealdoc.TagHandler = {
+        name = "local",
         handle = function(ctx: tealdoc.TagHandler.Context)
             local item = ctx.item
-            if not (item is tealdoc.TypeItem or item is tealdoc.FunctionItem)  then
-                -- better error!
-                log:error("typearg tag can only exists in function comments")
-                return
+            if not item.attributes then
+                item.attributes = {}
             end
-
-            local param: tealdoc.Typearg
-            if item.typeargs then
-                for _, p in ipairs(item.typeargs) do
-                    if p.name == nil or p.name == ctx.param then -- TODO: temp!
-                        param = p
-                        break
-                    end
-                end
-            end
-            if param then
-                param.name = ctx.param
-            end
-            if not param then
-                log:error(
-                    "typearg tag for parameter '%s' does not match any type argument in function '%s' declaration!",
-                    ctx.param,
-                    ctx.item.attributes and ctx.item.attributes["name"] or "<unknown>"
-                )
-            end
-            if param.description then
-                log:error(
-                    "Duplicate @typearg tag for parameter '%s' in function '%s'. Each type argument should only have one @typearg tag.",
-                    ctx.param,
-                    ctx.item.attributes and ctx.item.attributes["name"] or "<unknown>"
-                )
-            end
-            param.description = ctx.description
+            item.attributes["local"] = true
         end
     }
 
@@ -150,6 +188,7 @@ function DefaultEnv.init(): tealdoc.Env
     env:add_tag_handler(return_tag_handler)
     env:add_tag_handler(param_tag_handler)
     env:add_tag_handler(typearg_tag_handler)
+    env:add_tag_handler(local_tag_handler)
     
     -- TODO: better place for this
     local module_header_phase: Generator.Phase = {
@@ -349,7 +388,10 @@ function DefaultEnv.init(): tealdoc.Env
             b:unordered_list(function(list_item: function(content: function)) -- TODO!
                 for _, param in ipairs(item.params) do
                     list_item(function()
-                        b:text(b:b(b:code(param.name or "?")), " (", b:code(param.type or "?"), ")")
+                        if param.name then
+                            b:text(b:b(b:code(param.name)))
+                        end
+                        b:text(" (", b:code(param.type or "?"), ")")
                         if param.description then
                             b:text(" — ", param.description)
                         end
@@ -391,6 +433,7 @@ function DefaultEnv.init(): tealdoc.Env
     Generator.item_phases["variable"] = {header_phase, variable_signature_phase, text_phase}
     Generator.item_phases["type"] = {header_phase, type_signature_phase, text_phase, type_params_phase}
     Generator.item_phases["enumvalue"] = {header_phase, text_phase}
+    Generator.item_phases["markdown"] = {text_phase}
 
     return env
 end

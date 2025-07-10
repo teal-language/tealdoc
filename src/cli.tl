@@ -41,13 +41,19 @@ function CLI:add_default_commands()
         name = "md",
         setup = function(command: argparse.Command)
             command:argument("files", "input files"):args("+")
+            command:flag("-a --all", "include all items in the documentation")
+            command:option("-o --output", "output file")
+                :default("doc.md")
         end,
         handler = function(args: argparse.Args)
+            if args["all"] then
+                self._env.include_all = true
+            end
             local files = args.files as {string} -- TODO: bulletproof
             for _, file in ipairs(files) do
                 tealdoc.process_file(file, self._env)
             end
-            MarkdownGenerator:run("doc.md", self._env)
+            MarkdownGenerator:run(args["output"] as string, self._env)
         end
     }
     self:add_command(dump_command)
