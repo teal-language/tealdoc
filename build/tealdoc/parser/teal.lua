@@ -1,10 +1,8 @@
--- Prepend the current directory to Lua's package search path
-package.path = "./?.lua;" .. package.path
-
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tl = require("tl")
 local tealdoc = require("tealdoc")
-local log = require("log")
-local CommentParser = require("comment_parser")
+local log = require("tealdoc.log")
+local CommentParser = require("tealdoc.comment_parser")
+
 
 
 

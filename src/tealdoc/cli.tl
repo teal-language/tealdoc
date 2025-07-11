@@ -1,6 +1,6 @@
 local argparse = require("argparse")
-local DumpTool = require("tool.dump")
-local MarkdownGenerator = require("tool.markdown")
+local DumpTool = require("tealdoc.tool.dump")
+local MarkdownGenerator = require("tealdoc.tool.markdown")
 local tealdoc = require("tealdoc")
 
 local record CLI

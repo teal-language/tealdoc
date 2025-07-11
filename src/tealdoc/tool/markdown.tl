@@ -1,5 +1,5 @@
 local tealdoc = require("tealdoc")
-local Generator = require("tool.generator")
+local Generator = require("tealdoc.tool.generator")
 
 local record MarkdownBuilder is Generator.Builder
     output: {string}

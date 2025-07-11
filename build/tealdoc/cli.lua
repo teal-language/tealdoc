@@ -1,6 +1,6 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local type = type; local argparse = require("argparse")
-local DumpTool = require("tool.dump")
-local MarkdownGenerator = require("tool.markdown")
+local DumpTool = require("tealdoc.tool.dump")
+local MarkdownGenerator = require("tealdoc.tool.markdown")
 local tealdoc = require("tealdoc")
 
 local CLI = { Command = {} }

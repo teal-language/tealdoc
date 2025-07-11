@@ -1,5 +1,5 @@
 local tealdoc = require("tealdoc")
-local log = require("log")
+local log = require("tealdoc.log")
 
 local record Generator
     interface Builder

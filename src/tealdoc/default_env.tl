@@ -1,9 +1,9 @@
-local log = require("log")
+local log = require("tealdoc.log")
 local tealdoc = require("tealdoc")
-local TealParser = require("parser.teal")
-local MarkdownInput = require("parser.markdown")
+local TealParser = require("tealdoc.parser.teal")
+local MarkdownInput = require("tealdoc.parser.markdown")
 
-local Generator = require("tool.generator")
+local Generator = require("tealdoc.tool.generator")
 
 local record DefaultEnv
 end

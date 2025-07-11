@@ -1,7 +1,7 @@
 local tl <const> = require("tl")
 local tealdoc = require("tealdoc")
-local log = require("log")
-local CommentParser = require("comment_parser")
+local log = require("tealdoc.log")
+local CommentParser = require("tealdoc.comment_parser")
 local record VisitState
     env: tealdoc.Env 
     path: string

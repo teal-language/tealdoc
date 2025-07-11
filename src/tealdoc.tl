@@ -2,7 +2,7 @@
 --- @module tealdoc
 
 
-local log = require("log")
+local log = require("tealdoc.log")
 
 local record tealdoc
     

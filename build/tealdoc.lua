@@ -2,7 +2,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 
-local log = require("log")
+local log = require("tealdoc.log")
 
 local tealdoc = { TagHandler = { Context = {} }, Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param = {}, Return = {} }, DirectiveItem = {}, VariableItem = {}, TypeItem = {} }
 
