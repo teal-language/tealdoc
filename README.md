@@ -577,10 +577,10 @@ enum tealdoc.FunctionItem.FunctionKind
 Possible function kinds
 ## tealdoc.FunctionItem.FunctionKind.normal
 Normal function, local, global, or in-record.
-## tealdoc.FunctionItem.FunctionKind.metamethod
-Record metamethod
 ## tealdoc.FunctionItem.FunctionKind.macroexp
 Macro expansion function
+## tealdoc.FunctionItem.FunctionKind.metamethod
+Record metamethod
 ## tealdoc.FunctionItem.params
 ```
 tealdoc.FunctionItem.params: {Param}
@@ -626,14 +626,14 @@ This record represents a type item in Tealdoc. It is used to represent types, re
 enum tealdoc.TypeItem.TypeKind
 ```
 Possible kinds of types.
-## tealdoc.TypeItem.TypeKind.enum
-Type kind for an enum type.
-## tealdoc.TypeItem.TypeKind.record
-Type kind for a record type.
 ## tealdoc.TypeItem.TypeKind.type
 Type kind for a type alias.
+## tealdoc.TypeItem.TypeKind.record
+Type kind for a record type.
 ## tealdoc.TypeItem.TypeKind.interface
 Type kind for an interface type.
+## tealdoc.TypeItem.TypeKind.enum
+Type kind for an enum type.
 ## tealdoc.TypeItem.typename
 ```
 tealdoc.TypeItem.typename: string
@@ -677,6 +677,6 @@ Process the given text as a file with the specified filename using the parsers r
 
 ## About
 
-This project started as a [Google Summer of Code 2025 project](https://summerofcode.withgoogle.com/programs/2024/projects/MCJkfE3P) from Miłosz Koczorowski, mentored by Hisham Muhammad and Loren Segal.
+This project started as a [Google Summer of Code 2025 project](https://summerofcode.withgoogle.com/programs/2024/projects/MCJkfE3P) from [Miłosz Koczorowski](https://github.com/upedd), mentored by [Hisham Muhammad](https://github.com/hishamhm) and [Loren Segal](https://github.com/lsegal).
 
 Tealdoc is licensed under an MIT license.
