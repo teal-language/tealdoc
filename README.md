@@ -104,10 +104,10 @@ Use the `@typearg` tag to document generic type variables:
 
 ```teal
 --[[--
-    Calculates the squared area of a shape.
+    Calculates the area of a shape.
     @typearg S The type of the shape, which must implement `Shape`.
     @param shape The shape object.
-    @return The squared area of the shape.
+    @return The area of the shape.
 ]]
 local function area<S is Shape>(shape: S): number
     ...
@@ -521,10 +521,10 @@ enum tealdoc.DeclarationItem.Visibility
 Possible visibilities for declarations.
 ## tealdoc.DeclarationItem.Visibility.global
 Global visibility, for global variables and functions.
-## tealdoc.DeclarationItem.Visibility.local
-Local visibility, for local variables and functions.
 ## tealdoc.DeclarationItem.Visibility.record
 Record visibility, for record fields and nested types.
+## tealdoc.DeclarationItem.Visibility.local
+Local visibility, for local variables and functions.
 ## tealdoc.DeclarationItem.visibility
 ```
 tealdoc.DeclarationItem.visibility: Visibility
@@ -575,10 +575,10 @@ The description of the return value.
 enum tealdoc.FunctionItem.FunctionKind
 ```
 Possible function kinds
-## tealdoc.FunctionItem.FunctionKind.metamethod
-Record metamethod
 ## tealdoc.FunctionItem.FunctionKind.normal
 Normal function, local, global, or in-record.
+## tealdoc.FunctionItem.FunctionKind.metamethod
+Record metamethod
 ## tealdoc.FunctionItem.FunctionKind.macroexp
 Macro expansion function
 ## tealdoc.FunctionItem.params
@@ -628,10 +628,10 @@ enum tealdoc.TypeItem.TypeKind
 Possible kinds of types.
 ## tealdoc.TypeItem.TypeKind.enum
 Type kind for an enum type.
-## tealdoc.TypeItem.TypeKind.type
-Type kind for a type alias.
 ## tealdoc.TypeItem.TypeKind.record
 Type kind for a record type.
+## tealdoc.TypeItem.TypeKind.type
+Type kind for a type alias.
 ## tealdoc.TypeItem.TypeKind.interface
 Type kind for an interface type.
 ## tealdoc.TypeItem.typename

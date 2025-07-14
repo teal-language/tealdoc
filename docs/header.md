@@ -104,10 +104,10 @@ Use the `@typearg` tag to document generic type variables:
 
 ```teal
 --[[--
-    Calculates the squared area of a shape.
+    Calculates the area of a shape.
     @typearg S The type of the shape, which must implement `Shape`.
     @param shape The shape object.
-    @return The squared area of the shape.
+    @return The area of the shape.
 ]]
 local function area<S is Shape>(shape: S): number
     ...
