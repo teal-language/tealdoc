@@ -83,13 +83,13 @@ MarkdownBuilder.unordered_list = function(self, content: function(item: function
     return self
 end
 
-MarkdownBuilder.b = function(self, text: string): string
+MarkdownBuilder.b = function(_, text: string): string
     return "**" .. text .. "**"
 end
-MarkdownBuilder.i = function(self, text: string): string
+MarkdownBuilder.i = function(_, text: string): string
     return "*" .. text .. "*"
 end
-MarkdownBuilder.code = function(self, text: string): string
+MarkdownBuilder.code = function(_, text: string): string
     return "`" .. text .. "`"
 end
 

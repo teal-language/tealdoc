@@ -24,15 +24,18 @@ function DefaultEnv.init()
             log:error("module tag can only exists in directives")
             return
          end
-         if item.module_name then
+         if item.attributes and item.attributes["module_name"] then
             log:error(
             "Multiple @module tags found in the same comment block: previously defined as '%s', now found as '%s'. Only one @module tag is allowed per top-level comment.",
             ctx.item.attributes["module"],
             ctx.param)
 
          end
+         if not item.attributes then
+            item.attributes = {}
+         end
 
-         item.module_name = ctx.param
+         item.attributes["module_name"] = ctx.param
       end,
    }
 
@@ -184,21 +187,21 @@ function DefaultEnv.init()
       end,
    }
 
-   env:add_tag_handler(module_tag_handler)
-   env:add_tag_handler(return_tag_handler)
-   env:add_tag_handler(param_tag_handler)
-   env:add_tag_handler(typearg_tag_handler)
-   env:add_tag_handler(local_tag_handler)
+   env:add_tag(module_tag_handler)
+   env:add_tag(return_tag_handler)
+   env:add_tag(param_tag_handler)
+   env:add_tag(typearg_tag_handler)
+   env:add_tag(local_tag_handler)
 
 
    local module_header_phase = {
       name = "module_header",
       run = function(generator, item)
-         assert(item.kind == "directive" and item.module_name)
+         assert(item.kind == "directive" and item.attributes["module_name"])
 
          local b = generator.builder
 
-         b:h1("Module: " .. item.module_name)
+         b:h1("Module: " .. (item.attributes["module_name"]))
          b:line(item.text or "")
       end,
    }
@@ -255,11 +258,11 @@ function DefaultEnv.init()
          local b = generator.builder
 
          b:code_block(function()
-            if item.type ~= "record" then
-               b:text(item.type, " ")
+            if item.visibility ~= "record" then
+               b:text(item.visibility, " ")
             end
 
-            if item.type == "record" then
+            if item.visibility == "record" then
                local parent = item.parent
                local parent_item = env.registry[parent]
                if parent_item and parent_item.kind == "overload" then
@@ -269,7 +272,7 @@ function DefaultEnv.init()
                   b:text(item.path)
                end
             else
-               b:text(item.type, " ", item.name)
+               b:text(item.visibility, " ", item.name)
             end
 
             if #typeargs > 0 then
@@ -292,8 +295,8 @@ function DefaultEnv.init()
 
          local b = generator.builder
          b:code_block(function()
-            if item.type ~= "record" then
-               b:text(item.type, " ", item.name)
+            if item.visibility ~= "record" then
+               b:text(item.visibility, " ", item.name)
             else
                b:text(item.path)
             end
@@ -310,23 +313,23 @@ function DefaultEnv.init()
 
          local b = generator.builder
          b:code_block(function()
-            if item.type ~= "record" then
-               b:text(item.type, " ")
+            if item.visibility ~= "record" then
+               b:text(item.visibility, " ")
             end
 
-            b:text(item.typekind, " ")
+            b:text(item.type_kind, " ")
 
-            if item.type == "record" then
+            if item.visibility == "record" then
                b:text(item.path)
             else
                b:text(item.name)
             end
 
-            if item.typekind == "type" then
+            if item.type_kind == "type" then
                b:text(" = ", item.typename)
             end
 
-            if item.typeargs and item.typekind ~= "type" then
+            if item.typeargs and item.type_kind ~= "type" then
                local typeargs = {}
                for _, typearg in ipairs(item.typeargs) do
                   if typearg.constraint then
@@ -336,6 +339,12 @@ function DefaultEnv.init()
                   end
                end
                b:text("<", table.concat(typeargs, ", "), ">")
+            end
+
+            if item.type_kind == "interface" or item.type_kind == "record" then
+               if item.inherits and #item.inherits > 0 then
+                  b:text(" is ", table.concat(item.inherits, ", "))
+               end
             end
 
             b:line("")

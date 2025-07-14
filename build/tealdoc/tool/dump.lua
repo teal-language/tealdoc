@@ -10,10 +10,7 @@ DumpTool.run = function(registry)
       if item.kind then
          print("\tkind: " .. item.kind)
       end
-      if item.is_namespace ~= nil then
-         print("\tis_namespace: " .. tostring(item.is_namespace))
 
-      end
       if item.location then
          print("\tlocation: " .. item.location.filename .. ":" .. item.location.y .. ":" .. item.location.x)
       end

@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tl = require("tl")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tl = require("tl")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local CommentParser = require("tealdoc.comment_parser")
@@ -139,17 +139,25 @@ local function type_to_string(report, typ)
 end
 
 
+local function is_item_local(item)
+   return type(item) == "table" and item.visibility == "local"
+end
+
+local function is_item_global(item)
+   return type(item) == "table" and item.visibility == "local"
+end
+
 local function store_item_at_path(item, path, state)
 
    local old_item = state.env.registry[path]
    if old_item then
-      if tealdoc.is_item_local(item) then
+      if is_item_local(item) then
          if old_item.kind == "shadowed" then
             assert(old_item.children)
             path = path .. "#" .. tostring(#old_item.children + 1)
             table.insert(old_item.children, path)
          else
-            assert(tealdoc.is_item_local(old_item))
+            assert(is_item_local(old_item))
             local shadowed_path = old_item.path
             old_item.path = old_item.path .. "#1"
             path = path .. "#2"
@@ -166,8 +174,8 @@ local function store_item_at_path(item, path, state)
             old_item.parent = shadowed_path
             item.parent = shadowed_path
          end
-      elseif tealdoc.is_item_global(item) then
-         assert(tealdoc.is_item_global(old_item))
+      elseif is_item_global(item) then
+         assert(is_item_global(old_item))
          if old_item.text then
 
             log:warning(
@@ -177,7 +185,7 @@ local function store_item_at_path(item, path, state)
 
          end
       elseif old_item.kind == "function" and item.kind == "function" then
-         assert(old_item.type == "record")
+         assert(old_item.visibility == "record")
 
 
          if old_item.is_declaration then
@@ -225,10 +233,11 @@ local function store_item(item, state)
    return path
 end
 
-local function function_item_for_node(node, typ, state)
+local function function_item_for_node(node, visibility, kind, state)
    local item = {
       kind = "function",
-      type = typ,
+      function_kind = kind,
+      visibility = visibility,
       location = location_for_node(node),
    }
 
@@ -265,10 +274,11 @@ local function function_item_for_node(node, typ, state)
    return item
 end
 
-local function item_for_function_type(t, typ, state)
+local function item_for_function_type(t, visibility, kind, state)
    local item = {
       kind = "function",
-      type = typ,
+      function_kind = kind,
+      visibility = visibility,
       is_declaration = true,
       location = location_for_type(t),
    }
@@ -335,15 +345,15 @@ local function function_visitor(node, state)
    assert(node.name.kind == "identifier")
    local name = node.name.tk
 
-   local function_type
+   local visibility
    if node.kind == "local_function" then
-      function_type = "local"
+      visibility = "local"
    elseif node.kind == "global_function" then
-      function_type = "global"
+      visibility = "global"
    else
-      function_type = "record"
+      visibility = "record"
    end
-   local item = function_item_for_node(node, function_type, state)
+   local item = function_item_for_node(node, visibility, "normal", state)
    item.name = name
    process_comments(node.comments, item, state.env)
    local path = store_item(item, state)
@@ -372,7 +382,7 @@ local function macroexp_visitor(node, state)
    local macrodef = node.macrodef
    assert(macrodef.kind == "macroexp")
 
-   local item = function_item_for_node(macrodef, "macroexp", state)
+   local item = function_item_for_node(macrodef, "local", "macroexp", state)
    item.name = name
    process_comments(node.comments, item, state.env)
    store_item(item, state)
@@ -400,7 +410,7 @@ local function variable_declarations_visitor(node, state)
          kind = "variable",
          name = name.tk,
          typename = typename,
-         type = node.kind == "local_declaration" and "local" or "global",
+         visibility = node.kind == "local_declaration" and "local" or "global",
          location = location_for_node(name),
       }
 
@@ -412,7 +422,7 @@ end
 
 local record_like_visitor
 
-local function enum_visitor(t, state)
+local function enum_visitor(t, _, state)
    for value, _ in pairs(t.enumset) do
       local comments = t.value_comments and t.value_comments[value]
 
@@ -427,7 +437,7 @@ local function enum_visitor(t, state)
    end
 end
 
-local function typedecl_visitor(name, comments, t, typ, state)
+local function typedecl_visitor(name, comments, t, visibility, state)
    local def = t.def
    local typeargs
 
@@ -458,9 +468,9 @@ local function typedecl_visitor(name, comments, t, typ, state)
       name = name,
       typename = type_to_string(state.type_report, def),
       typeargs = typeargs,
-      type = typ,
+      visibility = visibility,
       location = location_for_type(t),
-      typekind = typekind,
+      type_kind = typekind,
    }
 
    local path = store_item(item, state)
@@ -477,7 +487,7 @@ local function typedecl_visitor(name, comments, t, typ, state)
       local old_parent = state.parent_item
       state.path = path .. "."
       state.parent_item = item
-      visit_type(def, state)
+      visit_type(def, item, state)
       state.path = old_path
       state.parent_item = old_parent
    end
@@ -491,8 +501,53 @@ local function type_is_function(t)
    return t.typename == "function"
 end
 
-record_like_visitor = function(t, state)
+record_like_visitor = function(t, declaration, state)
+
+
+
+   local inherited_field_has_comments = {}
+   local inherited_metafield_has_comments = {}
+   if t.interface_list then
+      for _, iface in ipairs(t.interface_list) do
+         if iface.typename == "nominal" then
+            local resolved = iface.resolved
+
+            local typenum = typenum_for_type(state.type_report, resolved)
+            local interface_path = typenum and state.typenum_to_path[typenum]
+            if not interface_path then
+               log:error("Could not find path for interface '%s' in record '%s'.", resolved.typename, t.typename)
+            else
+               if not declaration.inherits then
+                  declaration.inherits = {}
+               end
+               table.insert(declaration.inherits, interface_path)
+            end
+
+
+
+            if resolved.fields then
+               for field_name, _ in pairs(resolved.fields) do
+                  inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
+               end
+               if resolved.meta_fields then
+                  for field_name, _ in pairs(resolved.meta_fields) do
+                     inherited_metafield_has_comments[field_name] = resolved.meta_field_comments and resolved.meta_field_comments[field_name] ~= nil or false
+                  end
+               end
+            end
+         end
+      end
+   end
+
    local function field_visitor(name, field_type, comments, meta)
+
+      if inherited_field_has_comments[name] ~= nil then
+         if comments and inherited_field_has_comments[name] then
+            log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
+         elseif not comments then
+            return
+         end
+      end
 
       if field_type.typename == "typedecl" then
          local c
@@ -516,7 +571,7 @@ record_like_visitor = function(t, state)
          local base_path = store_item(overload_item, state)
 
          for i, function_type in ipairs(field_type.types) do
-            local item = item_for_function_type(function_type, "record", state)
+            local item = item_for_function_type(function_type, "record", "normal", state)
             item.name = name
             local param_types = {}
             for param_idx, param in ipairs(item.params) do
@@ -538,11 +593,11 @@ record_like_visitor = function(t, state)
       local item
 
       if type_is_function(field_type) then
-         item = item_for_function_type(field_type, meta and "metamethod" or "record", state)
+         item = item_for_function_type(field_type, "record", meta and "metamethod" or "normal", state)
       else
          local field_item = {
             kind = "variable",
-            type = "record",
+            visibility = "record",
             typename = type_to_string(state.type_report, field_type),
             location = location_for_type(field_type),
          }
@@ -646,9 +701,9 @@ local type_visitors = {
    ["enum"] = enum_visitor,
 }
 
-visit_type = function(t, state)
+visit_type = function(t, item, state)
    if type_visitors[t.typename] then
-      type_visitors[t.typename](t, state)
+      type_visitors[t.typename](t, item, state)
    end
 end
 
@@ -709,12 +764,12 @@ local function validate_directives(items)
    local module_item
    if items then
       for _, item in ipairs(items) do
-         if item.module_name then
+         if item.attributes and item.attributes["module_name"] then
             if module_item then
                log:error(
                "Multiple @module directives found: previously defined as '%s', now found as '%s'. Only one @module directive is allowed per file.",
-               module_item.module_name or "<unknown>",
-               item.module_name)
+               module_item.attributes["module_name"] or "<unknown>",
+               item.attributes["module_name"])
 
             end
             module_item = item
@@ -744,16 +799,16 @@ function TealParser.process(text, filename, env)
    if not module_item then
       return
    end
-   module_item.path = "$" .. module_item.module_name
+   module_item.path = "$" .. (module_item.attributes["module_name"])
    local state = {
       env = env,
-      path = module_item.module_name .. "~",
-      module_name = module_item.module_name,
+      path = (module_item.attributes["module_name"]) .. "~",
+      module_name = (module_item.attributes["module_name"]),
       type_report = reporter.tr,
       typenum_to_path = {},
       parent_item = module_item,
    }
-   table.insert(env.modules, module_item.module_name)
+   table.insert(env.modules, (module_item.attributes["module_name"]))
    env.registry[module_item.path] = module_item
    visit_node(result.ast, state)
 end

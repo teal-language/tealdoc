@@ -2,9 +2,12 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 
+
+
+
 local log = require("tealdoc.log")
 
-local tealdoc = { TagHandler = { Context = {} }, Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param = {}, Return = {} }, DirectiveItem = {}, VariableItem = {}, TypeItem = {} }
+local tealdoc = { Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param = {}, Return = {} }, VariableItem = {}, TypeItem = {} }
 
 
 
@@ -140,50 +143,177 @@ local tealdoc = { TagHandler = { Context = {} }, Location = {}, Env = {}, Typear
 
 
 
-function tealdoc.is_item_local(item)
-   if item.kind == "function" then
-      return item.type == "local" or item.type == "macroexp"
-   elseif item.kind == "variable" then
-      return item.type == "local"
-   elseif item.kind == "type" then
-      return item.type == "local"
-   else
-      return false
-   end
-end
 
-function tealdoc.is_item_global(item)
-   if item.kind == "function" then
-      return item.type == "global"
-   elseif item.kind == "variable" then
-      return item.type == "global"
-   elseif item.kind == "type" then
-      return item.type == "global"
-   else
-      return false
-   end
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function tealdoc.Env.init()
    local env = {
       parser_registry = {},
-      tag_handler_registry = {},
+      tag_registry = {},
       registry = {},
       modules = {},
       add_parser = tealdoc.Env.add_parser,
-      add_tag_handler = tealdoc.Env.add_tag_handler,
+      add_tag = tealdoc.Env.add_tag,
    }
 
    return env
 end
 
-function tealdoc.Env:add_tag_handler(handler)
-   assert(handler.name and handler.handle)
-   if self.tag_handler_registry[handler.name] then
+function tealdoc.Env:add_tag(tag)
+   assert(tag.name and tag.handle)
+   if self.tag_registry[tag.name] then
 
-      log:error("duplicate tag name detected: '" .. handler.name .. "'. Each tag must have a unique name.")
+      log:error("duplicate tag name detected: '" .. tag.name .. "'. Each tag must have a unique name.")
    end
-   self.tag_handler_registry[handler.name] = handler
+   self.tag_registry[tag.name] = tag
 end
 
 function tealdoc.Env:add_parser(parser)

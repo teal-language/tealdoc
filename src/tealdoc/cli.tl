@@ -2,6 +2,8 @@ local argparse = require("argparse")
 local DumpTool = require("tealdoc.tool.dump")
 local MarkdownGenerator = require("tealdoc.tool.markdown")
 local tealdoc = require("tealdoc")
+local log = require("tealdoc.log")
+local tl = require("tl")
 
 local record CLI
     record Command -- TODO: description, alias?
@@ -62,6 +64,7 @@ end
 
 function CLI:init(env: tealdoc.Env, skip_default_commands?: boolean)
     self._parser = argparse("tealdoc", nil, nil)
+    self._parser:option("--plugin", "plugin to load", nil, nil, nil, "*")
     self._parser:command_target("command")
     self._commands = {}
     self._env = env
@@ -80,6 +83,24 @@ end
 function CLI:run() 
     local args = self._parser:parse(nil)
     local command_name = args["command"]
+
+    tl.loader()
+    local plugins = args["plugin"] as {string}
+    if plugins then
+        for _, plugin in ipairs(plugins) do
+            local ok, result = pcall(require, plugin)
+            if not ok then
+                log:error("Failed to load plugin '" .. plugin .. "': " .. tostring(result))
+            end
+            print(result)
+            if result is tealdoc.Plugin then
+                result.run(self._env)
+            else
+                log:error("Plugin '" .. plugin .. "' does not implement tealdoc.Plugin interface")
+            end
+        end
+    end
+
     assert(command_name and command_name is string)
     local handler = self._commands[command_name as string]
     assert(handler)

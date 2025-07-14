@@ -15,34 +15,37 @@ function DefaultEnv.init(): tealdoc.Env
     env:add_parser(MarkdownInput)
 
     -- TODO: better place for this
-    local module_tag_handler: tealdoc.TagHandler = {
+    local module_tag_handler: tealdoc.Tag = {
         name = "module",
         has_param = true,
-        handle = function(ctx: tealdoc.TagHandler.Context)
+        handle = function(ctx: tealdoc.Tag.Context)
             local item = ctx.item
-            if not item is tealdoc.DirectiveItem then
+            if not (item.kind == "directive") then
                 log:error("module tag can only exists in directives")
                 return
             end
-            if item.module_name then
+            if item.attributes and item.attributes["module_name"] then
                 log:error(
                     "Multiple @module tags found in the same comment block: previously defined as '%s', now found as '%s'. Only one @module tag is allowed per top-level comment.",
                     ctx.item.attributes["module"],
                     ctx.param
                 )
             end
+            if not item.attributes then
+                item.attributes = {}
+            end
             -- TODO: validate module name?
-            item.module_name = ctx.param
+            item.attributes["module_name"] = ctx.param
         end
     }
 
     -- TODO: should we check if all params and typeargs are documented?
 
-    local param_tag_handler: tealdoc.TagHandler = {
+    local param_tag_handler: tealdoc.Tag = {
         name = "param",
         has_param = true,
         has_description = true,
-        handle = function(ctx: tealdoc.TagHandler.Context)
+        handle = function(ctx: tealdoc.Tag.Context)
             local item = ctx.item
             if not item is tealdoc.FunctionItem then
                 log:error(
@@ -91,11 +94,11 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    local typearg_tag_handler: tealdoc.TagHandler = { -- TODO: improve!
+    local typearg_tag_handler: tealdoc.Tag = { -- TODO: improve!
         name = "typearg",
         has_param = true,
         has_description = true,
-        handle = function(ctx: tealdoc.TagHandler.Context)
+        handle = function(ctx: tealdoc.Tag.Context)
             local item = ctx.item
             if not item is tealdoc.FunctionItem and not item is tealdoc.TypeItem then
                 log:error(
@@ -144,10 +147,10 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    local return_tag_handler: tealdoc.TagHandler = {
+    local return_tag_handler: tealdoc.Tag = {
         name = "return",
         has_description = true,
-        handle = function(ctx: tealdoc.TagHandler.Context)
+        handle = function(ctx: tealdoc.Tag.Context)
             local item = ctx.item
             if not item is tealdoc.FunctionItem then
                 log:error("return tag can only exist in function comments")
@@ -173,9 +176,9 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    local local_tag_handler: tealdoc.TagHandler = {
+    local local_tag_handler: tealdoc.Tag = {
         name = "local",
-        handle = function(ctx: tealdoc.TagHandler.Context)
+        handle = function(ctx: tealdoc.Tag.Context)
             local item = ctx.item
             if not item.attributes then
                 item.attributes = {}
@@ -184,21 +187,21 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    env:add_tag_handler(module_tag_handler)
-    env:add_tag_handler(return_tag_handler)
-    env:add_tag_handler(param_tag_handler)
-    env:add_tag_handler(typearg_tag_handler)
-    env:add_tag_handler(local_tag_handler)
+    env:add_tag(module_tag_handler)
+    env:add_tag(return_tag_handler)
+    env:add_tag(param_tag_handler)
+    env:add_tag(typearg_tag_handler)
+    env:add_tag(local_tag_handler)
     
     -- TODO: better place for this
     local module_header_phase: Generator.Phase = {
         name = "module_header",
         run = function(generator: Generator.Base, item: tealdoc.Item)
-            assert(item is tealdoc.DirectiveItem and item.module_name)
+            assert(item.kind == "directive" and item.attributes["module_name"])
 
             local b = generator.builder
 
-            b:h1("Module: " .. item.module_name)
+            b:h1("Module: " .. (item.attributes["module_name"] as string))
             b:line(item.text or "")
         end
     }
@@ -255,11 +258,11 @@ function DefaultEnv.init(): tealdoc.Env
             local b = generator.builder
 
             b:code_block(function()
-                if item.type ~= "record" then
-                    b:text(item.type, " ")
+                if item.visibility ~= "record" then
+                    b:text(item.visibility, " ")
                 end
 
-                if item.type == "record" then -- TODO: metamethods!
+                if item.visibility == "record" then -- TODO: metamethods!
                     local parent = item.parent
                     local parent_item = env.registry[parent]
                     if parent_item and parent_item.kind == "overload" then 
@@ -269,7 +272,7 @@ function DefaultEnv.init(): tealdoc.Env
                         b:text(item.path)
                     end
                 else
-                    b:text(item.type, " ", item.name)
+                    b:text(item.visibility, " ", item.name)
                 end
 
                 if #typeargs > 0 then
@@ -292,8 +295,8 @@ function DefaultEnv.init(): tealdoc.Env
 
             local b = generator.builder
             b:code_block(function()
-                if item.type ~= "record" then
-                    b:text(item.type, " ", item.name)
+                if item.visibility ~= "record" then
+                    b:text(item.visibility, " ", item.name)
                 else
                     b:text(item.path)
                 end
@@ -310,23 +313,23 @@ function DefaultEnv.init(): tealdoc.Env
 
             local b = generator.builder
             b:code_block(function()
-                if item.type ~= "record" then
-                    b:text(item.type, " ")
+                if item.visibility ~= "record" then
+                    b:text(item.visibility, " ")
                 end
 
-                b:text(item.typekind, " ")
+                b:text(item.type_kind, " ")
 
-                if item.type == "record" then
+                if item.visibility == "record" then
                     b:text(item.path)
                 else
                     b:text(item.name)
                 end
 
-                if item.typekind == "type" then
+                if item.type_kind == "type" then
                     b:text(" = ", item.typename)
                 end
 
-                if item.typeargs and item.typekind ~= "type" then -- don't repeat typeargs from type
+                if item.typeargs and item.type_kind ~= "type" then -- don't repeat typeargs from type
                     local typeargs: {string} = {}
                     for _, typearg in ipairs(item.typeargs) do
                         if typearg.constraint then
@@ -336,6 +339,12 @@ function DefaultEnv.init(): tealdoc.Env
                         end
                     end
                     b:text("<", table.concat(typeargs, ", "), ">")
+                end
+
+                if item.type_kind == "interface" or item.type_kind == "record" then
+                    if item.inherits and #item.inherits > 0 then
+                        b:text(" is ", table.concat(item.inherits, ", "))
+                    end
                 end
 
                 b:line("")

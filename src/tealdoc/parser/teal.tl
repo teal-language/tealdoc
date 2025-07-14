@@ -79,7 +79,7 @@ end
 -- TODO: improve errors with filenames and locations!
 
 local visit_node: function(node: tl.Node, state: VisitState)
-local visit_type: function(t: tl.Type, state: VisitState)
+local visit_type: function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState)
 
 local function children_visitor(node: tl.Node, state: VisitState)
     for _, child in ipairs(node) do
@@ -139,17 +139,25 @@ local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
 end
 
 
+local function is_item_local(item: tealdoc.Item): boolean
+    return item is tealdoc.DeclarationItem and item.visibility == "local"
+end
+
+local function is_item_global(item: tealdoc.Item): boolean
+    return item is tealdoc.DeclarationItem and item.visibility == "local"
+end
+
 local function store_item_at_path(item: tealdoc.Item, path: string, state: VisitState): string
     -- this code is a mess!
     local old_item = state.env.registry[path]
     if old_item then
-        if tealdoc.is_item_local(item) then
+        if is_item_local(item) then
             if old_item.kind == "shadowed" then -- TODO: better name?
                 assert(old_item.children)
                 path = path.."#"..tostring(#old_item.children + 1)
                 table.insert(old_item.children, path)
             else 
-                assert(tealdoc.is_item_local(old_item))
+                assert(is_item_local(old_item))
                 local shadowed_path = old_item.path
                 old_item.path = old_item.path.."#1"
                 path = path.."#2"
@@ -166,8 +174,8 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 old_item.parent = shadowed_path
                 item.parent = shadowed_path
             end
-        elseif tealdoc.is_item_global(item) then
-            assert(tealdoc.is_item_global(old_item))
+        elseif is_item_global(item) then
+            assert(is_item_global(old_item))
             if old_item.text then
                 -- TODO: better warning message
                 log:warning(
@@ -177,7 +185,7 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 )
             end
         elseif old_item is tealdoc.FunctionItem and item is tealdoc.FunctionItem then
-            assert(old_item.type == "record")  
+            assert(old_item.visibility == "record")  
             -- assert that old_item and item are the same function?
 
             if old_item.is_declaration then
@@ -225,10 +233,11 @@ local function store_item(item: tealdoc.Item, state: VisitState): string
     return path
 end
 
-local function function_item_for_node(node: tl.Node, typ: tealdoc.FunctionItem.Type, state: VisitState): tealdoc.FunctionItem
+local function function_item_for_node(node: tl.Node, visibility: tealdoc.DeclarationItem.Visibility, kind: tealdoc.FunctionItem.FunctionKind, state: VisitState): tealdoc.FunctionItem
     local item: tealdoc.FunctionItem = {
         kind = "function",
-        type = typ,
+        function_kind = kind,
+        visibility = visibility,
         location = location_for_node(node)
     }
     
@@ -265,10 +274,11 @@ local function function_item_for_node(node: tl.Node, typ: tealdoc.FunctionItem.T
     return item
 end
 
-local function item_for_function_type(t: tl.FunctionType | tl.GenericType, typ: tealdoc.FunctionItem.Type, state: VisitState): tealdoc.FunctionItem 
+local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visibility: tealdoc.DeclarationItem.Visibility, kind: tealdoc.FunctionItem.FunctionKind, state: VisitState): tealdoc.FunctionItem 
     local item: tealdoc.FunctionItem = {
         kind = "function",
-        type = typ,
+        function_kind = kind,
+        visibility = visibility,
         is_declaration = true,
         location = location_for_type(t)
     }
@@ -335,15 +345,15 @@ local function function_visitor(node: tl.Node, state: VisitState)
     assert(node.name.kind == "identifier")
     local name = node.name.tk
 
-    local function_type: tealdoc.FunctionItem.Type
+    local visibility: tealdoc.DeclarationItem.Visibility
     if node.kind == "local_function" then
-        function_type = "local"
+        visibility = "local"
     elseif node.kind == "global_function" then
-        function_type = "global"
+        visibility = "global"
     else
-        function_type = "record" 
+        visibility = "record" 
     end
-    local item = function_item_for_node(node, function_type, state)
+    local item = function_item_for_node(node, visibility, "normal", state)
     item.name = name
     process_comments(node.comments, item, state.env)
     local path = store_item(item, state)
@@ -372,7 +382,7 @@ local function macroexp_visitor(node: tl.Node, state: VisitState)
     local macrodef = node.macrodef
     assert(macrodef.kind == "macroexp")
     
-    local item = function_item_for_node(macrodef, "macroexp", state)
+    local item = function_item_for_node(macrodef, "local", "macroexp", state)
     item.name = name 
     process_comments(node.comments, item, state.env)
     store_item(item, state)
@@ -400,7 +410,7 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
             kind = "variable",
             name = name.tk,
             typename = typename,
-            type = node.kind == "local_declaration" and "local" or "global",
+            visibility = node.kind == "local_declaration" and "local" or "global",
             location = location_for_node(name)
         }
 
@@ -410,9 +420,9 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
 end
 
 
-local record_like_visitor: function(tl.RecordLikeType, VisitState) 
+local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitState) 
 
-local function enum_visitor(t: tl.EnumType, state: VisitState)
+local function enum_visitor(t: tl.EnumType, _: tealdoc.TypeItem, state: VisitState)
     for value, _ in pairs(t.enumset) do
         local comments = t.value_comments and t.value_comments[value]
 
@@ -427,7 +437,7 @@ local function enum_visitor(t: tl.EnumType, state: VisitState)
     end
 end
 
-local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.TypeDeclType, typ: tealdoc.TypeItem.Type, state: VisitState)
+local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.TypeDeclType, visibility: tealdoc.DeclarationItem.Visibility, state: VisitState)
     local def = t.def
     local typeargs: {tealdoc.Typearg}
     
@@ -458,9 +468,9 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
         name = name,
         typename = type_to_string(state.type_report, def),
         typeargs = typeargs,
-        type = typ,
+        visibility = visibility,
         location = location_for_type(t),
-        typekind = typekind,
+        type_kind = typekind,
     }
 
     local path = store_item(item, state)
@@ -477,7 +487,7 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
         local old_parent = state.parent_item
         state.path = path.."."
         state.parent_item = item
-        visit_type(def, state)
+        visit_type(def, item, state)
         state.path = old_path
         state.parent_item = old_parent
     end
@@ -491,8 +501,53 @@ local function type_is_function(t: tl.Type): boolean
     return t is tl.FunctionType
 end
 
-record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
+record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeItem, state: VisitState)
+    -- TODO: should we somehow store the contents of where clause to generate more matching signatures? 
+
+    -- TODO: mess!
+    local inherited_field_has_comments: {string: boolean} = {}
+    local inherited_metafield_has_comments: {string: boolean} = {}
+    if t.interface_list then
+        for _, iface in ipairs(t.interface_list) do
+            if iface is tl.NominalType then
+                local resolved = iface.resolved
+                
+                local typenum = typenum_for_type(state.type_report, resolved)
+                local interface_path = typenum and state.typenum_to_path[typenum]
+                if not interface_path then
+                    log:error("Could not find path for interface '%s' in record '%s'.", resolved.typename, t.typename)
+                else
+                    if not declaration.inherits then
+                        declaration.inherits = {}
+                    end
+                    table.insert(declaration.inherits, interface_path)
+                end
+
+                
+
+                if resolved is tl.RecordLikeType then
+                    for field_name, _ in pairs(resolved.fields) do
+                        inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
+                    end
+                    if resolved.meta_fields then
+                        for field_name, _ in pairs(resolved.meta_fields) do
+                            inherited_metafield_has_comments[field_name] = resolved.meta_field_comments and resolved.meta_field_comments[field_name] ~= nil or false
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     local function field_visitor(name: string, field_type: tl.Type, comments: {{tl.Comment}}, meta?: boolean)
+        -- here we assume that if the inherited field is shadowed that it has the same type 
+        if inherited_field_has_comments[name] ~= nil then -- is a inherited field 
+            if comments and inherited_field_has_comments[name] then
+                log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
+            elseif not comments then
+                return
+            end
+        end 
         -- inner type declarations
         if field_type is tl.TypeDeclType then
             local c: {tl.Comment}
@@ -516,7 +571,7 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
             local base_path = store_item(overload_item, state)
             
             for i, function_type in ipairs(field_type.types) do
-                local item = item_for_function_type(function_type, "record", state)
+                local item = item_for_function_type(function_type, "record", "normal", state)
                 item.name = name
                 local param_types: {string} = {}
                 for param_idx, param in ipairs(item.params) do
@@ -538,11 +593,11 @@ record_like_visitor = function(t: tl.RecordLikeType, state: VisitState)
         local item: tealdoc.Item
 
         if type_is_function(field_type) then
-            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, meta and "metamethod" or "record", state)
+            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", meta and "metamethod" or "normal", state)
         else
             local field_item: tealdoc.VariableItem = {
                 kind = "variable",
-                type = "record",
+                visibility = "record",
                 typename = type_to_string(state.type_report, field_type),
                 location = location_for_type(field_type)
             }
@@ -640,29 +695,29 @@ visit_node = function(node: tl.Node, state: VisitState)
     end
 end
 
-local type_visitors: {tl.TypeName: function(t: tl.Type, state: VisitState)} = {
+local type_visitors: {tl.TypeName: function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState)} = {
     ["record"] = record_like_visitor,
     ["interface"] = record_like_visitor,
     ["enum"] = enum_visitor
 }
 
-visit_type = function(t: tl.Type, state: VisitState) 
+visit_type = function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState) 
     if type_visitors[t.typename] then
-        type_visitors[t.typename](t, state)
+        type_visitors[t.typename](t, item, state)
     end
 end
 
-local function parse_toplevel_comments(comments: {tl.Comment}, env: tealdoc.Env): {tealdoc.DirectiveItem}
+local function parse_toplevel_comments(comments: {tl.Comment}, env: tealdoc.Env): {tealdoc.Item}
     if not comments then
         return nil
     end
-    local items: {tealdoc.DirectiveItem} = {}
+    local items: {tealdoc.Item} = {}
 
     local in_comment_block = false
     local current_block: {tl.Comment} = {}
 
     local function end_block() 
-        local item: tealdoc.DirectiveItem = {
+        local item: tealdoc.Item = {
             kind = "directive",
             location = {
                 filename = "", -- TODO!
@@ -705,16 +760,16 @@ end
 
 --- Validates directive comments and finds the module directive
 -- @return module item if there is one 
-local function validate_directives(items: {tealdoc.DirectiveItem}): tealdoc.DirectiveItem
-    local module_item: tealdoc.DirectiveItem
+local function validate_directives(items: {tealdoc.Item}): tealdoc.Item
+    local module_item: tealdoc.Item
     if items then
         for _, item in ipairs(items) do
-            if item.module_name then
+            if item.attributes and item.attributes["module_name"] then
                 if module_item then 
                     log:error(
                         "Multiple @module directives found: previously defined as '%s', now found as '%s'. Only one @module directive is allowed per file.",
-                        module_item.module_name or "<unknown>",
-                        item.module_name
+                        module_item.attributes["module_name"] or "<unknown>",
+                        item.attributes["module_name"]
                     )
                 end
                 module_item = item
@@ -744,16 +799,16 @@ function TealParser.process(text: string, filename: string, env: tealdoc.Env)
     if not module_item then
         return
     end
-    module_item.path = "$"..module_item.module_name
+    module_item.path = "$"..(module_item.attributes["module_name"] as string)
     local state: VisitState = {
         env = env,
-        path = module_item.module_name.."~",
-        module_name = module_item.module_name,
+        path = (module_item.attributes["module_name"] as string).."~",
+        module_name = (module_item.attributes["module_name"] as string),
         type_report = reporter.tr,
         typenum_to_path = {},
         parent_item = module_item
     }
-    table.insert(env.modules, module_item.module_name)
+    table.insert(env.modules, (module_item.attributes["module_name"] as string))
     env.registry[module_item.path] = module_item
     visit_node(result.ast, state)
 end
