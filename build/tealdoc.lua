@@ -292,6 +292,10 @@ local tealdoc = { Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param 
 
 
 
+
+
+
+
 function tealdoc.Env.init()
    local env = {
       parser_registry = {},
@@ -337,7 +341,7 @@ end
 
 function tealdoc.process_text(text, path, env)
    local filename = path:match("([^/\\]*)$") or path
-   local ext = filename:gsub(".*%.", ".")
+   local ext = filename:match("(%.[^%.]+.*)$") or ""
    local parser = env.parser_registry[ext]
    if not parser then
       log:warning("No parser found for file '%s' (extension '%s'). File will be skipped.", path, ext)

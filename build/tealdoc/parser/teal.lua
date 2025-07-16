@@ -186,7 +186,6 @@ local function store_item_at_path(item, path, state)
 
          end
       elseif old_item.kind == "function" and item.kind == "function" then
-         assert(old_item.visibility == "record")
 
 
          if old_item.is_declaration then
@@ -198,7 +197,7 @@ local function store_item_at_path(item, path, state)
          else
             if old_item.text then
                log:warning(
-               "A record function named '%s' is being redefined. The previous definition's comment will be discarded.",
+               "A function named '%s' is being redefined. The previous definition's comment will be discarded.",
                item.name)
 
             end
@@ -390,6 +389,13 @@ local function macroexp_visitor(node, state)
    store_item(item, state)
 end
 
+local function type_is_function(t)
+   if t.typename == "generic" then
+      local base = t.t
+      return base.typename == "function"
+   end
+   return t.typename == "function"
+end
 
 
 local function variable_declarations_visitor(node, state)
@@ -407,14 +413,20 @@ local function variable_declarations_visitor(node, state)
          typename = typeinfo_to_string(typeinfo_for_global(state.type_report, name.tk))
       end
 
-
-      local item = {
-         kind = "variable",
-         name = name.tk,
-         typename = typename,
-         visibility = node.kind == "local_declaration" and "local" or "global",
-         location = location_for_node(name),
-      }
+      local item
+      if decltype and type_is_function(decltype) then
+         item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "normal", state)
+         item.is_declaration = true
+      else
+         local variable_item = {
+            kind = "variable",
+            typename = typename,
+            visibility = node.kind == "local_declaration" and "local" or "global",
+            location = location_for_node(name),
+         }
+         item = variable_item
+      end
+      item.name = name.tk
 
       process_comments(node.comments, item, state.env)
       store_item(item, state)
@@ -494,13 +506,7 @@ local function typedecl_visitor(name, comments, t, visibility, state)
    end
 end
 
-local function type_is_function(t)
-   if t.typename == "generic" then
-      local base = t.t
-      return base.typename == "function"
-   end
-   return t.typename == "function"
-end
+
 
 record_like_visitor = function(t, declaration, state)
 
@@ -513,18 +519,10 @@ record_like_visitor = function(t, declaration, state)
          if iface.typename == "nominal" then
             local resolved = iface.resolved
 
-            local typenum = typenum_for_type(state.type_report, resolved)
-            local interface_path = typenum and state.typenum_to_path[typenum]
-            if not interface_path then
-               log:error("Could not find path for interface '%s' in record '%s'.", resolved.typename, t.typename)
-            else
-               if not declaration.inherits then
-                  declaration.inherits = {}
-               end
-               table.insert(declaration.inherits, interface_path)
+            if not declaration.inherits then
+               declaration.inherits = {}
             end
-
-
+            table.insert(declaration.inherits, type_to_string(state.type_report, resolved))
 
             if resolved.fields then
                for field_name, _ in pairs(resolved.fields) do
@@ -654,7 +652,9 @@ local function type_declaration_visitor(node, state)
    local name = node.var.tk
    if node.value then
       local newtype = node.value.newtype
-      typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+      if newtype then
+         typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+      end
    end
 end
 
@@ -691,6 +691,9 @@ local node_visitors = {
 }
 
 visit_node = function(node, state)
+   if node.f == "@internal" then
+      return
+   end
    if node_visitors[node.kind] then
       node_visitors[node.kind](node, state)
    end
@@ -709,6 +712,8 @@ visit_type = function(t, item, state)
 end
 
 local TealParser = {}
+
+
 
 
 
@@ -765,7 +770,10 @@ function TealParser.init(source_dir)
    local parser = {
       source_dir = source_dir,
       file_extensions = TealParser.file_extensions,
+      tl_env = tl.new_env(),
+      typenum_to_path = {},
    }
+   parser.tl_env.report_types = true
 
    local self = setmetatable(parser, { __index = TealParser })
    return self
@@ -802,20 +810,16 @@ local function get_module_name_from_path(path, source_dir)
 
 
    local last = components[#components]
-   components[#components] = last:match("^(.+)%..+$") or last
+   components[#components] = last:match("^([^%.]+)") or last
 
    return table.concat(components, ".")
 end
 
 function TealParser:process(text, path, env)
 
-   local tl_env = tl.new_env()
-   tl_env.report_types = true
-
-   local result = tl.check_string(text, tl_env, path)
+   local result = tl.check_string(text, self.tl_env, path)
 
    local reporter = result.env.reporter
-
 
    local module_name = get_module_name_from_path(path, self.source_dir)
    log:info("Processing Teal module '%s' from file '%s'", module_name, path)
@@ -837,7 +841,7 @@ function TealParser:process(text, path, env)
       path = module_name .. "~",
       module_name = module_name,
       type_report = reporter.tr,
-      typenum_to_path = {},
+      typenum_to_path = self.typenum_to_path,
       parent_item = module_item,
       module_item_typeid = result.type.typeid,
    }

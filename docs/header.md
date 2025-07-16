@@ -189,6 +189,7 @@ tealdoc --help
 *   `--output <file>`: Specifies the output file for the generated documentation.
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
+*   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
 
 ## Architecture
 

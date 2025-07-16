@@ -44,12 +44,16 @@ function CLI:add_default_commands()
       setup = function(command)
          command:argument("files", "input files"):args("+")
          command:flag("-a --all", "include all items in the documentation")
+         command:flag("--no-warn-missing", "do not warn about missing items")
          command:option("-o --output", "output file"):
          default("doc.md")
       end,
       handler = function(args)
          if args["all"] then
             self._env.include_all = true
+         end
+         if args["no_warn_missing"] then
+            self._env.no_warnings_on_missing = true
          end
          local files = args.files
          for _, file in ipairs(files) do

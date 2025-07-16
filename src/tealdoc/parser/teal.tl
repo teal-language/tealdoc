@@ -186,7 +186,6 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 )
             end
         elseif old_item is tealdoc.FunctionItem and item is tealdoc.FunctionItem then
-            assert(old_item.visibility == "record")  
             -- assert that old_item and item are the same function?
 
             if old_item.is_declaration then
@@ -198,7 +197,7 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
             else 
                 if old_item.text then
                     log:warning(
-                        "A record function named '%s' is being redefined. The previous definition's comment will be discarded.",
+                        "A function named '%s' is being redefined. The previous definition's comment will be discarded.",
                         item.name
                     )
                 end
@@ -390,6 +389,13 @@ local function macroexp_visitor(node: tl.Node, state: VisitState)
     store_item(item, state)
 end
 
+local function type_is_function(t: tl.Type): boolean
+    if t is tl.GenericType then
+        local base = t.t
+        return base is tl.FunctionType
+    end
+    return t is tl.FunctionType
+end
 
 
 local function variable_declarations_visitor(node: tl.Node, state: VisitState) 
@@ -407,14 +413,20 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
             typename = typeinfo_to_string(typeinfo_for_global(state.type_report, name.tk))
         end
         
-
-        local item: tealdoc.VariableItem = {
-            kind = "variable",
-            name = name.tk,
-            typename = typename,
-            visibility = node.kind == "local_declaration" and "local" or "global",
-            location = location_for_node(name)
-        }
+        local item: tealdoc.Item
+        if decltype and type_is_function(decltype) then -- what about inferred types??
+            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "normal", state)
+            item.is_declaration = true
+        else
+            local variable_item = {
+                kind = "variable",
+                typename = typename,
+                visibility = node.kind == "local_declaration" and "local" or "global",
+                location = location_for_node(name)
+            }
+            item = variable_item
+        end
+        item.name = name.tk
 
         process_comments(node.comments, item, state.env) 
         store_item(item, state)
@@ -494,13 +506,7 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
     end
 end
 
-local function type_is_function(t: tl.Type): boolean
-    if t is tl.GenericType then
-        local base = t.t
-        return base is tl.FunctionType
-    end
-    return t is tl.FunctionType
-end
+
 
 record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeItem, state: VisitState)
     -- TODO: should we somehow store the contents of where clause to generate more matching signatures? 
@@ -513,19 +519,11 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             if iface is tl.NominalType then
                 local resolved = iface.resolved
                 
-                local typenum = typenum_for_type(state.type_report, resolved)
-                local interface_path = typenum and state.typenum_to_path[typenum]
-                if not interface_path then
-                    log:error("Could not find path for interface '%s' in record '%s'.", resolved.typename, t.typename)
-                else
-                    if not declaration.inherits then
-                        declaration.inherits = {}
-                    end
-                    table.insert(declaration.inherits, interface_path)
+                if not declaration.inherits then
+                    declaration.inherits = {}
                 end
-
-                
-
+                table.insert(declaration.inherits, type_to_string(state.type_report, resolved))
+            
                 if resolved is tl.RecordLikeType then
                     for field_name, _ in pairs(resolved.fields) do
                         inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
@@ -654,7 +652,9 @@ local function type_declaration_visitor(node: tl.Node, state: VisitState)
     local name = node.var.tk
     if node.value then -- what to do for types without values! 
         local newtype = node.value.newtype
-        typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+        if newtype then
+            typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+        end
     end 
 end
 
@@ -691,6 +691,9 @@ local node_visitors: {tl.NodeKind: function(node: tl.Node, state: VisitState)}  
 }
 
 visit_node = function(node: tl.Node, state: VisitState) 
+    if node.f == "@internal" then
+        return
+    end
     if node_visitors[node.kind] then
         node_visitors[node.kind](node, state)
     end
@@ -710,6 +713,8 @@ end
 
 local record TealParser is tealdoc.Parser
     source_dir: string
+    tl_env: tl.Env
+    typenum_to_path: {integer: string}
 end
 
 local function get_sourcedir_from_config(): string
@@ -764,8 +769,11 @@ function TealParser.init(source_dir?: string): TealParser
 
     local parser: TealParser = {
         source_dir = source_dir,
-        file_extensions = TealParser.file_extensions
+        file_extensions = TealParser.file_extensions,
+        tl_env = tl.new_env(),
+        typenum_to_path = {}
     }
+    parser.tl_env.report_types = true
 
     local self = setmetatable(parser, {__index = TealParser})
     return self
@@ -802,21 +810,17 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
     
     -- Remove file extension from last component
     local last = components[#components]
-    components[#components] = last:match("^(.+)%..+$") or last
+    components[#components] = last:match("^([^%.]+)") or last
     
     return table.concat(components, ".")
 end
 
 function TealParser:process(text: string, path: string, env: tealdoc.Env)
     -- TODO: handle errors
-    local tl_env = tl.new_env()
-    tl_env.report_types = true
-
-    local result = tl.check_string(text, tl_env, path)
+    local result = tl.check_string(text, self.tl_env, path)
     
     local reporter = result.env.reporter
 
-    -- TODO: get ts from path.
     local module_name = get_module_name_from_path(path, self.source_dir)
     log:info("Processing Teal module '%s' from file '%s'", module_name, path)
 
@@ -837,7 +841,7 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
         path = module_name.."~",
         module_name = module_name,
         type_report = reporter.tr,
-        typenum_to_path = {},
+        typenum_to_path = self.typenum_to_path,
         parent_item = module_item,
         module_item_typeid = result.type.typeid
     }

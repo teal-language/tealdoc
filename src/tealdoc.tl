@@ -140,6 +140,10 @@ local record tealdoc
         --- When using the CLI, you can set this option using the `--all` flag.
         include_all: boolean
 
+        --- Whether to skip warnings about missing items.
+        --- If this is true, Tealdoc will not log warnings about missing items.
+        no_warnings_on_missing: boolean
+
         --- Add a parser to the environment.
         --- This function registers a parser that can handle specific file extensions.
         --- The parser must implement the `tealdoc.Parser` interface.
@@ -232,7 +236,7 @@ local record tealdoc
         typeargs: {Typearg}
         --- The kind of the function.
         function_kind: FunctionKind
-        --- Whether this function is an in-record declaration.
+        --- Whether this function is only a declaration (it does not contain a body).
         is_declaration: boolean -- maybe better name?      
     end
 
@@ -271,7 +275,7 @@ local record tealdoc
         --- The kind of the type item.
         type_kind: TypeKind
 
-        --- Paths of inherited types
+        --- Names of inherited types
         inherits: {string}
     end
 
@@ -337,7 +341,7 @@ end
 
 function tealdoc.process_text(text: string, path: string, env: tealdoc.Env)
     local filename = path:match("([^/\\]*)$") or path
-    local ext = filename:gsub(".*%.", ".")
+    local ext = filename:match("(%.[^%.]+.*)$") or ""
     local parser = env.parser_registry[ext]
     if not parser then
         log:warning("No parser found for file '%s' (extension '%s'). File will be skipped.", path, ext)

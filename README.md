@@ -189,6 +189,7 @@ tealdoc --help
 *   `--output <file>`: Specifies the output file for the generated documentation.
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
+*   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
 
 ## Architecture
 
@@ -439,6 +440,11 @@ The list of modules that are processed by Tealdoc. This is used to store the nam
 tealdoc.Env.include_all: boolean
 ```
 The option to include all items in the output. If this is true, all items will be included in the output, regardless of whether they are local or global. When using the CLI, you can set this option using the `--all` flag.
+## tealdoc.Env.no_warnings_on_missing
+```
+tealdoc.Env.no_warnings_on_missing: boolean
+```
+Whether to skip warnings about missing items. If this is true, Tealdoc will not log warnings about missing items.
 ## tealdoc.Env.add_parser
 ```
 tealdoc.Env.add_parser(self: self, parser: Parser)
@@ -490,7 +496,7 @@ tealdoc.Typearg.description: string
 The description of the type argument.
 ## tealdoc.DeclarationItem
 ```
-interface tealdoc.DeclarationItem is tealdoc.Item
+interface tealdoc.DeclarationItem is Item
 ```
 This interface represents a declaration item in Tealdoc. It is used to represent declarations of functions, variables, and types.
 ## tealdoc.DeclarationItem.Visibility
@@ -498,12 +504,12 @@ This interface represents a declaration item in Tealdoc. It is used to represent
 enum tealdoc.DeclarationItem.Visibility
 ```
 Possible visibilities for declarations.
-## tealdoc.DeclarationItem.Visibility.record
-Record visibility, for record fields and nested types.
 ## tealdoc.DeclarationItem.Visibility.local
 Local visibility, for local variables and functions.
 ## tealdoc.DeclarationItem.Visibility.global
 Global visibility, for global variables and functions.
+## tealdoc.DeclarationItem.Visibility.record
+Record visibility, for record fields and nested types.
 ## tealdoc.DeclarationItem.visibility
 ```
 tealdoc.DeclarationItem.visibility: Visibility
@@ -511,7 +517,7 @@ tealdoc.DeclarationItem.visibility: Visibility
 The visibility of the declaration.
 ## tealdoc.FunctionItem
 ```
-record tealdoc.FunctionItem is tealdoc.DeclarationItem, tealdoc.Item
+record tealdoc.FunctionItem is DeclarationItem, Item
 ```
 This record represents a function item in Tealdoc.
 ## tealdoc.FunctionItem.Param
@@ -554,12 +560,12 @@ The description of the return value.
 enum tealdoc.FunctionItem.FunctionKind
 ```
 Possible function kinds
+## tealdoc.FunctionItem.FunctionKind.macroexp
+Macro expansion function
 ## tealdoc.FunctionItem.FunctionKind.metamethod
 Record metamethod
 ## tealdoc.FunctionItem.FunctionKind.normal
 Normal function, local, global, or in-record.
-## tealdoc.FunctionItem.FunctionKind.macroexp
-Macro expansion function
 ## tealdoc.FunctionItem.params
 ```
 tealdoc.FunctionItem.params: {Param}
@@ -584,10 +590,10 @@ The kind of the function.
 ```
 tealdoc.FunctionItem.is_declaration: boolean
 ```
-Whether this function is an in-record declaration.
+Whether this function is only a declaration (it does not contain a body).
 ## tealdoc.VariableItem
 ```
-record tealdoc.VariableItem is tealdoc.DeclarationItem, tealdoc.Item
+record tealdoc.VariableItem is DeclarationItem, Item
 ```
 This record represents a variable item in Tealdoc.
 ## tealdoc.VariableItem.typename
@@ -597,7 +603,7 @@ tealdoc.VariableItem.typename: string
 The name of the type of the variable.
 ## tealdoc.TypeItem
 ```
-record tealdoc.TypeItem is tealdoc.DeclarationItem, tealdoc.Item
+record tealdoc.TypeItem is DeclarationItem, Item
 ```
 This record represents a type item in Tealdoc. It is used to represent types, records, interfaces, enums, and type aliases.
 ## tealdoc.TypeItem.TypeKind
@@ -605,12 +611,12 @@ This record represents a type item in Tealdoc. It is used to represent types, re
 enum tealdoc.TypeItem.TypeKind
 ```
 Possible kinds of types.
-## tealdoc.TypeItem.TypeKind.record
-Type kind for a record type.
-## tealdoc.TypeItem.TypeKind.type
-Type kind for a type alias.
 ## tealdoc.TypeItem.TypeKind.enum
 Type kind for an enum type.
+## tealdoc.TypeItem.TypeKind.type
+Type kind for a type alias.
+## tealdoc.TypeItem.TypeKind.record
+Type kind for a record type.
 ## tealdoc.TypeItem.TypeKind.interface
 Type kind for an interface type.
 ## tealdoc.TypeItem.typename
@@ -632,7 +638,7 @@ The kind of the type item.
 ```
 tealdoc.TypeItem.inherits: {string}
 ```
-Paths of inherited types
+Names of inherited types
 ## tealdoc.process_file
 ```
 tealdoc.process_file(path: string, env: Env)

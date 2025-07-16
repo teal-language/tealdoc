@@ -57,7 +57,7 @@ Generator.generate_for_item = function(generator: Generator.Base, item: tealdoc.
     if item is tealdoc.FunctionItem and item.function_kind == "metamethod" and item.name == "__is" then
         return 
     end
-    if not item.text and not is_module and (item.kind == "function" or item.kind == "type" or item.kind == "variable" or item.kind == "enumvalue") then
+    if not item.text and not is_module and (item.kind == "function" or item.kind == "type" or item.kind == "variable" or item.kind == "enumvalue") and not env.no_warnings_on_missing then
         log:warning("Documentation missing for item: " .. item.path)
     end
     
