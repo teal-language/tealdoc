@@ -8,6 +8,28 @@
 A documentation generator written in [Teal](github.com/teal-language/tl/tree/master).
 
 Its primary function is to generate documentation for programs written in Teal, but it is extensible enough to support other languages.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [How to Document Your Code](#how-to-document-your-code)
+    - [Tealdoc Comments](#tealdoc-comments)
+    - [Anatomy of a Comment](#anatomy-of-a-comment)
+    - [Functions](#functions)
+    - [Records and Interfaces](#records-and-interfaces)
+    - [Enums](#enums)
+    - [Variables and Types](#variables-and-types)
+    - [Controlling Visibility](#controlling-visibility)
+- [CLI Reference](#cli-reference)
+    - [Commands](#commands)
+    - [Options](#options)
+- [Architecture](#architecture)
+    - [Using Tealdoc Programmatically](#using-tealdoc-programmatically)
+    - [Adding Custom Tags](#adding-custom-tags)
+    - [Plugins](#plugins)
+- [API Reference](#api-reference)
+- [About](#about)
+
 ## Installation
 
 Tealdoc can be installed using [Luarocks](https://luarocks.org/):
@@ -263,6 +285,10 @@ local MyPlugin: tealdoc.Plugin = {
 --- Note that the plugins loaded via the command line must behave like Lua modules.
 return MyPlugin
 ```
+
+## API Reference
+> [!NOTE]
+> The API reference is generated from the source code using tealdoc itself.
 # Module: tealdoc
 This module exposes the public API of Tealdoc.  You can use it to programmatically interact with Tealdoc. You can also use it to extend Tealdoc using plugins.
 ## tealdoc.Plugin
@@ -560,10 +586,10 @@ The description of the return value.
 enum tealdoc.FunctionItem.FunctionKind
 ```
 Possible function kinds
-## tealdoc.FunctionItem.FunctionKind.macroexp
-Macro expansion function
 ## tealdoc.FunctionItem.FunctionKind.metamethod
 Record metamethod
+## tealdoc.FunctionItem.FunctionKind.macroexp
+Macro expansion function
 ## tealdoc.FunctionItem.FunctionKind.normal
 Normal function, local, global, or in-record.
 ## tealdoc.FunctionItem.params
@@ -611,12 +637,12 @@ This record represents a type item in Tealdoc. It is used to represent types, re
 enum tealdoc.TypeItem.TypeKind
 ```
 Possible kinds of types.
+## tealdoc.TypeItem.TypeKind.record
+Type kind for a record type.
 ## tealdoc.TypeItem.TypeKind.enum
 Type kind for an enum type.
 ## tealdoc.TypeItem.TypeKind.type
 Type kind for a type alias.
-## tealdoc.TypeItem.TypeKind.record
-Type kind for a record type.
 ## tealdoc.TypeItem.TypeKind.interface
 Type kind for an interface type.
 ## tealdoc.TypeItem.typename

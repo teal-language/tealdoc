@@ -8,6 +8,28 @@
 A documentation generator written in [Teal](github.com/teal-language/tl/tree/master).
 
 Its primary function is to generate documentation for programs written in Teal, but it is extensible enough to support other languages.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [How to Document Your Code](#how-to-document-your-code)
+    - [Tealdoc Comments](#tealdoc-comments)
+    - [Anatomy of a Comment](#anatomy-of-a-comment)
+    - [Functions](#functions)
+    - [Records and Interfaces](#records-and-interfaces)
+    - [Enums](#enums)
+    - [Variables and Types](#variables-and-types)
+    - [Controlling Visibility](#controlling-visibility)
+- [CLI Reference](#cli-reference)
+    - [Commands](#commands)
+    - [Options](#options)
+- [Architecture](#architecture)
+    - [Using Tealdoc Programmatically](#using-tealdoc-programmatically)
+    - [Adding Custom Tags](#adding-custom-tags)
+    - [Plugins](#plugins)
+- [API Reference](#api-reference)
+- [About](#about)
+
 ## Installation
 
 Tealdoc can be installed using [Luarocks](https://luarocks.org/):
@@ -263,3 +285,7 @@ local MyPlugin: tealdoc.Plugin = {
 --- Note that the plugins loaded via the command line must behave like Lua modules.
 return MyPlugin
 ```
+
+## API Reference
+> [!NOTE]
+> The API reference is generated from the source code using tealdoc itself.
