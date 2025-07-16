@@ -52,28 +52,6 @@ After the description, you can add tags, which start with an `@`. Tags may optio
 -- @another_tag
 ```
 
-### Modules
-
-Every file you wish to generate documentation for must contain a module.
-To document a module, add a detached comment at the top-level containing the `@module` tag.
-
-**Note:** The module comment must be separated from any subsequent declarations by at least one blank line.
-
-```teal
---- A test module for demonstrating Tealdoc.
--- @module test
-
-local record test
-    ...
-end
-
-function test.foo()
-    ...
-end
-
-return test
-```
-
 ### Functions
 
 Document functions by placing a Tealdoc comment directly above them. Parameter and return types are inferred automatically from the function's type annotations.
@@ -312,13 +290,14 @@ interface tealdoc.Parser
 Parser is an abstract base interface for Tealdoc parsers. Parsers are used to process source files and extract documentation items from them. Parsers must add the items to the `env.registry` table. Each parser is responsible for a specific set of file extensions. You can register a parser using the `add_parser` method of the `tealdoc.Env` interface.
 ## tealdoc.Parser.process
 ```
-tealdoc.Parser.process(text: string, filename: string, env: tealdoc.Env)
+tealdoc.Parser.process(self: self, text: string, path: string, env: tealdoc.Env)
 ```
 Process file contents. This function is called by Tealdoc when a file with a registered extension is processed.
 #### Parameters
 
+- **`self`** (`self`) — The parser instance.
 - **`text`** (`string`) — The contents of the file as a string.
-- **`filename`** (`string`) — The name of the file being processed.
+- **`path`** (`string`) — The path of the file being processed.
 - **`env`** (`tealdoc.Env`) — The environment in which the parser is running.
 
 ## tealdoc.Parser.file_extensions
@@ -519,12 +498,12 @@ This interface represents a declaration item in Tealdoc. It is used to represent
 enum tealdoc.DeclarationItem.Visibility
 ```
 Possible visibilities for declarations.
-## tealdoc.DeclarationItem.Visibility.global
-Global visibility, for global variables and functions.
 ## tealdoc.DeclarationItem.Visibility.record
 Record visibility, for record fields and nested types.
 ## tealdoc.DeclarationItem.Visibility.local
 Local visibility, for local variables and functions.
+## tealdoc.DeclarationItem.Visibility.global
+Global visibility, for global variables and functions.
 ## tealdoc.DeclarationItem.visibility
 ```
 tealdoc.DeclarationItem.visibility: Visibility
@@ -575,12 +554,12 @@ The description of the return value.
 enum tealdoc.FunctionItem.FunctionKind
 ```
 Possible function kinds
+## tealdoc.FunctionItem.FunctionKind.metamethod
+Record metamethod
 ## tealdoc.FunctionItem.FunctionKind.normal
 Normal function, local, global, or in-record.
 ## tealdoc.FunctionItem.FunctionKind.macroexp
 Macro expansion function
-## tealdoc.FunctionItem.FunctionKind.metamethod
-Record metamethod
 ## tealdoc.FunctionItem.params
 ```
 tealdoc.FunctionItem.params: {Param}
@@ -626,14 +605,14 @@ This record represents a type item in Tealdoc. It is used to represent types, re
 enum tealdoc.TypeItem.TypeKind
 ```
 Possible kinds of types.
-## tealdoc.TypeItem.TypeKind.type
-Type kind for a type alias.
 ## tealdoc.TypeItem.TypeKind.record
 Type kind for a record type.
-## tealdoc.TypeItem.TypeKind.interface
-Type kind for an interface type.
+## tealdoc.TypeItem.TypeKind.type
+Type kind for a type alias.
 ## tealdoc.TypeItem.TypeKind.enum
 Type kind for an enum type.
+## tealdoc.TypeItem.TypeKind.interface
+Type kind for an interface type.
 ## tealdoc.TypeItem.typename
 ```
 tealdoc.TypeItem.typename: string

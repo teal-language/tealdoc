@@ -52,28 +52,6 @@ After the description, you can add tags, which start with an `@`. Tags may optio
 -- @another_tag
 ```
 
-### Modules
-
-Every file you wish to generate documentation for must contain a module.
-To document a module, add a detached comment at the top-level containing the `@module` tag.
-
-**Note:** The module comment must be separated from any subsequent declarations by at least one blank line.
-
-```teal
---- A test module for demonstrating Tealdoc.
--- @module test
-
-local record test
-    ...
-end
-
-function test.foo()
-    ...
-end
-
-return test
-```
-
 ### Functions
 
 Document functions by placing a Tealdoc comment directly above them. Parameter and return types are inferred automatically from the function's type annotations.

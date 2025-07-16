@@ -1,12 +1,9 @@
+local log = require("tealdoc.log")
+
 --- This module exposes the public API of Tealdoc.
 ---
 --- You can use it to programmatically interact with Tealdoc.
 --- You can also use it to extend Tealdoc using plugins.
---- @module tealdoc
-
-
-local log = require("tealdoc.log")
-
 local record tealdoc
     
     --- Plugin is an abstract base interface for tealdoc plugins.
@@ -33,10 +30,11 @@ local record tealdoc
         
         --- Process file contents.
         --- This function is called by Tealdoc when a file with a registered extension is processed.
+        --- @param self The parser instance.
         --- @param text The contents of the file as a string.
-        --- @param filename The name of the file being processed.
+        --- @param path The path of the file being processed.
         --- @param env The environment in which the parser is running.
-        process: function(text: string, filename: string, env: tealdoc.Env)
+        process: function(self, text: string, path: string, env: tealdoc.Env)
 
         --- A list of file extensions that this parser can handle.
         --- This is used to register the parser in the `tealdoc.Env` environment.
@@ -291,7 +289,7 @@ local record tealdoc
     --- @param text The text to process.
     --- @param filename The name of the file being processed, used to determine the file extension.
     --- @param env The environment in which the text is processed.
-    process_text: function(text: string, filename: string, env: Env)
+    process_text: function(text: string, path: string, env: Env)
 end
 
 function tealdoc.Env.init(): tealdoc.Env
@@ -325,7 +323,7 @@ end
 
 
 function tealdoc.process_file(path: string, env: tealdoc.Env)
-    local filename = path:match("([^/\\]*)$") or path
+   
     local file = io.open(path, "r")
     if not file then
         log:error("Could not open file: " .. path)
@@ -334,17 +332,18 @@ function tealdoc.process_file(path: string, env: tealdoc.Env)
     local text = file:read("*a")
     file:close()
 
-    tealdoc.process_text(text, filename, env)
+    tealdoc.process_text(text, path, env)
 end 
 
-function tealdoc.process_text(text: string, filename: string, env: tealdoc.Env)
-    local ext = filename:match("%..*$")
+function tealdoc.process_text(text: string, path: string, env: tealdoc.Env)
+    local filename = path:match("([^/\\]*)$") or path
+    local ext = filename:gsub(".*%.", ".")
     local parser = env.parser_registry[ext]
     if not parser then
-        log:warning("No parser found for file '%s' (extension '%s'). File will be skipped.", filename, ext)
+        log:warning("No parser found for file '%s' (extension '%s'). File will be skipped.", path, ext)
         return
-    end 
-    parser.process(text, filename, env)
+    end
+    parser:process(text, path, env)
 end
 
 return tealdoc

@@ -4,7 +4,7 @@ local record MarkdownInput is tealdoc.Parser
 end
 
 MarkdownInput.file_extensions = {".md"}
-MarkdownInput.process = function(text: string, filename: string, env: tealdoc.Env)
+function MarkdownInput:process(text: string, filename: string, env: tealdoc.Env)
    local item: tealdoc.Item = {
         path = "$"..filename,
         kind = "markdown",

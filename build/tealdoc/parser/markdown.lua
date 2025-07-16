@@ -4,7 +4,7 @@ local MarkdownInput = {}
 
 
 MarkdownInput.file_extensions = { ".md" }
-MarkdownInput.process = function(text, filename, env)
+function MarkdownInput:process(text, filename, env)
    local item = {
       path = "$" .. filename,
       kind = "markdown",

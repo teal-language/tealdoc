@@ -11,34 +11,10 @@ end
 function DefaultEnv.init(): tealdoc.Env
     local env = tealdoc.Env.init()
 
-    env:add_parser(TealParser)
+    env:add_parser(TealParser.init())
     env:add_parser(MarkdownInput)
 
     -- TODO: better place for this
-    local module_tag_handler: tealdoc.Tag = {
-        name = "module",
-        has_param = true,
-        handle = function(ctx: tealdoc.Tag.Context)
-            local item = ctx.item
-            if not (item.kind == "directive") then
-                log:error("module tag can only exists in directives")
-                return
-            end
-            if item.attributes and item.attributes["module_name"] then
-                log:error(
-                    "Multiple @module tags found in the same comment block: previously defined as '%s', now found as '%s'. Only one @module tag is allowed per top-level comment.",
-                    ctx.item.attributes["module"],
-                    ctx.param
-                )
-            end
-            if not item.attributes then
-                item.attributes = {}
-            end
-            -- TODO: validate module name?
-            item.attributes["module_name"] = ctx.param
-        end
-    }
-
     -- TODO: should we check if all params and typeargs are documented?
 
     local param_tag_handler: tealdoc.Tag = {
@@ -187,7 +163,6 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    env:add_tag(module_tag_handler)
     env:add_tag(return_tag_handler)
     env:add_tag(param_tag_handler)
     env:add_tag(typearg_tag_handler)
@@ -197,11 +172,11 @@ function DefaultEnv.init(): tealdoc.Env
     local module_header_phase: Generator.Phase = {
         name = "module_header",
         run = function(generator: Generator.Base, item: tealdoc.Item)
-            assert(item.kind == "directive" and item.attributes["module_name"])
+            assert(item.kind == "module")
 
             local b = generator.builder
 
-            b:h1("Module: " .. (item.attributes["module_name"] as string))
+            b:h1("Module: " .. item.name)
             b:line(item.text or "")
         end
     }
@@ -437,7 +412,7 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    Generator.item_phases["directive"] = {module_header_phase}
+    Generator.item_phases["module"] = {module_header_phase}
     Generator.item_phases["function"] = {header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase}
     Generator.item_phases["variable"] = {header_phase, variable_signature_phase, text_phase}
     Generator.item_phases["type"] = {header_phase, type_signature_phase, text_phase, type_params_phase}

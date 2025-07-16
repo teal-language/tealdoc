@@ -1,7 +1,8 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tl = require("tl")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tl = require("tl")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local CommentParser = require("tealdoc.comment_parser")
+
 
 
 
@@ -212,16 +213,17 @@ local function store_item_at_path(item, path, state)
    return path
 end
 
-local function get_path(item, state)
+local function get_path(item, state, typ)
    assert(item.name)
-   if state.module_name == item.name and state.path == state.module_name .. "~" then
+   if typ and typ.typeid == state.module_item_typeid then
+      state.env.registry["$" .. state.module_name].text = item.text
       return state.module_name
    end
    return state.path .. item.name
 end
 
-local function store_item(item, state)
-   local path = store_item_at_path(item, get_path(item, state), state)
+local function store_item(item, state, typ)
+   local path = store_item_at_path(item, get_path(item, state, typ), state)
    if not path then return end
    if not item.parent then
       if not state.parent_item.children then
@@ -472,15 +474,14 @@ local function typedecl_visitor(name, comments, t, visibility, state)
       location = location_for_type(t),
       type_kind = typekind,
    }
+   process_comments(comments, item, state.env)
 
-   local path = store_item(item, state)
+   local path = store_item(item, state, t)
 
    local typenum = typenum_for_type(state.type_report, t)
    if typenum then
       state.typenum_to_path[typenum] = path
    end
-
-   process_comments(comments, item, state.env)
 
    if def.fields or def.typename == "enum" then
       local old_path = state.path
@@ -707,108 +708,140 @@ visit_type = function(t, item, state)
    end
 end
 
-local function parse_toplevel_comments(comments, env)
-   if not comments then
-      return nil
-   end
-   local items = {}
-
-   local in_comment_block = false
-   local current_block = {}
-
-   local function end_block()
-      local item = {
-         kind = "directive",
-         location = {
-            filename = "",
-            x = current_block[1].x,
-            y = current_block[1].y,
-         },
-      }
-      process_comments(current_block, item, env)
-      table.insert(items, item)
-      in_comment_block = false
-      current_block = {}
-   end
-
-   for _, comment in ipairs(comments) do
-      if is_long_comment(comment) then
-         if in_comment_block then
-            end_block()
-         end
-         table.insert(current_block, comment)
-         end_block()
-      elseif in_comment_block then
-
-         if comment.y - current_block[#current_block].y > 1 then
-            end_block()
-         else
-            table.insert(current_block, comment)
-         end
-      elseif comment.text:match("^%-%-%-") then
-         in_comment_block = true
-         table.insert(current_block, comment)
-      end
-   end
-
-   if in_comment_block then
-      end_block()
-   end
-
-   return items
-end
-
-
-
-local function validate_directives(items)
-   local module_item
-   if items then
-      for _, item in ipairs(items) do
-         if item.attributes and item.attributes["module_name"] then
-            if module_item then
-               log:error(
-               "Multiple @module directives found: previously defined as '%s', now found as '%s'. Only one @module directive is allowed per file.",
-               module_item.attributes["module_name"] or "<unknown>",
-               item.attributes["module_name"])
-
-            end
-            module_item = item
-         end
-      end
-   end
-   if not module_item then
-      log:error("No @module directive found in the file. Please add a top-level comment with '@module <name>' to specify the module name.")
-   end
-   return module_item
-end
-
 local TealParser = {}
 
+
+
+local function get_sourcedir_from_config()
+   local path_separator = package.config:sub(1, 1)
+   local filename = "tlconfig.lua"
+   local file = nil
+   for _ = 1, 20 do
+      file = io.open(filename, "r")
+      if file then
+         break
+      end
+      filename = ".." .. path_separator .. filename
+   end
+
+   if not file then
+      log:debug("Could not find tlconfig.tl in the current directory or any parent directory.")
+      return ""
+   end
+
+   local contents = file:read("*a")
+   if contents then
+      local load_config, err = load(contents)
+      if not load_config then
+         log:error("Error loading tlconfig.lua:\n" .. err)
+         return ""
+      end
+      local ok, config = pcall(load_config)
+      if not ok then
+         log:error("Error executing tlconfig.lua:\n" .. tostring(config))
+         return ""
+      end
+
+      if type(config) == "table" then
+         local source_dir = config.source_dir
+         if source_dir and type(source_dir) == "string" then
+            return source_dir
+         else
+            log:debug("tlconfig.lua does not contain 'source_dir' field.")
+            return ""
+         end
+      else
+         log:error("tlconfig.lua did not return a table.")
+         return ""
+      end
+   end
+end
+
+function TealParser.init(source_dir)
+   source_dir = source_dir or get_sourcedir_from_config()
+
+   log:debug("TealParser initialized with source directory: \"" .. tostring(source_dir) .. "\"")
+
+   local parser = {
+      source_dir = source_dir,
+      file_extensions = TealParser.file_extensions,
+   }
+
+   local self = setmetatable(parser, { __index = TealParser })
+   return self
+end
 
 TealParser.file_extensions = { ".tl", ".d.tl" }
 
 
-function TealParser.process(text, filename, env)
+local function get_module_name_from_path(path, source_dir)
+   local path_separator = package.config:sub(1, 1)
+
+
+   local relative_path = path
+   if source_dir and source_dir ~= "" then
+      local source_dir_pattern = source_dir:gsub("([^%w])", "%%%1")
+      if path:find("^" .. source_dir_pattern) then
+         relative_path = path:sub(#source_dir + 1)
+
+         if relative_path:sub(1, 1) == path_separator then
+            relative_path = relative_path:sub(2)
+         end
+      end
+   end
+
+
+   local components = {}
+   for component in relative_path:gmatch("[^" .. path_separator .. "]+") do
+      table.insert(components, component)
+   end
+
+   if #components == 0 then
+      return ""
+   end
+
+
+   local last = components[#components]
+   components[#components] = last:match("^(.+)%..+$") or last
+
+   return table.concat(components, ".")
+end
+
+function TealParser:process(text, path, env)
 
    local tl_env = tl.new_env()
    tl_env.report_types = true
-   local result = tl.check_string(text, tl_env, filename)
+
+   local result = tl.check_string(text, tl_env, path)
+
    local reporter = result.env.reporter
-   local directives = parse_toplevel_comments(result.ast.unattached_comments, env)
-   local module_item = validate_directives(directives)
-   if not module_item then
-      return
-   end
-   module_item.path = "$" .. (module_item.attributes["module_name"])
+
+
+   local module_name = get_module_name_from_path(path, self.source_dir)
+   log:info("Processing Teal module '%s' from file '%s'", module_name, path)
+
+   local module_item = {
+      kind = "module",
+      name = module_name,
+      location = {
+         filename = path,
+         x = 1,
+         y = 1,
+      },
+      children = {},
+      path = "$" .. module_name,
+   }
+
    local state = {
       env = env,
-      path = (module_item.attributes["module_name"]) .. "~",
-      module_name = (module_item.attributes["module_name"]),
+      path = module_name .. "~",
+      module_name = module_name,
       type_report = reporter.tr,
       typenum_to_path = {},
       parent_item = module_item,
+      module_item_typeid = result.type.typeid,
    }
-   table.insert(env.modules, (module_item.attributes["module_name"]))
+   table.insert(env.modules, module_name)
    env.registry[module_item.path] = module_item
    visit_node(result.ast, state)
 end
