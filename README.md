@@ -317,12 +317,12 @@ interface tealdoc.Parser
 Parser is an abstract base interface for Tealdoc parsers. Parsers are used to process source files and extract documentation items from them. Parsers must add the items to the `env.registry` table. Each parser is responsible for a specific set of file extensions. You can register a parser using the `add_parser` method of the `tealdoc.Env` interface.
 ## tealdoc.Parser.process
 ```
-tealdoc.Parser.process(self: self, text: string, path: string, env: tealdoc.Env)
+tealdoc.Parser.process(self: Parser, text: string, path: string, env: tealdoc.Env)
 ```
 Process file contents. This function is called by Tealdoc when a file with a registered extension is processed.
 #### Parameters
 
-- **`self`** (`self`) — The parser instance.
+- **`self`** (`Parser`) — The parser instance.
 - **`text`** (`string`) — The contents of the file as a string.
 - **`path`** (`string`) — The path of the file being processed.
 - **`env`** (`tealdoc.Env`) — The environment in which the parser is running.
@@ -473,22 +473,22 @@ tealdoc.Env.no_warnings_on_missing: boolean
 Whether to skip warnings about missing items. If this is true, Tealdoc will not log warnings about missing items.
 ## tealdoc.Env.add_parser
 ```
-tealdoc.Env.add_parser(self: self, parser: Parser)
+tealdoc.Env.add_parser(self: Env, parser: Parser)
 ```
 Add a parser to the environment. This function registers a parser that can handle specific file extensions. The parser must implement the `tealdoc.Parser` interface.
 #### Parameters
 
-- **`self`** (`self`) — The environment to which the parser is added.
+- **`self`** (`Env`) — The environment to which the parser is added.
 - **`parser`** (`Parser`) — The parser to add.
 
 ## tealdoc.Env.add_tag
 ```
-tealdoc.Env.add_tag(self: self, tag: Tag)
+tealdoc.Env.add_tag(self: Env, tag: Tag)
 ```
 Add a tag to the environment. The tag must implement the `tealdoc.Tag` interface.
 #### Parameters
 
-- **`self`** (`self`) — The environment to which the tag is added.
+- **`self`** (`Env`) — The environment to which the tag is added.
 - **`tag`** (`Tag`) — The tag to add.
 
 ## tealdoc.Env.init
@@ -530,11 +530,11 @@ This interface represents a declaration item in Tealdoc. It is used to represent
 enum tealdoc.DeclarationItem.Visibility
 ```
 Possible visibilities for declarations.
-## tealdoc.DeclarationItem.Visibility.local
-Local visibility, for local variables and functions.
-## tealdoc.DeclarationItem.Visibility.global
+## tealdoc.DeclarationItem.Visibility."global"
 Global visibility, for global variables and functions.
-## tealdoc.DeclarationItem.Visibility.record
+## tealdoc.DeclarationItem.Visibility."local"
+Local visibility, for local variables and functions.
+## tealdoc.DeclarationItem.Visibility."record"
 Record visibility, for record fields and nested types.
 ## tealdoc.DeclarationItem.visibility
 ```
@@ -586,11 +586,11 @@ The description of the return value.
 enum tealdoc.FunctionItem.FunctionKind
 ```
 Possible function kinds
-## tealdoc.FunctionItem.FunctionKind.metamethod
-Record metamethod
-## tealdoc.FunctionItem.FunctionKind.macroexp
+## tealdoc.FunctionItem.FunctionKind."macroexp"
 Macro expansion function
-## tealdoc.FunctionItem.FunctionKind.normal
+## tealdoc.FunctionItem.FunctionKind."metamethod"
+Record metamethod
+## tealdoc.FunctionItem.FunctionKind."normal"
 Normal function, local, global, or in-record.
 ## tealdoc.FunctionItem.params
 ```
@@ -637,14 +637,14 @@ This record represents a type item in Tealdoc. It is used to represent types, re
 enum tealdoc.TypeItem.TypeKind
 ```
 Possible kinds of types.
-## tealdoc.TypeItem.TypeKind.record
-Type kind for a record type.
-## tealdoc.TypeItem.TypeKind.enum
+## tealdoc.TypeItem.TypeKind."enum"
 Type kind for an enum type.
-## tealdoc.TypeItem.TypeKind.type
-Type kind for a type alias.
-## tealdoc.TypeItem.TypeKind.interface
+## tealdoc.TypeItem.TypeKind."interface"
 Type kind for an interface type.
+## tealdoc.TypeItem.TypeKind."record"
+Type kind for a record type.
+## tealdoc.TypeItem.TypeKind."type"
+Type kind for a type alias.
 ## tealdoc.TypeItem.typename
 ```
 tealdoc.TypeItem.typename: string

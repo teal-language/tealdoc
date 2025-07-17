@@ -233,9 +233,6 @@ function DefaultEnv.init(): tealdoc.Env
             local b = generator.builder
 
             b:code_block(function()
-                if item.visibility ~= "record" then
-                    b:text(item.visibility, " ")
-                end
 
                 if item.visibility == "record" then -- TODO: metamethods!
                     local parent = item.parent

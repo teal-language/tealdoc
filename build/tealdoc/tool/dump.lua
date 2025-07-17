@@ -69,6 +69,12 @@ DumpTool.run = function(registry)
                print("\t\t\tconstraint = " .. tostring(typearg.constraint))
             end
          end
+         if item.inherits then
+            print("\tinherits: ")
+            for _, inherit in ipairs(item.inherits) do
+               print("\t\t" .. inherit)
+            end
+         end
       end
       if item.parent then
          print("\tparent: " .. item.parent)

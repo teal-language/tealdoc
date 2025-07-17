@@ -233,9 +233,6 @@ function DefaultEnv.init()
          local b = generator.builder
 
          b:code_block(function()
-            if item.visibility ~= "record" then
-               b:text(item.visibility, " ")
-            end
 
             if item.visibility == "record" then
                local parent = item.parent

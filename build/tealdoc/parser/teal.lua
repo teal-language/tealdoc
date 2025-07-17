@@ -245,10 +245,17 @@ local function function_item_for_node(node, visibility, kind, state)
    if node.args then
       item.params = {}
       for i, ar in ipairs(node.args) do
-         item.params[i] = {
-            name = ar.tk,
-            type = ar.argtype and type_to_string(state.type_report, ar.argtype),
-         }
+         if node.is_method and i == 1 then
+            item.params[i] = {
+               name = "self",
+               type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner)),
+            }
+         else
+            item.params[i] = {
+               name = ar.tk,
+               type = ar.argtype and type_to_string(state.type_report, ar.argtype),
+            }
+         end
       end
    end
 
@@ -275,7 +282,7 @@ local function function_item_for_node(node, visibility, kind, state)
    return item
 end
 
-local function item_for_function_type(t, visibility, kind, state)
+local function item_for_function_type(t, visibility, kind, state, owner)
    local item = {
       kind = "function",
       function_kind = kind,
@@ -305,9 +312,16 @@ local function item_for_function_type(t, visibility, kind, state)
    if t.args then
       item.params = {}
       for i, ar in ipairs(t.args.tuple) do
-         item.params[i] = {
-            type = type_to_string(state.type_report, ar),
-         }
+         if t.is_method and i == 1 and owner then
+            item.params[i] = {
+               name = "self",
+               type = typeinfo_to_string(typeinfo_for_type(state.type_report, owner)),
+            }
+         else
+            item.params[i] = {
+               type = type_to_string(state.type_report, ar),
+            }
+         end
       end
    end
 
@@ -437,12 +451,19 @@ end
 local record_like_visitor
 
 local function enum_visitor(t, _, state)
+
+   local values = {}
    for value, _ in pairs(t.enumset) do
+      table.insert(values, value)
+   end
+   table.sort(values)
+
+   for _, value in ipairs(values) do
       local comments = t.value_comments and t.value_comments[value]
 
       local item = {
          kind = "enumvalue",
-         name = value,
+         name = "\"" .. value .. "\"",
          location = location_for_type(t),
       }
 
@@ -514,26 +535,33 @@ record_like_visitor = function(t, declaration, state)
 
    local inherited_field_has_comments = {}
    local inherited_metafield_has_comments = {}
+
+
+   local visited_typeids = {}
    if t.interface_list then
+      if not declaration.inherits then
+         declaration.inherits = {}
+      end
       for _, iface in ipairs(t.interface_list) do
          if iface.typename == "nominal" then
             local resolved = iface.resolved
+            if not visited_typeids[resolved.typeid] then
+               visited_typeids[resolved.typeid] = true
+               table.insert(declaration.inherits, type_to_string(state.type_report, iface))
 
-            if not declaration.inherits then
-               declaration.inherits = {}
-            end
-            table.insert(declaration.inherits, type_to_string(state.type_report, resolved))
-
-            if resolved.fields then
-               for field_name, _ in pairs(resolved.fields) do
-                  inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
-               end
-               if resolved.meta_fields then
-                  for field_name, _ in pairs(resolved.meta_fields) do
-                     inherited_metafield_has_comments[field_name] = resolved.meta_field_comments and resolved.meta_field_comments[field_name] ~= nil or false
+               if resolved.fields then
+                  for field_name, _ in pairs(resolved.fields) do
+                     inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
+                  end
+                  if resolved.meta_fields then
+                     for field_name, _ in pairs(resolved.meta_fields) do
+                        inherited_metafield_has_comments[field_name] = resolved.meta_field_comments and resolved.meta_field_comments[field_name] ~= nil or false
+                     end
                   end
                end
             end
+         elseif iface.typename == "array" then
+            table.insert(declaration.inherits, type_to_string(state.type_report, iface))
          end
       end
    end
@@ -570,7 +598,7 @@ record_like_visitor = function(t, declaration, state)
          local base_path = store_item(overload_item, state)
 
          for i, function_type in ipairs(field_type.types) do
-            local item = item_for_function_type(function_type, "record", "normal", state)
+            local item = item_for_function_type(function_type, "record", "normal", state, t)
             item.name = name
             local param_types = {}
             for param_idx, param in ipairs(item.params) do
@@ -592,7 +620,8 @@ record_like_visitor = function(t, declaration, state)
       local item
 
       if type_is_function(field_type) then
-         item = item_for_function_type(field_type, "record", meta and "metamethod" or "normal", state)
+         item = item_for_function_type(field_type, "record", meta and "metamethod" or "normal", state, t)
+
       else
          local field_item = {
             kind = "variable",
