@@ -13,6 +13,8 @@ local CommentParser = require("tealdoc.comment_parser")
 
 
 
+
+
 local function typenum_for_position(report, filename, x, y)
    local rf = report.by_pos[filename]
    if not rf then return end
@@ -242,7 +244,7 @@ local function function_item_for_node(node, visibility, kind, state)
       location = location_for_node(node),
    }
 
-   if node.args then
+   if node.args and #node.args > 0 then
       item.params = {}
       for i, ar in ipairs(node.args) do
          if node.is_method and i == 1 then
@@ -260,7 +262,7 @@ local function function_item_for_node(node, visibility, kind, state)
    end
 
 
-   if node.rets then
+   if node.rets and #node.rets.tuple > 0 then
       item.returns = {}
       for i, ret in ipairs(node.rets.tuple) do
          item.returns[i] = {
@@ -309,7 +311,7 @@ local function item_for_function_type(t, visibility, kind, state, owner)
    t = t
 
 
-   if t.args then
+   if t.args and #t.args.tuple > 0 then
       item.params = {}
       for i, ar in ipairs(t.args.tuple) do
          if t.is_method and i == 1 and owner then
@@ -326,7 +328,7 @@ local function item_for_function_type(t, visibility, kind, state, owner)
    end
 
 
-   if t.rets then
+   if t.rets and #t.rets.tuple > 0 then
       item.returns = {}
       for i, ret in ipairs(t.rets.tuple) do
          item.returns[i] = {
@@ -487,15 +489,13 @@ local function typedecl_visitor(name, comments, t, visibility, state)
       def = def.t
    end
 
-   local typekind
+   local typekind = "type"
    if def.typename == "record" then
       typekind = "record"
    elseif def.typename == "enum" then
       typekind = "enum"
    elseif def.typename == "interface" then
       typekind = "interface"
-   else
-      typekind = "type"
    end
 
    local item = {

@@ -58,6 +58,9 @@ DumpTool.run = function(registry)
       end
       if item.kind == "type" then
          print("\tname: " .. item.name)
+         if item.type_kind then
+            print("\ttype_kind: " .. item.type_kind)
+         end
          if item.typename then
             print("\ttypename: " .. tostring(item.typename))
          end

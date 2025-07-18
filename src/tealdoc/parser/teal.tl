@@ -12,6 +12,8 @@ local record VisitState
     module_item_typeid: integer
 end
 
+-- TODO: the locations are wrong for most of the items!
+
 
 local function typenum_for_position(report: tl.TypeReport, filename: string, x: integer, y: integer): integer
     local rf = report.by_pos[filename]
@@ -242,7 +244,7 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         location = location_for_node(node)
     }
     
-    if node.args then 
+    if node.args and #node.args > 0 then 
         item.params = {}
         for i, ar in ipairs(node.args) do 
             if node.is_method and i == 1 then
@@ -260,7 +262,7 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
     end
     
 
-    if node.rets then
+    if node.rets and #node.rets.tuple > 0 then
         item.returns = {}
         for i, ret in ipairs(node.rets.tuple) do
             item.returns[i] = {
@@ -309,7 +311,7 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
     t = t as tl.FunctionType
 
     
-    if t.args then 
+    if t.args and #t.args.tuple > 0 then 
         item.params = {}
         for i, ar in ipairs(t.args.tuple) do 
             if t.is_method and i == 1 and owner then
@@ -326,7 +328,7 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
     end
     
 
-    if t.rets then
+    if t.rets and #t.rets.tuple > 0 then
         item.returns = {}
         for i, ret in ipairs(t.rets.tuple) do
             item.returns[i] = {
@@ -487,15 +489,13 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
         def = def.t
     end
     
-    local typekind: tealdoc.TypeItem.TypeKind
-    if def is tl.RecordType then
+    local typekind: tealdoc.TypeItem.TypeKind = "type"
+    if def.typename == "record" then
         typekind = "record"
-    elseif def is tl.EnumType then
+    elseif def.typename == "enum" then
         typekind = "enum"
-    elseif def is tl.InterfaceType then
+    elseif def.typename == "interface" then
         typekind = "interface"
-    else
-        typekind = "type"
     end
 
     local item: tealdoc.TypeItem = {
