@@ -145,7 +145,7 @@ local function is_item_local(item: tealdoc.Item): boolean
 end
 
 local function is_item_global(item: tealdoc.Item): boolean
-    return item is tealdoc.DeclarationItem and item.visibility == "local"
+    return item is tealdoc.DeclarationItem and item.visibility == "global"
 end
 
 local function store_item_at_path(item: tealdoc.Item, path: string, state: VisitState): string

@@ -145,7 +145,7 @@ local function is_item_local(item)
 end
 
 local function is_item_global(item)
-   return type(item) == "table" and item.visibility == "local"
+   return type(item) == "table" and item.visibility == "global"
 end
 
 local function store_item_at_path(item, path, state)
