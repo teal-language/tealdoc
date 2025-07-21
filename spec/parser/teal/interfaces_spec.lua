@@ -1,22 +1,22 @@
 local util = require("spec.util")
 
-describe("teal support in tealdoc: records", function()
+describe("teal support in tealdoc: interfaces", function()
     describe("declarations", function()
-        it("should parse a local record", function()
+        it("should parse a local interface", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -26,21 +26,21 @@ describe("teal support in tealdoc: records", function()
             })
         end)
 
-        it("should parse a global record", function()
+        it("should parse a global interface", function()
             util.check_registry([[
-                --- my record
-                global record MyRecord
+                --- my interface
+                global interface MyInterface
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -50,21 +50,21 @@ describe("teal support in tealdoc: records", function()
             })
         end)
 
-        it("should parse a local record with generics", function()
+        it("should parse a local interface with generics", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord<T>
+                --- my interface
+                local interface MyInterface<T>
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord<T>",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface<T>",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -75,21 +75,21 @@ describe("teal support in tealdoc: records", function()
             })
         end)
 
-        it("should parse a global record with generics", function()
+        it("should parse a global interface with generics", function()
             util.check_registry([[
-                --- my record
-                global record MyRecord<T>
+                --- my interface
+                global interface MyInterface<T>
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord<T>",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface<T>",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -100,21 +100,21 @@ describe("teal support in tealdoc: records", function()
             })
         end)
 
-        it("should parse a local record with a constrained generic", function()
+        it("should parse a local interface with a constrained generic", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord<T is math.Numeric>
+                --- my interface
+                local interface MyInterface<T is math.Numeric>
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord<T is math.Numeric>",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface<T is math.Numeric>",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -125,21 +125,21 @@ describe("teal support in tealdoc: records", function()
             })
         end)
 
-        it("should parse a global record with a constrained generic", function()
+        it("should parse a global interface with a constrained generic", function()
             util.check_registry([[
-                --- my record
-                global record MyRecord<T is math.Numeric>
+                --- my interface
+                global interface MyInterface<T is math.Numeric>
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord<T is math.Numeric>",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface<T is math.Numeric>",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -154,55 +154,55 @@ describe("teal support in tealdoc: records", function()
     describe("fields", function()
         it("should parse fields", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my field
                     a: integer
                     --- my other field
                     b: string
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.a",
-                        "test~MyRecord.b",
+                        "test~MyInterface.a",
+                        "test~MyInterface.b",
                     },
                 },
-                ["test~MyRecord.a"] = {
+                ["test~MyInterface.a"] = {
                     kind = "variable",
                     name = "a",
                     typename = "integer",
                     text = "my field",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.a",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.a",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 8,
                     },
                 },
-                ["test~MyRecord.b"] = {
+                ["test~MyInterface.b"] = {
                     kind = "variable",
                     name = "b",
                     typename = "string",
                     text = "my other field",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.b",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.b",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -216,39 +216,39 @@ describe("teal support in tealdoc: records", function()
     describe("functions", function()
         it("should parse a function without params and returns", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my function
                     my_function: function()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "test~MyInterface.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -260,39 +260,39 @@ describe("teal support in tealdoc: records", function()
 
         it("should parse a function with params and returns", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my function
                     my_function: function(integer, integer): integer, integer
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "test~MyInterface.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -312,39 +312,39 @@ describe("teal support in tealdoc: records", function()
 
         it("should parse a function with generics", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my function
                     my_function: function<T>(x: T): T
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "test~MyInterface.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -365,39 +365,39 @@ describe("teal support in tealdoc: records", function()
 
         it("should parse a function with a constrained generic", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my function
                     my_function: function<T is math.Numeric>(x: T): T
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "test~MyInterface.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -418,8 +418,8 @@ describe("teal support in tealdoc: records", function()
 
         it("should parse overloaded functions", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my function
                     my_function: function(integer, integer): integer
 
@@ -430,44 +430,44 @@ describe("teal support in tealdoc: records", function()
                     my_function: function(boolean, boolean): boolean
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "test~MyInterface.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["test~MyInterface.my_function"] = {
                     kind = "overload",
                     name = "my_function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.my_function",
                     children = {
-                        "test~MyRecord.my_function(integer, integer)",
-                        "test~MyRecord.my_function(string, string)",
-                        "test~MyRecord.my_function(boolean, boolean)",
+                        "test~MyInterface.my_function(integer, integer)",
+                        "test~MyInterface.my_function(string, string)",
+                        "test~MyInterface.my_function(boolean, boolean)",
                     },
                 },
-                ["test~MyRecord.my_function(integer, integer)"] = {
+                ["test~MyInterface.my_function(integer, integer)"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyRecord.my_function",
-                    path = "test~MyRecord.my_function(integer, integer)",
+                    parent = "test~MyInterface.my_function",
+                    path = "test~MyInterface.my_function(integer, integer)",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -481,15 +481,15 @@ describe("teal support in tealdoc: records", function()
                         { type = "integer" },
                     }
                 },
-                ["test~MyRecord.my_function(string, string)"] = {
+                ["test~MyInterface.my_function(string, string)"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my overloaded function",
                     visibility = "record",
-                    parent = "test~MyRecord.my_function",
-                    path = "test~MyRecord.my_function(string, string)",
+                    parent = "test~MyInterface.my_function",
+                    path = "test~MyInterface.my_function(string, string)",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -503,15 +503,15 @@ describe("teal support in tealdoc: records", function()
                         { type = "string" },
                     }
                 },
-                ["test~MyRecord.my_function(boolean, boolean)"] = {
+                ["test~MyInterface.my_function(boolean, boolean)"] = {
                     kind = "function",
                     function_kind = "normal",
                     is_declaration = true,
                     name = "my_function",
                     text = "my other overloaded function",
                     visibility = "record",
-                    parent = "test~MyRecord.my_function",
-                    path = "test~MyRecord.my_function(boolean, boolean)",
+                    parent = "test~MyInterface.my_function",
+                    path = "test~MyInterface.my_function(boolean, boolean)",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -531,610 +531,72 @@ describe("teal support in tealdoc: records", function()
     describe("metamethods", function()
         it("should parse metamethods", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my __add metamethod
-                    metamethod __add: function(a: MyRecord, b: MyRecord): MyRecord
+                    metamethod __add: function(a: MyInterface, b: MyInterface): MyInterface
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.$meta",
+                        "test~MyInterface.$meta",
                     },
                 },
-                ["test~MyRecord.$meta"] = {
+                ["test~MyInterface.$meta"] = {
                     kind = "metafields",
                     name = "$meta",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.$meta",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.$meta",
                     children = {
-                        "test~MyRecord.$meta.__add",
+                        "test~MyInterface.$meta.__add",
                     },
                 },
-                ["test~MyRecord.$meta.__add"] = {
+                ["test~MyInterface.$meta.__add"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     text = "my __add metamethod",
                     visibility = "record",
-                    parent = "test~MyRecord.$meta",
-                    path = "test~MyRecord.$meta.__add",
+                    parent = "test~MyInterface.$meta",
+                    path = "test~MyInterface.$meta.__add",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 23,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
+                        { type = "MyInterface" },
+                        { type = "MyInterface" }
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        { type = "MyInterface" }
                     }
                 }
             })
         end)
         it("normal functions and metamethods should not conflict", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord
+                --- my interface
+                local interface MyInterface
                     --- my __add metamethod
-                    metamethod __add: function(a: MyRecord, b: MyRecord): MyRecord
+                    metamethod __add: function(a: MyInterface, b: MyInterface): MyInterface
 
                     --- my normal function
-                    __add: function(a: MyRecord): MyRecord
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.__add",
-                        "test~MyRecord.$meta"
-                    },
-                },
-                ["test~MyRecord.$meta"] = {
-                    kind = "metafields",
-                    name = "$meta",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.$meta",
-                    children = {
-                        "test~MyRecord.$meta.__add"
-                    },
-                },
-                ["test~MyRecord.$meta.__add"] = {
-                    kind = "function",
-                    function_kind = "metamethod",
-                    is_declaration = true,
-                    name = "__add",
-                    text = "my __add metamethod",
-                    visibility = "record",
-                    parent = "test~MyRecord.$meta",
-                    path = "test~MyRecord.$meta.__add",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 23,
-                    },
-                    params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
-                    },
-                    returns = {
-                        { type = "MyRecord" }
-                    }
-                },
-                ["test~MyRecord.__add"] = {
-                    kind = "function",
-                    function_kind = "normal",
-                    is_declaration = true,
-                    name = "__add",
-                    text = "my normal function",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.__add",
-                    location = {
-                        filename = "test.tl",
-                        y = 7,
-                        x = 12,
-                    },
-                    params = {
-                        { type = "MyRecord" }
-                    },
-                    returns = {
-                        { type = "MyRecord" }
-                    }
-                }
-            })
-        end)
-        it("should parse overloaded metamethods", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my __add metamethod
-                    metamethod __add: function(a: MyRecord, b: MyRecord): MyRecord
-
-                    --- my overloaded __add metamethod
-                    metamethod __add: function(a: MyRecord, b: string): MyRecord
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.$meta",
-                    },
-                },
-                ["test~MyRecord.$meta"] = {
-                    kind = "metafields",
-                    name = "$meta",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.$meta",
-                    children = {
-                        "test~MyRecord.$meta.__add",
-                    },
-                },
-                ["test~MyRecord.$meta.__add"] = {
-                    kind = "overload",
-                    name = "__add",
-                    parent = "test~MyRecord.$meta",
-                    path = "test~MyRecord.$meta.__add",
-                    children = {
-                        "test~MyRecord.$meta.__add(MyRecord, MyRecord)",
-                        "test~MyRecord.$meta.__add(MyRecord, string)",
-                    },
-                },
-                ["test~MyRecord.$meta.__add(MyRecord, MyRecord)"] = {
-                    kind = "function",
-                    function_kind = "metamethod",
-                    is_declaration = true,
-                    name = "__add",
-                    text = "my __add metamethod",
-                    visibility = "record",
-                    parent = "test~MyRecord.$meta.__add",
-                    path = "test~MyRecord.$meta.__add(MyRecord, MyRecord)",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 23,
-                    },
-                    params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
-                    },
-                    returns = {
-                        { type = "MyRecord" }
-                    }
-                },
-                ["test~MyRecord.$meta.__add(MyRecord, string)"] = {
-                    kind = "function",
-                    function_kind = "metamethod",
-                    is_declaration = true,
-                    name = "__add",
-                    text = "my overloaded __add metamethod",
-                    visibility = "record",
-                    parent = "test~MyRecord.$meta.__add",
-                    path = "test~MyRecord.$meta.__add(MyRecord, string)",
-                    location = {
-                        filename = "test.tl",
-                        y = 7,
-                        x = 23,
-                    },
-                    params = {
-                        { type = "MyRecord" },
-                        { type = "string" }
-                    },
-                    returns = {
-                        { type = "MyRecord" }
-                    }
-                }
-            })
-        end)
-    end)
-    describe("nested types", function()
-        it("should parse a record with a nested record", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested record
-                    record NestedRecord
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedRecord"
-                    },
-                },
-                ["test~MyRecord.NestedRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "NestedRecord",
-                    name = "NestedRecord",
-                    text = "my nested record",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    }
-                }
-            })
-        end)
-        it("should parse a record with a nested record with generics", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested record
-                    record NestedRecord<T>
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedRecord"
-                    },
-                },
-                ["test~MyRecord.NestedRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "NestedRecord<T>",
-                    name = "NestedRecord",
-                    text = "my nested record",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    },
-                    typeargs = { { name = "T" } }
-                }
-            })
-        end)
-        it("should parse a record with a nested record with a constrained generic", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested record
-                    record NestedRecord<T is math.Numeric>
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedRecord"
-                    },
-                },
-                ["test~MyRecord.NestedRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "NestedRecord<T is math.Numeric>",
-                    name = "NestedRecord",
-                    text = "my nested record",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    },
-                    typeargs = { { name = "T", constraint = "math.Numeric" } }
-                }
-            })
-        end)
-        it("should parse a record with a nested record with a nested record", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested record
-                    record NestedRecord
-                        --- my deeply nested record
-                        record DeeplyNestedRecord
-                        end
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedRecord"
-                    },
-                },
-                ["test~MyRecord.NestedRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "NestedRecord",
-                    name = "NestedRecord",
-                    text = "my nested record",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    },
-                    children = {
-                        "test~MyRecord.NestedRecord.DeeplyNestedRecord"
-                    },
-                },
-                ["test~MyRecord.NestedRecord.DeeplyNestedRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "DeeplyNestedRecord",
-                    name = "DeeplyNestedRecord",
-                    text = "my deeply nested record",
-                    visibility = "record",
-                    parent = "test~MyRecord.NestedRecord",
-                    path = "test~MyRecord.NestedRecord.DeeplyNestedRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 6,
-                        x = 9,
-                    }
-                }
-            })
-        end)
-        it("should parse a record with a nested interface", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested interface
-                    interface NestedInterface
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedInterface"
-                    },
-                },
-                ["test~MyRecord.NestedInterface"] = {
-                    kind = "type",
-                    type_kind = "interface",
-                    typename = "NestedInterface",
-                    name = "NestedInterface",
-                    text = "my nested interface",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedInterface",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    }
-                }
-            })
-        end)
-        it("should parse a record with a nested enum", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested enum
-                    enum NestedEnum
-                        "A"
-                        "B"
-                    end
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedEnum"
-                    },
-                },
-                ["test~MyRecord.NestedEnum"] = {
-                    kind = "type",
-                    type_kind = "enum",
-                    typename = "NestedEnum",
-                    name = "NestedEnum",
-                    text = "my nested enum",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedEnum",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    },
-                    children = {
-                        "test~MyRecord.NestedEnum.\"A\"",
-                        "test~MyRecord.NestedEnum.\"B\""
-                    }
-                },
-                ["test~MyRecord.NestedEnum.\"A\""] = {
-                    kind = "enumvalue",
-                    name = "\"A\"",
-                    parent = "test~MyRecord.NestedEnum",
-                    path = "test~MyRecord.NestedEnum.\"A\"",
-                    
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    }
-                },
-                ["test~MyRecord.NestedEnum.\"B\""] = {
-                    kind = "enumvalue",
-                    name = "\"B\"",
-                    parent = "test~MyRecord.NestedEnum",
-                    path = "test~MyRecord.NestedEnum.\"B\"",
-                    
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 5,
-                    }
-                }
-            })
-        end)
-        it("should parse a record with a nested type alias", function()
-            util.check_registry([[
-                --- my record
-                local record MyRecord
-                    --- my nested type alias
-                    type NestedType = string
-                end
-            ]], {
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 2,
-                        x = 1,
-                    },
-                    children = {
-                        "test~MyRecord.NestedType"
-                    },
-                },
-                ["test~MyRecord.NestedType"] = {
-                    kind = "type",
-                    type_kind = "type",
-                    typename = "string",
-                    name = "NestedType",
-                    text = "my nested type alias",
-                    visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.NestedType",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 23,
-                    }
-                }
-            })
-        end)
-    end)
-    describe("inheritance", function()
-        it("should parse a record that inherits from interface", function()
-            util.check_registry([[
-                local interface MyInterface
-                end
-                local record MyRecord is MyInterface
+                    __add: function(a: MyInterface): MyInterface
                 end
             ]], {
                 ["test~MyInterface"] = {
@@ -1142,111 +604,19 @@ describe("teal support in tealdoc: records", function()
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
                     path = "test~MyInterface",
-                    location = {
-                        filename = "test.tl",
-                        y = 1,
-                        x = 1,
-                    }
-                },
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 3,
-                        x = 1,
-                    },
-                    inherits = { "MyInterface" }
-                }
-            })
-        end)
-        it("should handle fields from interface", function()
-            util.check_registry([[
-                local interface MyInterface
-                    myField: string
-                end
-                local record MyRecord is MyInterface
-                end
-            ]], {
-                ["test~MyInterface"] = {
-                    kind = "type",
-                    type_kind = "interface",
-                    typename = "MyInterface",
-                    name = "MyInterface",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyInterface",
-                    children = {
-                        "test~MyInterface.myField"
-                    },
-                    location = {
-                        filename = "test.tl",
-                        y = 1,
-                        x = 1,
-                    }
-                },
-                ["test~MyInterface.myField"] = {
-                    kind = "variable",
-                    typename = "string",
-                    name = "myField",
-                    visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.myField",
                     location = {
                         filename = "test.tl",
                         y = 2,
-                        x = 14,
-                    }
-                },
-                ["test~MyRecord"] = {
-                    kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyRecord",
-                    location = {
-                        filename = "test.tl",
-                        y = 4,
-                        x = 1,
-                    },
-                    inherits = { "MyInterface" }
-                },
-            })
-        end)
-        it("should handle metamethods from interface", function()
-            util.check_registry([[
-                local interface MyInterface
-                    metamethod __add: function(a: MyInterface, b: MyInterface): MyInterface
-                end
-                local record MyRecord is MyInterface
-                end
-            ]], {
-                ["test~MyInterface"] = {
-                    kind = "type",
-                    type_kind = "interface",
-                    typename = "MyInterface",
-                    name = "MyInterface",
-                    visibility = "local",
-                    parent = "$test",
-                    path = "test~MyInterface",
-                    location = {
-                        filename = "test.tl",
-                        y = 1,
                         x = 1,
                     },
                     children = {
+                        "test~MyInterface.__add",
                         "test~MyInterface.$meta"
-                    }
+                    },
                 },
                 ["test~MyInterface.$meta"] = {
                     kind = "metafields",
@@ -1255,20 +625,20 @@ describe("teal support in tealdoc: records", function()
                     path = "test~MyInterface.$meta",
                     children = {
                         "test~MyInterface.$meta.__add"
-                    }
+                    },
                 },
                 ["test~MyInterface.$meta.__add"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
-                    
+                    text = "my __add metamethod",
                     visibility = "record",
                     parent = "test~MyInterface.$meta",
                     path = "test~MyInterface.$meta.__add",
                     location = {
                         filename = "test.tl",
-                        y = 2,
+                        y = 4,
                         x = 23,
                     },
                     params = {
@@ -1279,20 +649,606 @@ describe("teal support in tealdoc: records", function()
                         { type = "MyInterface" }
                     }
                 },
-                ["test~MyRecord"] = {
+                ["test~MyInterface.__add"] = {
+                    kind = "function",
+                    function_kind = "normal",
+                    is_declaration = true,
+                    name = "__add",
+                    text = "my normal function",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.__add",
+                    location = {
+                        filename = "test.tl",
+                        y = 7,
+                        x = 12,
+                    },
+                    params = {
+                        { type = "MyInterface" }
+                    },
+                    returns = {
+                        { type = "MyInterface" }
+                    }
+                }
+            })
+        end)
+        it("should parse overloaded metamethods", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my __add metamethod
+                    metamethod __add: function(a: MyInterface, b: MyInterface): MyInterface
+
+                    --- my overloaded __add metamethod
+                    metamethod __add: function(a: MyInterface, b: string): MyInterface
+                end
+            ]], {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.$meta",
+                    },
+                },
+                ["test~MyInterface.$meta"] = {
+                    kind = "metafields",
+                    name = "$meta",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.$meta",
+                    children = {
+                        "test~MyInterface.$meta.__add",
+                    },
+                },
+                ["test~MyInterface.$meta.__add"] = {
+                    kind = "overload",
+                    name = "__add",
+                    parent = "test~MyInterface.$meta",
+                    path = "test~MyInterface.$meta.__add",
+                    children = {
+                        "test~MyInterface.$meta.__add(MyInterface, MyInterface)",
+                        "test~MyInterface.$meta.__add(MyInterface, string)",
+                    },
+                },
+                ["test~MyInterface.$meta.__add(MyInterface, MyInterface)"] = {
+                    kind = "function",
+                    function_kind = "metamethod",
+                    is_declaration = true,
+                    name = "__add",
+                    text = "my __add metamethod",
+                    visibility = "record",
+                    parent = "test~MyInterface.$meta.__add",
+                    path = "test~MyInterface.$meta.__add(MyInterface, MyInterface)",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 23,
+                    },
+                    params = {
+                        { type = "MyInterface" },
+                        { type = "MyInterface" }
+                    },
+                    returns = {
+                        { type = "MyInterface" }
+                    }
+                },
+                ["test~MyInterface.$meta.__add(MyInterface, string)"] = {
+                    kind = "function",
+                    function_kind = "metamethod",
+                    is_declaration = true,
+                    name = "__add",
+                    text = "my overloaded __add metamethod",
+                    visibility = "record",
+                    parent = "test~MyInterface.$meta.__add",
+                    path = "test~MyInterface.$meta.__add(MyInterface, string)",
+                    location = {
+                        filename = "test.tl",
+                        y = 7,
+                        x = 23,
+                    },
+                    params = {
+                        { type = "MyInterface" },
+                        { type = "string" }
+                    },
+                    returns = {
+                        { type = "MyInterface" }
+                    }
+                }
+            })
+        end)
+    end)
+    describe("nested types", function()
+        it("should parse a interface with a nested interface", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested interface
+                    interface NestedInterface
+                    end
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedInterface"
+                    },
+                },
+                ["test~MyInterface.NestedInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "NestedInterface",
+                    name = "NestedInterface",
+                    text = "my nested interface",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    }
+                }
+            })
+        end)
+        it("should parse a interface with a nested interface with generics", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested interface
+                    interface NestedInterface<T>
+                    end
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedInterface"
+                    },
+                },
+                ["test~MyInterface.NestedInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "NestedInterface<T>",
+                    name = "NestedInterface",
+                    text = "my nested interface",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    },
+                    typeargs = { { name = "T" } }
+                }
+            })
+        end)
+        it("should parse a interface with a nested interface with a constrained generic", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested interface
+                    interface NestedInterface<T is math.Numeric>
+                    end
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedInterface"
+                    },
+                },
+                ["test~MyInterface.NestedInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "NestedInterface<T is math.Numeric>",
+                    name = "NestedInterface",
+                    text = "my nested interface",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    },
+                    typeargs = { { name = "T", constraint = "math.Numeric" } }
+                }
+            })
+        end)
+        it("should parse a interface with a nested interface with a nested interface", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested interface
+                    interface NestedInterface
+                        --- my deeply nested interface
+                        interface DeeplyNestedInterface
+                        end
+                    end
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedInterface"
+                    },
+                },
+                ["test~MyInterface.NestedInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "NestedInterface",
+                    name = "NestedInterface",
+                    text = "my nested interface",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    },
+                    children = {
+                        "test~MyInterface.NestedInterface.DeeplyNestedInterface"
+                    },
+                },
+                ["test~MyInterface.NestedInterface.DeeplyNestedInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "DeeplyNestedInterface",
+                    name = "DeeplyNestedInterface",
+                    text = "my deeply nested interface",
+                    visibility = "record",
+                    parent = "test~MyInterface.NestedInterface",
+                    path = "test~MyInterface.NestedInterface.DeeplyNestedInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 6,
+                        x = 9,
+                    }
+                }
+            })
+        end)
+        it("should parse a interface with a nested enum", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested enum
+                    enum NestedEnum
+                        "A"
+                        "B"
+                    end
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedEnum"
+                    },
+                },
+                ["test~MyInterface.NestedEnum"] = {
+                    kind = "type",
+                    type_kind = "enum",
+                    typename = "NestedEnum",
+                    name = "NestedEnum",
+                    text = "my nested enum",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedEnum",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    },
+                    children = {
+                        "test~MyInterface.NestedEnum.\"A\"",
+                        "test~MyInterface.NestedEnum.\"B\""
+                    }
+                },
+                ["test~MyInterface.NestedEnum.\"A\""] = {
+                    kind = "enumvalue",
+                    name = "\"A\"",
+                    parent = "test~MyInterface.NestedEnum",
+                    path = "test~MyInterface.NestedEnum.\"A\"",
+                    
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    }
+                },
+                ["test~MyInterface.NestedEnum.\"B\""] = {
+                    kind = "enumvalue",
+                    name = "\"B\"",
+                    parent = "test~MyInterface.NestedEnum",
+                    path = "test~MyInterface.NestedEnum.\"B\"",
+                    
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 5,
+                    }
+                }
+            })
+        end)
+        it("should parse a interface with a nested type alias", function()
+            util.check_registry([[
+                --- my interface
+                local interface MyInterface
+                    --- my nested type alias
+                    type NestedType = string
+                end
+            ]], {
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyInterface.NestedType"
+                    },
+                },
+                ["test~MyInterface.NestedType"] = {
+                    kind = "type",
+                    type_kind = "type",
+                    typename = "string",
+                    name = "NestedType",
+                    text = "my nested type alias",
+                    visibility = "record",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.NestedType",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 23,
+                    }
+                }
+            })
+        end)
+    end)
+    describe("inheritance", function()
+        it("should parse a interface that inherits from interface", function()
+            util.check_registry([[
+                local interface A
+                end
+                local interface MyInterface is A
+                end
+            ]], {
+                ["test~A"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "A",
+                    name = "A",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~A",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    }
+                },
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 3,
+                        x = 1,
+                    },
+                    inherits = { "A" }
+                }
+            })
+        end)
+        it("should handle fields from interface", function()
+            util.check_registry([[
+                local interface A
+                    myField: string
+                end
+                local interface MyInterface is A
+                end
+            ]], {
+                ["test~A"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "A",
+                    name = "A",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~A",
+                    children = {
+                        "test~A.myField"
+                    },
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    }
+                },
+                ["test~A.myField"] = {
+                    kind = "variable",
+                    typename = "string",
+                    name = "myField",
+                    visibility = "record",
+                    parent = "test~A",
+                    path = "test~A.myField",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 14,
+                    }
+                },
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 1,
                     },
-                    inherits = { "MyInterface" }
+                    inherits = { "A" }
+                },
+            })
+        end)
+        it("should handle metamethods from interface", function()
+            util.check_registry([[
+                local interface A
+                    metamethod __add: function(a: A, b: A): A
+                end
+                local interface MyInterface is A
+                end
+            ]], {
+                ["test~A"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "A",
+                    name = "A",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~A",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~A.$meta"
+                    }
+                },
+                ["test~A.$meta"] = {
+                    kind = "metafields",
+                    name = "$meta",
+                    parent = "test~A",
+                    path = "test~A.$meta",
+                    children = {
+                        "test~A.$meta.__add"
+                    }
+                },
+                ["test~A.$meta.__add"] = {
+                    kind = "function",
+                    function_kind = "metamethod",
+                    is_declaration = true,
+                    name = "__add",
+                    
+                    visibility = "record",
+                    parent = "test~A.$meta",
+                    path = "test~A.$meta.__add",
+                    location = {
+                        filename = "test.tl",
+                        y = 2,
+                        x = 23,
+                    },
+                    params = {
+                        { type = "A" },
+                        { type = "A" }
+                    },
+                    returns = {
+                        { type = "A" }
+                    }
+                },
+                ["test~MyInterface"] = {
+                    kind = "type",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    visibility = "local",
+                    parent = "$test",
+                    path = "test~MyInterface",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 1,
+                    },
+                    inherits = { "A" }
                 }
             })
         end)
@@ -1304,7 +1260,7 @@ describe("teal support in tealdoc: records", function()
                 end
                 local interface C is A
                 end
-                local record MyRecord is B, C
+                local interface MyInterface is B, C
                 end
             ]], {
                 ["test~A"] = {
@@ -1351,14 +1307,14 @@ describe("teal support in tealdoc: records", function()
                     },
                     inherits = { "A" }
                 },
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -1370,25 +1326,25 @@ describe("teal support in tealdoc: records", function()
         end)
         it("should handle inheritance from array", function()
             util.check_registry([[
-                --- my record
-                local record MyRecord is { MyRecord }
+                --- my interface
+                local interface MyInterface is { MyInterface }
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
-                    text = "my record",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
+                    text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
-                    inherits = { "{MyRecord}" }
+                    inherits = { "{MyInterface}" }
                 }
             })
         end)
@@ -1397,7 +1353,7 @@ describe("teal support in tealdoc: records", function()
                 local interface A
                     myField: string
                 end
-                local record MyRecord is A
+                local interface MyInterface is A
                     myField: string
                 end
             ]], {
@@ -1431,14 +1387,14 @@ describe("teal support in tealdoc: records", function()
                         x = 14,
                     }
                 },
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -1453,7 +1409,7 @@ describe("teal support in tealdoc: records", function()
                 local interface A
                     myField: string
                 end
-                local record MyRecord is A
+                local interface MyInterface is A
                     --- my shadowed field
                     myField: string
                 end
@@ -1488,16 +1444,16 @@ describe("teal support in tealdoc: records", function()
                         x = 14,
                     }
                 },
-                ["test~MyRecord"] = {
+                ["test~MyInterface"] = {
                     kind = "type",
-                    type_kind = "record",
-                    typename = "MyRecord",
-                    name = "MyRecord",
+                    type_kind = "interface",
+                    typename = "MyInterface",
+                    name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyRecord",
+                    path = "test~MyInterface",
                     children = {
-                        "test~MyRecord.myField"
+                        "test~MyInterface.myField"
                     },
                     location = {
                         filename = "test.tl",
@@ -1506,14 +1462,14 @@ describe("teal support in tealdoc: records", function()
                     },
                     inherits = { "A" },
                 },
-                ["test~MyRecord.myField"] = {
+                ["test~MyInterface.myField"] = {
                     kind = "variable",
                     typename = "string",
                     name = "myField",
                     text = "my shadowed field",
                     visibility = "record",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.myField",
+                    parent = "test~MyInterface",
+                    path = "test~MyInterface.myField",
                     location = {
                         filename = "test.tl",
                         y = 6,

@@ -230,8 +230,14 @@ local function store_item(item: tealdoc.Item, state: VisitState, typ?: tl.Type):
         if not state.parent_item.children then
             state.parent_item.children = {}
         end
-        table.insert(state.parent_item.children, path)
         item.parent = state.parent_item.path
+        -- hack for not adding the same item twice in case we are replacing an item
+        for _, child in ipairs(state.parent_item.children) do
+            if child == path then
+                return path
+            end
+        end
+        table.insert(state.parent_item.children, path)
     end
     return path
 end
@@ -249,14 +255,15 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         for i, ar in ipairs(node.args) do 
             if node.is_method and i == 1 then
                 item.params[i] = {
-                    name = "self",
                     type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner))
                 }
             else
                 item.params[i] = {
-                    name = ar.tk,
                     type = ar.argtype and type_to_string(state.type_report, ar.argtype)
                 }
+                if visibility ~= "record" then -- hack for parity with declarations
+                    item.params[i].name = ar.tk
+                end
             end
         end
     end
@@ -316,7 +323,6 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
         for i, ar in ipairs(t.args.tuple) do 
             if t.is_method and i == 1 and owner then
                 item.params[i] = {
-                    name = "self",
                     type = typeinfo_to_string(typeinfo_for_type(state.type_report, owner))
                 }
             else
@@ -337,6 +343,49 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
         end
     end
     
+    return item
+end
+
+local function item_for_function_typeinfo(t: tl.TypeInfo, visibility: tealdoc.DeclarationItem.Visibility, state: VisitState): tealdoc.FunctionItem
+    local item: tealdoc.FunctionItem = {
+        kind = "function",
+        visibility = visibility,
+        function_kind = "normal",
+        location = {
+            filename = t.file,
+            x = t.x,
+            y = t.y
+        }
+    }
+
+    if t.typeargs and #t.typeargs > 0 then
+        item.typeargs = {}
+        for i, typearg in ipairs(t.typeargs) do
+            item.typeargs[i] = {
+                name = typearg[1],
+                constraint = typearg[2] and typeinfo_to_string(state.type_report.types[typearg[2]])
+            }
+        end
+    end
+
+    if t.args and #t.args > 0 then
+        item.params = {}
+        for i, ar in ipairs(t.args) do
+            item.params[i] = {
+                type = typeinfo_to_string(state.type_report.types[ar[1]])
+            }
+        end
+    end
+
+    if t.rets and #t.rets > 0 then
+        item.returns = {}
+        for i, ret in ipairs(t.rets) do
+            item.returns[i] = {
+                type = typeinfo_to_string(state.type_report.types[ret[1]])
+            }
+        end
+    end
+
     return item
 end
 
@@ -419,18 +468,26 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
     for i, name in ipairs(node.vars) do 
         assert(name.kind == "identifier")
         local decltype = node.decltuple.tuple[i] 
-        local typename: string
+        local typeinfo: tl.TypeInfo
 
+        local typename: string
         if decltype then
             typename = type_to_string(state.type_report, decltype)
         elseif node.kind == "local_declaration" then
-            typename = typeinfo_to_string(typeinfo_for_node(state.type_report, name)) 
+            typeinfo = typeinfo_for_node(state.type_report, name)
+            typename = typeinfo_to_string(typeinfo)
         elseif node.kind == "global_declaration" then
-            typename = typeinfo_to_string(typeinfo_for_global(state.type_report, name.tk))
+            typeinfo = typeinfo_for_global(state.type_report, name.tk)
+            typename = typeinfo_to_string(typeinfo)
         end
         
         local item: tealdoc.Item
-        if decltype and type_is_function(decltype) then -- what about inferred types??
+        if typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
+            item = item_for_function_typeinfo(typeinfo, 
+                node.kind == "local_declaration" and "local" or "global",
+                state
+            )
+        elseif decltype and type_is_function(decltype) then
             item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "normal", state)
             item.is_declaration = true
         else
@@ -566,15 +623,38 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
         end
     end
 
+    local has_metafields = false
+
     local function field_visitor(name: string, field_type: tl.Type, comments: {{tl.Comment}}, meta?: boolean)
         -- here we assume that if the inherited field is shadowed that it has the same type 
-        if inherited_field_has_comments[name] ~= nil then -- is a inherited field 
-            if comments and inherited_field_has_comments[name] then
-                log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
-            elseif not comments then
-                return
+        -- TODO: cleanup
+        if meta then
+            if inherited_metafield_has_comments[name] ~= nil then -- is a inherited field 
+                if comments and inherited_metafield_has_comments[name] then
+                    log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
+                elseif not comments then
+                    return
+                end
             end
-        end 
+            if not has_metafields then
+                has_metafields = true
+                local metafields_item: tealdoc.Item = { -- we need a special item for metafields to avoid name conflicts
+                    kind = "metafields",
+                    name = "$meta",
+                }
+                
+                state.path = store_item(metafields_item, state) .. "."
+                state.parent_item = metafields_item
+            end
+        else 
+            if inherited_field_has_comments[name] ~= nil then -- is a inherited field 
+                if comments and inherited_field_has_comments[name] then
+                    log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
+                elseif not comments then
+                    return
+                end
+            end 
+        end
         -- inner type declarations
         if field_type is tl.TypeDeclType then
             local c: {tl.Comment}
@@ -598,11 +678,13 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             local base_path = store_item(overload_item, state)
             
             for i, function_type in ipairs(field_type.types) do
-                local item = item_for_function_type(function_type, "record", "normal", state, t)
+                local item = item_for_function_type(function_type, "record", meta and "metamethod" or "normal", state, t)
                 item.name = name
                 local param_types: {string} = {}
-                for param_idx, param in ipairs(item.params) do
-                    param_types[param_idx] = param.type
+                if item.params then
+                    for param_idx, param in ipairs(item.params) do
+                        param_types[param_idx] = param.type
+                    end
                 end
                  
                 local path = base_path.."("..table.concat(param_types, ", ")..")"
@@ -651,25 +733,21 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
         field_visitor(field_name, field_type, comments)
     end
     if t.meta_fields then
-        local metafields_item: tealdoc.Item = { -- we need a special item for metafields to avoid name conflicts
-            kind = "metafields",
-            name = "$meta",
-        }
         local old_path = state.path
         local old_parent = state.parent_item 
-        state.path = store_item(metafields_item, state) .. "."
-        state.parent_item = metafields_item
         for _, field_name in ipairs(t.meta_field_order) do
             local field_type = t.meta_fields[field_name]
             local comments: {{tl.Comment}}
-            if t.field_comments then
-                comments = t.field_comments[field_name]
+            if t.meta_field_comments then
+                comments = t.meta_field_comments[field_name]
             end
 
             field_visitor(field_name, field_type, comments, true)
         end
-        state.path = old_path
-        state.parent_item = old_parent
+        if has_metafields then
+            state.path = old_path
+            state.parent_item = old_parent
+        end
     end
 end 
 
@@ -678,13 +756,12 @@ end
 local function type_declaration_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "local_type" or node.kind == "global_type")
     assert(node.var.kind == "identifier")
+    assert(node.value)
     local name = node.var.tk
-    if node.value then -- what to do for types without values! 
-        local newtype = node.value.newtype
-        if newtype then
-            typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
-        end
-    end 
+    local newtype = node.value.newtype
+    if newtype then -- only "local type ... = require(...)" do not contain newtype, should we handle it?
+        typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+    end
 end
 
 

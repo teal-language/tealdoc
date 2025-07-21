@@ -207,16 +207,20 @@ function DefaultEnv.init()
          assert(item.kind == "function")
 
          local params = {}
-         for _, param in ipairs(item.params) do
-            if not param.name then
-               table.insert(params, param.type or "?")
-            else
-               table.insert(params, param.name .. ": " .. (param.type or "?"))
+         if item.params then
+            for _, param in ipairs(item.params) do
+               if not param.name then
+                  table.insert(params, param.type or "?")
+               else
+                  table.insert(params, param.name .. ": " .. (param.type or "?"))
+               end
             end
          end
          local returns = {}
-         for _, ret in ipairs(item.returns) do
-            table.insert(returns, ret.type or "?")
+         if item.returns then
+            for _, ret in ipairs(item.returns) do
+               table.insert(returns, ret.type or "?")
+            end
          end
 
          local typeargs = {}

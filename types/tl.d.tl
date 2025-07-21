@@ -692,6 +692,7 @@ local record tl
         fields: {string: integer} -- RECORD
         meta_fields: {string: integer} -- RECORD (optional)
         enums: {string} -- ENUM
+        typeargs: {{string, integer}} -- FUNCTION, RECORD (optional)
         args: {{integer, string}} -- FUNCTION
         rets: {{integer, string}} -- FUNCTION
         vararg: boolean -- FUNCTION

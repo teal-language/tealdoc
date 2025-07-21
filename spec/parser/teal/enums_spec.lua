@@ -216,4 +216,56 @@ describe("teal support in tealdoc: enums", function()
             }
         })
     end)
+
+    it("enum values must be saved in lexicographic order", function()
+        util.check_registry([[
+            --- my enum
+            local enum MyEnum
+                "B"
+                "A"
+            end
+        ]], {
+            ["test~MyEnum"] = {
+                kind = "type",
+                name = "MyEnum",
+                text = "my enum",
+                visibility = "local",
+                typename = "MyEnum",
+                parent = "$test",
+                path = "test~MyEnum",
+                location = {
+                    filename = "test.tl",
+                    y = 2,
+                    x = 1,
+                },
+                type_kind = "enum",
+                children = {
+                    "test~MyEnum.\"A\"",
+                    "test~MyEnum.\"B\""
+                },
+            },
+            ["test~MyEnum.\"A\""] = {
+                kind = "enumvalue",
+                name = "\"A\"",
+                parent = "test~MyEnum",
+                path = "test~MyEnum.\"A\"",
+                location = {
+                    filename = "test.tl",
+                    y = 2,
+                    x = 1,
+                },
+            },
+            ["test~MyEnum.\"B\""] = {
+                kind = "enumvalue",
+                name = "\"B\"",
+                parent = "test~MyEnum",
+                path = "test~MyEnum.\"B\"",
+                location = {
+                    filename = "test.tl",
+                    y = 2,
+                    x = 1,
+                },
+            }
+        })
+    end)
 end)
