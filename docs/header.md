@@ -35,7 +35,7 @@ Its primary function is to generate documentation for programs written in Teal, 
 Tealdoc can be installed using [Luarocks](https://luarocks.org/):
 
 ```
-luarocks install --server=https://luarocks.org/dev tealdoc
+luarocks install tealdoc
 ```
 
 ## How to Document Your Code
