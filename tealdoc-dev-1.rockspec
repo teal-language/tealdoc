@@ -14,7 +14,7 @@ description = {
 }
 dependencies = {
    "argparse",
-   "tl > 0.24.6"
+   "tl >= 0.24.7"
 }
 build = {
    type = "builtin",
