@@ -1,6 +1,7 @@
 local argparse = require("argparse")
-local DumpTool = require("tealdoc.tool.dump")
-local MarkdownGenerator = require("tealdoc.tool.markdown")
+local DumpTool = require("tealdoc.dump")
+local MarkdownGenerator = require("tealdoc.generator.markdown")
+local HTMLGenerator = require("tealdoc.generator.html.generator")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
@@ -62,8 +63,32 @@ function CLI:add_default_commands()
             MarkdownGenerator:run(args["output"] as string, self._env)
         end
     }
+    local html_command: CLI.Command = {
+        name = "html",
+        setup = function(command: argparse.Command)
+            command:argument("files", "input files"):args("+")
+            command:flag("-a --all", "include all items in the documentation")
+            command:flag("--no-warn-missing", "do not warn about missing items")
+            command:option("-o --output", "output folder")
+                :default("doc")
+        end,
+        handler = function(args: argparse.Args)
+            if args["all"] then
+                self._env.include_all = true
+            end
+            if args["no_warn_missing"] then
+                self._env.no_warnings_on_missing = true
+            end
+            local files = args.files as {string} -- TODO: bulletproof
+            for _, file in ipairs(files) do
+                tealdoc.process_file(file, self._env)
+            end
+            HTMLGenerator:run(args["output"] as string, self._env)
+        end
+    }
     self:add_command(dump_command)
     self:add_command(md_command)
+    self:add_command(html_command)
 end
 
 function CLI:init(env: tealdoc.Env, skip_default_commands?: boolean)

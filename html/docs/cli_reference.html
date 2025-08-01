@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tealdoc Documentation</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0
+    }
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #111;
+    }
+    code {
+        background-color: #f4f4f4;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+    }
+    ul, ol {
+        margin: 1em 0;
+    }
+    li {
+        margin: 0.5em 0;
+    }
+    a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    pre code {
+        display: block;
+        width: 100%;
+        background-color: #d0f0f0;
+        padding: 1em;
+        overflow-x: scroll;
+    }
+
+    summary {
+        position: relative;
+        cursor: pointer;
+    }
+
+    summary::marker {
+        content: "";
+    }
+
+    details > summary::after {
+        position: absolute;
+        content: "❯";
+        transform-origin: center;
+        margin-left: 0.5em;
+    }
+    details[open] > summary::after {
+        transform: rotate(90deg);
+    }
+
+    /* Breadcrumb navigation styles */
+    main > nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    main > nav ul li {
+        display: inline;
+    }
+    main > nav ul li a {
+        text-decoration: none;
+    }
+    main > nav ul li a:hover {
+        text-decoration: underline;
+    }
+
+    ul.tree-list {
+        list-style: outside ;
+        line-height: 1.5rem;
+        padding-left: 1.5em;
+        margin: 0;
+    }
+
+    .tree-list li {
+        margin: 0;
+    }
+
+    main {
+        max-width: 800px;
+        width: 100%;
+        margin: 1em auto;
+        padding: 0 10px;
+    }
+    footer {
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+</style>
+</head>
+<body>
+<main>
+<nav>
+<ul>
+<li><a href="../index.html">index</a> / </li>
+<li>docs / </li>
+<li>cli_reference</li>
+</ul>
+</nav>
+<p>
+<h2>CLI Reference</h2>
+
+<p>To use the Tealdoc command-line interface:</p>
+
+<pre><code>tealdoc &lt;command&gt; [options]
+</code></pre>
+
+<p>You can view all available commands and options with:</p>
+
+<pre><code>tealdoc --help
+</code></pre>
+
+<h3>Commands</h3>
+
+<ul>
+<li><code>md</code>: Generate documentation as a Markdown file.</li>
+<li><code>html</code>: Generate documentation as an HTML file.</li>
+<li><code>dump</code>: Print the internal documentation registry to the console for debugging.</li>
+</ul>
+
+<h3>Options</h3>
+
+<ul>
+<li><code>--output &lt;file&gt;</code>: Specifies the output file for the generated documentation.</li>
+<li><code>--all</code>: Includes local definitions in the output.</li>
+<li><code>--plugin &lt;plugins&gt;</code>: Plugins to load; plugin names are resolved the same way as lua requires.</li>
+<li><code>--no-warn-missing</code>: Suppresses warnings about missing documentation for items.</li>
+</ul></p>
+</main>
+<footer>
+<small>generated using <a href="https://github.com/teal-language/tealdoc" target="_blank">tealdoc</a> 0.1+dev</small>
+</footer>
+</body>
+</html>

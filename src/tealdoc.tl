@@ -221,7 +221,7 @@ local record tealdoc
         --- Possible function kinds
         enum FunctionKind
             --- Normal function, local, global, or in-record.
-            "normal"
+            "function"
             --- Macro expansion function
             "macroexp"
             --- Record metamethod
@@ -294,7 +294,12 @@ local record tealdoc
     --- @param filename The name of the file being processed, used to determine the file extension.
     --- @param env The environment in which the text is processed.
     process_text: function(text: string, path: string, env: Env)
+
+    --- Current version of Tealdoc.
+    version: string 
 end
+
+tealdoc.version = "0.1+dev"
 
 function tealdoc.Env.init(): tealdoc.Env
     local env: tealdoc.Env = {

@@ -350,7 +350,7 @@ local function item_for_function_typeinfo(t: tl.TypeInfo, visibility: tealdoc.De
     local item: tealdoc.FunctionItem = {
         kind = "function",
         visibility = visibility,
-        function_kind = "normal",
+        function_kind = "function",
         location = {
             filename = t.file,
             x = t.x,
@@ -419,7 +419,7 @@ local function function_visitor(node: tl.Node, state: VisitState)
     else
         visibility = "record" 
     end
-    local item = function_item_for_node(node, visibility, "normal", state)
+    local item = function_item_for_node(node, visibility, "function", state)
     item.name = name
     process_comments(node.comments, item, state.env)
     local path = store_item(item, state)
@@ -488,7 +488,7 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
                 state
             )
         elseif decltype and type_is_function(decltype) then
-            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "normal", state)
+            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
             item.is_declaration = true
         else
             local variable_item = {
@@ -678,7 +678,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             local base_path = store_item(overload_item, state)
             
             for i, function_type in ipairs(field_type.types) do
-                local item = item_for_function_type(function_type, "record", meta and "metamethod" or "normal", state, t)
+                local item = item_for_function_type(function_type, "record", meta and "metamethod" or "function", state, t)
                 item.name = name
                 local param_types: {string} = {}
                 if item.params then
@@ -702,7 +702,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
         local item: tealdoc.Item
 
         if type_is_function(field_type) then
-            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", meta and "metamethod" or "normal", state, t)
+            item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", meta and "metamethod" or "function", state, t)
                 
         else
             local field_item: tealdoc.VariableItem = {
@@ -732,6 +732,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
 
         field_visitor(field_name, field_type, comments)
     end
+
     if t.meta_fields then
         local old_path = state.path
         local old_parent = state.parent_item 

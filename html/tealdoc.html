@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tealdoc Documentation</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0
+    }
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #111;
+    }
+    code {
+        background-color: #f4f4f4;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+    }
+    ul, ol {
+        margin: 1em 0;
+    }
+    li {
+        margin: 0.5em 0;
+    }
+    a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    pre code {
+        display: block;
+        width: 100%;
+        background-color: #d0f0f0;
+        padding: 1em;
+        overflow-x: scroll;
+    }
+
+    summary {
+        position: relative;
+        cursor: pointer;
+    }
+
+    summary::marker {
+        content: "";
+    }
+
+    details > summary::after {
+        position: absolute;
+        content: "❯";
+        transform-origin: center;
+        margin-left: 0.5em;
+    }
+    details[open] > summary::after {
+        transform: rotate(90deg);
+    }
+
+    /* Breadcrumb navigation styles */
+    main > nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    main > nav ul li {
+        display: inline;
+    }
+    main > nav ul li a {
+        text-decoration: none;
+    }
+    main > nav ul li a:hover {
+        text-decoration: underline;
+    }
+
+    ul.tree-list {
+        list-style: outside ;
+        line-height: 1.5rem;
+        padding-left: 1.5em;
+        margin: 0;
+    }
+
+    .tree-list li {
+        margin: 0;
+    }
+
+    main {
+        max-width: 800px;
+        width: 100%;
+        margin: 1em auto;
+        padding: 0 10px;
+    }
+    footer {
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+</style>
+</head>
+<body>
+<main>
+<nav>
+<ul>
+<li><a href="index.html">index</a> / </li>
+<li>tealdoc</li>
+</ul>
+</nav>
+<h1 id="tealdoc">Module tealdoc</h1><pre><code class="code-block"><details style="display: inline;" open><summary>local record <a href="#tealdoc">tealdoc</a></summary>  <details style="display: inline;"><summary>interface <a href="#tealdoc.Plugin">Plugin</a></summary>    <a href="#tealdoc.Plugin.name">name</a>: string
+    <a href="#tealdoc.Plugin.run">run</a>: function(env: tealdoc.Env)
+end</details>
+  <details style="display: inline;"><summary>interface <a href="#tealdoc.Parser">Parser</a></summary>    <a href="#tealdoc.Parser.process">process</a>: function(self: Parser, text: string, path: string, env: tealdoc.Env)
+    <a href="#tealdoc.Parser.file_extensions">file_extensions</a>: {string}
+end</details>
+  <details style="display: inline;"><summary>interface <a href="#tealdoc.Tag">Tag</a></summary>    <details style="display: inline;"><summary>interface <a href="#tealdoc.Tag.Context">Context</a></summary>      <a href="#tealdoc.Tag.Context.item">item</a>: Item
+      <a href="#tealdoc.Tag.Context.param">param</a>: string
+      <a href="#tealdoc.Tag.Context.description">description</a>: string
+end</details>
+    <a href="#tealdoc.Tag.name">name</a>: string
+    <a href="#tealdoc.Tag.handle">handle</a>: function(ctx: Context)
+    <a href="#tealdoc.Tag.has_param">has_param</a>: boolean
+    <a href="#tealdoc.Tag.has_description">has_description</a>: boolean
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.Location">Location</a></summary>    <a href="#tealdoc.Location.filename">filename</a>: string
+    <a href="#tealdoc.Location.x">x</a>: integer
+    <a href="#tealdoc.Location.y">y</a>: integer
+end</details>
+  <details style="display: inline;"><summary>interface <a href="#tealdoc.Item">Item</a></summary>    <a href="#tealdoc.Item.kind">kind</a>: string
+    <a href="#tealdoc.Item.path">path</a>: string
+    <a href="#tealdoc.Item.name">name</a>: string
+    <a href="#tealdoc.Item.children">children</a>: {string}
+    <a href="#tealdoc.Item.parent">parent</a>: string
+    <a href="#tealdoc.Item.text">text</a>: string
+    <a href="#tealdoc.Item.attributes">attributes</a>: {string : &lt;any type&gt;}
+    <a href="#tealdoc.Item.location">location</a>: Location
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.Env">Env</a></summary>    <a href="#tealdoc.Env.registry">registry</a>: {string : Item}
+    <a href="#tealdoc.Env.modules">modules</a>: {string}
+    <a href="#tealdoc.Env.include_all">include_all</a>: boolean
+    <a href="#tealdoc.Env.no_warnings_on_missing">no_warnings_on_missing</a>: boolean
+    <a href="#tealdoc.Env.add_parser">add_parser</a>: function(self: Env, parser: Parser)
+    <a href="#tealdoc.Env.add_tag">add_tag</a>: function(self: Env, tag: Tag)
+    <a href="#tealdoc.Env.init">init</a>: function(): Env
+    <a href="#tealdoc.Env.parser_registry">parser_registry</a>: {string : Parser}
+    <a href="#tealdoc.Env.tag_registry">tag_registry</a>: {string : Tag}
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.Typearg">Typearg</a></summary>    <a href="#tealdoc.Typearg.name">name</a>: string
+    <a href="#tealdoc.Typearg.constraint">constraint</a>: string
+    <a href="#tealdoc.Typearg.description">description</a>: string
+end</details>
+  <details style="display: inline;"><summary>interface <a href="#tealdoc.DeclarationItem">DeclarationItem</a></summary>    <details style="display: inline;"><summary>enum <a href="#tealdoc.DeclarationItem.Visibility">Visibility</a></summary>      <a href="#tealdoc.DeclarationItem.Visibility."global"">&quot;global&quot;</a>
+      <a href="#tealdoc.DeclarationItem.Visibility."local"">&quot;local&quot;</a>
+      <a href="#tealdoc.DeclarationItem.Visibility."record"">&quot;record&quot;</a>
+end</details>
+    <a href="#tealdoc.DeclarationItem.visibility">visibility</a>: Visibility
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.FunctionItem">FunctionItem</a></summary>    <details style="display: inline;"><summary>record <a href="#tealdoc.FunctionItem.Param">Param</a></summary>      <a href="#tealdoc.FunctionItem.Param.name">name</a>: string
+      <a href="#tealdoc.FunctionItem.Param.type">type</a>: string
+      <a href="#tealdoc.FunctionItem.Param.description">description</a>: string
+end</details>
+    <details style="display: inline;"><summary>record <a href="#tealdoc.FunctionItem.Return">Return</a></summary>      <a href="#tealdoc.FunctionItem.Return.type">type</a>: string
+      <a href="#tealdoc.FunctionItem.Return.description">description</a>: string
+end</details>
+    <details style="display: inline;"><summary>enum <a href="#tealdoc.FunctionItem.FunctionKind">FunctionKind</a></summary>      <a href="#tealdoc.FunctionItem.FunctionKind."function"">&quot;function&quot;</a>
+      <a href="#tealdoc.FunctionItem.FunctionKind."macroexp"">&quot;macroexp&quot;</a>
+      <a href="#tealdoc.FunctionItem.FunctionKind."metamethod"">&quot;metamethod&quot;</a>
+end</details>
+    <a href="#tealdoc.FunctionItem.params">params</a>: {Param}
+    <a href="#tealdoc.FunctionItem.returns">returns</a>: {Return}
+    <a href="#tealdoc.FunctionItem.typeargs">typeargs</a>: {Typearg}
+    <a href="#tealdoc.FunctionItem.function_kind">function_kind</a>: FunctionKind
+    <a href="#tealdoc.FunctionItem.is_declaration">is_declaration</a>: boolean
+
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.VariableItem">VariableItem</a></summary>    <a href="#tealdoc.VariableItem.typename">typename</a>: string
+
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.TypeItem">TypeItem</a></summary>    <details style="display: inline;"><summary>enum <a href="#tealdoc.TypeItem.TypeKind">TypeKind</a></summary>      <a href="#tealdoc.TypeItem.TypeKind."enum"">&quot;enum&quot;</a>
+      <a href="#tealdoc.TypeItem.TypeKind."interface"">&quot;interface&quot;</a>
+      <a href="#tealdoc.TypeItem.TypeKind."record"">&quot;record&quot;</a>
+      <a href="#tealdoc.TypeItem.TypeKind."type"">&quot;type&quot;</a>
+end</details>
+    <a href="#tealdoc.TypeItem.typename">typename</a>: string
+    <a href="#tealdoc.TypeItem.typeargs">typeargs</a>: {Typearg}
+    <a href="#tealdoc.TypeItem.type_kind">type_kind</a>: TypeKind
+    <a href="#tealdoc.TypeItem.inherits">inherits</a>: {string}
+
+end</details>
+  <a href="#tealdoc.process_file">process_file</a>: function(path: string, env: Env)
+  <a href="#tealdoc.process_text">process_text</a>: function(text: string, filename: string, env: Env)
+  <a href="#tealdoc.version">version</a>: string
+end</details>
+</code></pre>
+<h3 id="tealdoc.Plugin">Plugin</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.Plugin">Plugin</a></summary>  <a href="#tealdoc.Plugin.name">name</a>: string
+  <a href="#tealdoc.Plugin.run">run</a>: function(env: tealdoc.Env)
+end</details></code></pre>
+<p>
+Plugin is an abstract base interface for tealdoc plugins. Plugins can be used to extend Tealdoc functionality. When using the CLI you can load plugins using the <code>--plugin</code> option followed by the plugin package name, which will be resolved the same way as Lua modules.</p>
+<h3 id="tealdoc.Plugin.name">Plugin.name</h3><pre><code class="code-block"><a href="#tealdoc.Plugin.name">Plugin.name</a>: string
+</code></pre>
+<p>
+The name of the plugin used for identification purposes.</p>
+<h3 id="tealdoc.Plugin.run">Plugin.run</h3><pre><code class="code-block">function <a href="#tealdoc.Plugin.run">Plugin.run</a>(env: tealdoc.Env)
+</code></pre>
+<p>
+Run the plugin. This function is called when the plugin is loaded. You may use this function to modify the environment in order to extend the Tealdoc functionality.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>env</code></b> (<code>tealdoc.Env</code>) — The environment in which the plugin is running.</li>
+</ul>
+<h3 id="tealdoc.Parser">Parser</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.Parser">Parser</a></summary>  <a href="#tealdoc.Parser.process">process</a>: function(self: Parser, text: string, path: string, env: tealdoc.Env)
+  <a href="#tealdoc.Parser.file_extensions">file_extensions</a>: {string}
+end</details></code></pre>
+<p>
+Parser is an abstract base interface for Tealdoc parsers. Parsers are used to process source files and extract documentation items from them. Parsers must add the items to the <code>env.registry</code> table. Each parser is responsible for a specific set of file extensions. You can register a parser using the <code>add_parser</code> method of the <code>tealdoc.Env</code> interface.</p>
+<h3 id="tealdoc.Parser.process">Parser.process</h3><pre><code class="code-block">function <a href="#tealdoc.Parser.process">Parser.process</a>(self: Parser, text: string, path: string, env: tealdoc.Env)
+</code></pre>
+<p>
+Process file contents. This function is called by Tealdoc when a file with a registered extension is processed.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>self</code></b> (<code>Parser</code>) — The parser instance.</li>
+<li><b><code>text</code></b> (<code>string</code>) — The contents of the file as a string.</li>
+<li><b><code>path</code></b> (<code>string</code>) — The path of the file being processed.</li>
+<li><b><code>env</code></b> (<code>tealdoc.Env</code>) — The environment in which the parser is running.</li>
+</ul>
+<h3 id="tealdoc.Parser.file_extensions">Parser.file_extensions</h3><pre><code class="code-block"><a href="#tealdoc.Parser.file_extensions">Parser.file_extensions</a>: {string}
+</code></pre>
+<p>
+A list of file extensions that this parser can handle. This is used to register the parser in the <code>tealdoc.Env</code> environment. Each extension should start with a dot (e.g. &quot;.lua&quot;, &quot;.md&quot;).</p>
+<h3 id="tealdoc.Tag">Tag</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.Tag">Tag</a></summary>  <details style="display: inline;"><summary>interface <a href="#tealdoc.Tag.Context">Context</a></summary>    <a href="#tealdoc.Tag.Context.item">item</a>: Item
+    <a href="#tealdoc.Tag.Context.param">param</a>: string
+    <a href="#tealdoc.Tag.Context.description">description</a>: string
+end</details>
+  <a href="#tealdoc.Tag.name">name</a>: string
+  <a href="#tealdoc.Tag.handle">handle</a>: function(ctx: Context)
+  <a href="#tealdoc.Tag.has_param">has_param</a>: boolean
+  <a href="#tealdoc.Tag.has_description">has_description</a>: boolean
+end</details></code></pre>
+<p>
+Tag is an abstract base interface for Tealdoc tags. Tags are used to annotate items with additional metadata. Tags can be used to provide additional information about an item, such as parameters, descriptions, or other attributes. Tags can be registered in the <code>tealdoc.Env</code> environment using the <code>add_tag</code> method.</p>
+<h3 id="tealdoc.Tag.Context">Tag.Context</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.Tag.Context">Tag.Context</a></summary>  <a href="#tealdoc.Tag.Context.item">item</a>: Item
+  <a href="#tealdoc.Tag.Context.param">param</a>: string
+  <a href="#tealdoc.Tag.Context.description">description</a>: string
+end</details></code></pre>
+<p>
+Context is the context in which the tag is encountered.</p>
+<h3 id="tealdoc.Tag.Context.item">Tag.Context.item</h3><pre><code class="code-block"><a href="#tealdoc.Tag.Context.item">Tag.Context.item</a>: Item
+</code></pre>
+<p>
+The item to which the tag belongs.</p>
+<h3 id="tealdoc.Tag.Context.param">Tag.Context.param</h3><pre><code class="code-block"><a href="#tealdoc.Tag.Context.param">Tag.Context.param</a>: string
+</code></pre>
+<p>
+The parameter of the tag if any. Only applicable if has_param of the tag is true.</p>
+<h3 id="tealdoc.Tag.Context.description">Tag.Context.description</h3><pre><code class="code-block"><a href="#tealdoc.Tag.Context.description">Tag.Context.description</a>: string
+</code></pre>
+<p>
+The description of the tag if any. Only applicable if has_description of the tag is true.</p>
+<h3 id="tealdoc.Tag.name">Tag.name</h3><pre><code class="code-block"><a href="#tealdoc.Tag.name">Tag.name</a>: string
+</code></pre>
+<p>
+The name of the tag, which is used to identify the tag in the comments.</p>
+<h3 id="tealdoc.Tag.handle">Tag.handle</h3><pre><code class="code-block">function <a href="#tealdoc.Tag.handle">Tag.handle</a>(ctx: Context)
+</code></pre>
+<p>
+Function which is called when the tag is encountered in the comments.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>ctx</code></b> (<code>Context</code>) — The context in which the tag is encountered.</li>
+</ul>
+<h3 id="tealdoc.Tag.has_param">Tag.has_param</h3><pre><code class="code-block"><a href="#tealdoc.Tag.has_param">Tag.has_param</a>: boolean
+</code></pre>
+<p>
+Whether the tag has a parameter. If true, the tag expects a parameter after the tag name. For example, <code>@param name description</code> has a parameter <code>name</code>.</p>
+<h3 id="tealdoc.Tag.has_description">Tag.has_description</h3><pre><code class="code-block"><a href="#tealdoc.Tag.has_description">Tag.has_description</a>: boolean
+</code></pre>
+<p>
+Whether the tag has a description. If true, the tag expects a description after the tag name or parameter. For example, <code>@description This is a description</code> has a description <code>This is a description</code>.</p>
+<h3 id="tealdoc.Location">Location</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.Location">Location</a></summary>  <a href="#tealdoc.Location.filename">filename</a>: string
+  <a href="#tealdoc.Location.x">x</a>: integer
+  <a href="#tealdoc.Location.y">y</a>: integer
+end</details></code></pre>
+<p>
+This record represents a location in a file. It is used to store the location of an item in the source code.</p>
+<h3 id="tealdoc.Location.filename">Location.filename</h3><pre><code class="code-block"><a href="#tealdoc.Location.filename">Location.filename</a>: string
+</code></pre>
+<p>
+The path to the file where the item is located.</p>
+<h3 id="tealdoc.Location.x">Location.x</h3><pre><code class="code-block"><a href="#tealdoc.Location.x">Location.x</a>: integer
+</code></pre>
+<p>
+The column number where the item is located.</p>
+<h3 id="tealdoc.Location.y">Location.y</h3><pre><code class="code-block"><a href="#tealdoc.Location.y">Location.y</a>: integer
+</code></pre>
+<p>
+The line number where the item is located.</p>
+<h3 id="tealdoc.Item">Item</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.Item">Item</a></summary>  <a href="#tealdoc.Item.kind">kind</a>: string
+  <a href="#tealdoc.Item.path">path</a>: string
+  <a href="#tealdoc.Item.name">name</a>: string
+  <a href="#tealdoc.Item.children">children</a>: {string}
+  <a href="#tealdoc.Item.parent">parent</a>: string
+  <a href="#tealdoc.Item.text">text</a>: string
+  <a href="#tealdoc.Item.attributes">attributes</a>: {string : &lt;any type&gt;}
+  <a href="#tealdoc.Item.location">location</a>: Location
+end</details></code></pre>
+<p>
+Item is an abstract base interface for Tealdoc items. Items represent documentation entities such as functions, variables, types, etc. Items can also represent abstract concepts like namespaces or modules.</p>
+<h3 id="tealdoc.Item.kind">Item.kind</h3><pre><code class="code-block"><a href="#tealdoc.Item.kind">Item.kind</a>: string
+</code></pre>
+<p>
+The kind of the item, e.g. &quot;function&quot;, &quot;variable&quot;, &quot;type&quot;, etc. This is used to differentiate between different types of items.</p>
+<h3 id="tealdoc.Item.path">Item.path</h3><pre><code class="code-block"><a href="#tealdoc.Item.path">Item.path</a>: string
+</code></pre>
+<p>
+The path to the item, which is used as a unique identifier.</p>
+<h3 id="tealdoc.Item.name">Item.name</h3><pre><code class="code-block"><a href="#tealdoc.Item.name">Item.name</a>: string
+</code></pre>
+<p>
+The name of the item, which is used for display purposes. This is usually the same as the last part of the path.</p>
+<h3 id="tealdoc.Item.children">Item.children</h3><pre><code class="code-block"><a href="#tealdoc.Item.children">Item.children</a>: {string}
+</code></pre>
+<p>
+The children of the item, which are other items that are related to this item. This is used to represent hierarchical relationships between items. For example, a record type may have fields that are also items. The children are stored as an array of paths of the children.</p>
+<h3 id="tealdoc.Item.parent">Item.parent</h3><pre><code class="code-block"><a href="#tealdoc.Item.parent">Item.parent</a>: string
+</code></pre>
+<p>
+The parent of the item, which is the path to the parent item.</p>
+<h3 id="tealdoc.Item.text">Item.text</h3><pre><code class="code-block"><a href="#tealdoc.Item.text">Item.text</a>: string
+</code></pre>
+<p>
+The text of the item, which is the documentation content. This is usually a multiline string that contains the documentation for the item. It may include markdown or other formatting. If the item does not have any documentation, this may be nil.</p>
+<h3 id="tealdoc.Item.attributes">Item.attributes</h3><pre><code class="code-block"><a href="#tealdoc.Item.attributes">Item.attributes</a>: {string : &lt;any type&gt;}
+</code></pre>
+<p>
+The attributes of the item, which are additional metadata.</p>
+<h3 id="tealdoc.Item.location">Item.location</h3><pre><code class="code-block"><a href="#tealdoc.Item.location">Item.location</a>: Location
+</code></pre>
+<p>
+The location of the item in the source code.</p>
+<h3 id="tealdoc.Env">Env</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.Env">Env</a></summary>  <a href="#tealdoc.Env.registry">registry</a>: {string : Item}
+  <a href="#tealdoc.Env.modules">modules</a>: {string}
+  <a href="#tealdoc.Env.include_all">include_all</a>: boolean
+  <a href="#tealdoc.Env.no_warnings_on_missing">no_warnings_on_missing</a>: boolean
+  <a href="#tealdoc.Env.add_parser">add_parser</a>: function(self: Env, parser: Parser)
+  <a href="#tealdoc.Env.add_tag">add_tag</a>: function(self: Env, tag: Tag)
+  <a href="#tealdoc.Env.init">init</a>: function(): Env
+  <a href="#tealdoc.Env.parser_registry">parser_registry</a>: {string : Parser}
+  <a href="#tealdoc.Env.tag_registry">tag_registry</a>: {string : Tag}
+end</details></code></pre>
+<p>
+Env is the environment in which Tealdoc operates. It contains the registry of items, parsers, and tag handlers. You can use this environment to add new parsers or tag handlers. You can also use it to access the registry of items.</p>
+<h3 id="tealdoc.Env.registry">Env.registry</h3><pre><code class="code-block"><a href="#tealdoc.Env.registry">Env.registry</a>: {string : Item}
+</code></pre>
+<p>
+The registry of items, which is a table mapping paths to items. This is used to store all the items that are processed by Tealdoc. The keys are the paths of the items, and the values are the items themselves.</p>
+<h3 id="tealdoc.Env.modules">Env.modules</h3><pre><code class="code-block"><a href="#tealdoc.Env.modules">Env.modules</a>: {string}
+</code></pre>
+<p>
+The list of modules that are processed by Tealdoc. This is used to store the names of the modules that are documented.</p>
+<h3 id="tealdoc.Env.include_all">Env.include_all</h3><pre><code class="code-block"><a href="#tealdoc.Env.include_all">Env.include_all</a>: boolean
+</code></pre>
+<p>
+The option to include all items in the output. If this is true, all items will be included in the output, regardless of whether they are local or global. When using the CLI, you can set this option using the <code>--all</code> flag.</p>
+<h3 id="tealdoc.Env.no_warnings_on_missing">Env.no_warnings_on_missing</h3><pre><code class="code-block"><a href="#tealdoc.Env.no_warnings_on_missing">Env.no_warnings_on_missing</a>: boolean
+</code></pre>
+<p>
+Whether to skip warnings about missing items. If this is true, Tealdoc will not log warnings about missing items.</p>
+<h3 id="tealdoc.Env.add_parser">Env.add_parser</h3><pre><code class="code-block">function <a href="#tealdoc.Env.add_parser">Env.add_parser</a>(self: Env, parser: Parser)
+</code></pre>
+<p>
+Add a parser to the environment. This function registers a parser that can handle specific file extensions. The parser must implement the <code>tealdoc.Parser</code> interface.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>self</code></b> (<code>Env</code>) — The environment to which the parser is added.</li>
+<li><b><code>parser</code></b> (<code>Parser</code>) — The parser to add.</li>
+</ul>
+<h3 id="tealdoc.Env.add_tag">Env.add_tag</h3><pre><code class="code-block">function <a href="#tealdoc.Env.add_tag">Env.add_tag</a>(self: Env, tag: Tag)
+</code></pre>
+<p>
+Add a tag to the environment. The tag must implement the <code>tealdoc.Tag</code> interface.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>self</code></b> (<code>Env</code>) — The environment to which the tag is added.</li>
+<li><b><code>tag</code></b> (<code>Tag</code>) — The tag to add.</li>
+</ul>
+<h3 id="tealdoc.Env.init">Env.init</h3><pre><code class="code-block">function <a href="#tealdoc.Env.init">Env.init</a>(): Env
+</code></pre>
+<p>
+Initialize a new environment. This function creates a new environment with empty registries.</p>
+<h4>Returns</h4>
+<ol>
+<li>(<code>Env</code>)</li>
+</ol>
+<h3 id="tealdoc.Typearg">Typearg</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.Typearg">Typearg</a></summary>  <a href="#tealdoc.Typearg.name">name</a>: string
+  <a href="#tealdoc.Typearg.constraint">constraint</a>: string
+  <a href="#tealdoc.Typearg.description">description</a>: string
+end</details></code></pre>
+<p>
+This record represents a type argument for a function or type.</p>
+<h3 id="tealdoc.Typearg.name">Typearg.name</h3><pre><code class="code-block"><a href="#tealdoc.Typearg.name">Typearg.name</a>: string
+</code></pre>
+<p>
+The name of the type argument.</p>
+<h3 id="tealdoc.Typearg.constraint">Typearg.constraint</h3><pre><code class="code-block"><a href="#tealdoc.Typearg.constraint">Typearg.constraint</a>: string
+</code></pre>
+<p>
+The constraint of the type argument if any.</p>
+<h3 id="tealdoc.Typearg.description">Typearg.description</h3><pre><code class="code-block"><a href="#tealdoc.Typearg.description">Typearg.description</a>: string
+</code></pre>
+<p>
+The description of the type argument.</p>
+<h3 id="tealdoc.DeclarationItem">DeclarationItem</h3><pre><code class="code-block"><details style="display: inline;" open><summary>interface <a href="#tealdoc.DeclarationItem">DeclarationItem</a></summary>  <details style="display: inline;"><summary>enum <a href="#tealdoc.DeclarationItem.Visibility">Visibility</a></summary>    <a href="#tealdoc.DeclarationItem.Visibility."global"">&quot;global&quot;</a>
+    <a href="#tealdoc.DeclarationItem.Visibility."local"">&quot;local&quot;</a>
+    <a href="#tealdoc.DeclarationItem.Visibility."record"">&quot;record&quot;</a>
+end</details>
+  <a href="#tealdoc.DeclarationItem.visibility">visibility</a>: Visibility
+end</details></code></pre>
+<p>
+This interface represents a declaration item in Tealdoc. It is used to represent declarations of functions, variables, and types.</p>
+<h3 id="tealdoc.DeclarationItem.Visibility">DeclarationItem.Visibility</h3><pre><code class="code-block"><details style="display: inline;" open><summary>enum <a href="#tealdoc.DeclarationItem.Visibility">DeclarationItem.Visibility</a></summary>  <a href="#tealdoc.DeclarationItem.Visibility."global"">&quot;global&quot;</a>
+  <a href="#tealdoc.DeclarationItem.Visibility."local"">&quot;local&quot;</a>
+  <a href="#tealdoc.DeclarationItem.Visibility."record"">&quot;record&quot;</a>
+end</details></code></pre>
+<p>
+Possible visibilities for declarations.</p>
+<h3 id="tealdoc.DeclarationItem.Visibility."global"">DeclarationItem.Visibility.&quot;global&quot;</h3><p>
+Global visibility, for global variables and functions.</p>
+<h3 id="tealdoc.DeclarationItem.Visibility."local"">DeclarationItem.Visibility.&quot;local&quot;</h3><p>
+Local visibility, for local variables and functions.</p>
+<h3 id="tealdoc.DeclarationItem.Visibility."record"">DeclarationItem.Visibility.&quot;record&quot;</h3><p>
+Record visibility, for record fields and nested types.</p>
+<h3 id="tealdoc.DeclarationItem.visibility">DeclarationItem.visibility</h3><pre><code class="code-block"><a href="#tealdoc.DeclarationItem.visibility">DeclarationItem.visibility</a>: Visibility
+</code></pre>
+<p>
+The visibility of the declaration.</p>
+<h3 id="tealdoc.FunctionItem">FunctionItem</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.FunctionItem">FunctionItem</a></summary>  <details style="display: inline;"><summary>record <a href="#tealdoc.FunctionItem.Param">Param</a></summary>    <a href="#tealdoc.FunctionItem.Param.name">name</a>: string
+    <a href="#tealdoc.FunctionItem.Param.type">type</a>: string
+    <a href="#tealdoc.FunctionItem.Param.description">description</a>: string
+end</details>
+  <details style="display: inline;"><summary>record <a href="#tealdoc.FunctionItem.Return">Return</a></summary>    <a href="#tealdoc.FunctionItem.Return.type">type</a>: string
+    <a href="#tealdoc.FunctionItem.Return.description">description</a>: string
+end</details>
+  <details style="display: inline;"><summary>enum <a href="#tealdoc.FunctionItem.FunctionKind">FunctionKind</a></summary>    <a href="#tealdoc.FunctionItem.FunctionKind."function"">&quot;function&quot;</a>
+    <a href="#tealdoc.FunctionItem.FunctionKind."macroexp"">&quot;macroexp&quot;</a>
+    <a href="#tealdoc.FunctionItem.FunctionKind."metamethod"">&quot;metamethod&quot;</a>
+end</details>
+  <a href="#tealdoc.FunctionItem.params">params</a>: {Param}
+  <a href="#tealdoc.FunctionItem.returns">returns</a>: {Return}
+  <a href="#tealdoc.FunctionItem.typeargs">typeargs</a>: {Typearg}
+  <a href="#tealdoc.FunctionItem.function_kind">function_kind</a>: FunctionKind
+  <a href="#tealdoc.FunctionItem.is_declaration">is_declaration</a>: boolean
+
+end</details></code></pre>
+<p>
+This record represents a function item in Tealdoc.</p>
+<h3 id="tealdoc.FunctionItem.Param">FunctionItem.Param</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.FunctionItem.Param">FunctionItem.Param</a></summary>  <a href="#tealdoc.FunctionItem.Param.name">name</a>: string
+  <a href="#tealdoc.FunctionItem.Param.type">type</a>: string
+  <a href="#tealdoc.FunctionItem.Param.description">description</a>: string
+end</details></code></pre>
+<p>
+This record represents a parameter of a function.</p>
+<h3 id="tealdoc.FunctionItem.Param.name">FunctionItem.Param.name</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.Param.name">FunctionItem.Param.name</a>: string
+</code></pre>
+<p>
+The name of the parameter.</p>
+<h3 id="tealdoc.FunctionItem.Param.type">FunctionItem.Param.type</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.Param.type">FunctionItem.Param.type</a>: string
+</code></pre>
+<p>
+The type of the parameter.</p>
+<h3 id="tealdoc.FunctionItem.Param.description">FunctionItem.Param.description</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.Param.description">FunctionItem.Param.description</a>: string
+</code></pre>
+<p>
+The description of the parameter.</p>
+<h3 id="tealdoc.FunctionItem.Return">FunctionItem.Return</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.FunctionItem.Return">FunctionItem.Return</a></summary>  <a href="#tealdoc.FunctionItem.Return.type">type</a>: string
+  <a href="#tealdoc.FunctionItem.Return.description">description</a>: string
+end</details></code></pre>
+<p>
+This record represents a return value of a function.</p>
+<h3 id="tealdoc.FunctionItem.Return.type">FunctionItem.Return.type</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.Return.type">FunctionItem.Return.type</a>: string
+</code></pre>
+<p>
+The type of the return value.</p>
+<h3 id="tealdoc.FunctionItem.Return.description">FunctionItem.Return.description</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.Return.description">FunctionItem.Return.description</a>: string
+</code></pre>
+<p>
+The description of the return value.</p>
+<h3 id="tealdoc.FunctionItem.FunctionKind">FunctionItem.FunctionKind</h3><pre><code class="code-block"><details style="display: inline;" open><summary>enum <a href="#tealdoc.FunctionItem.FunctionKind">FunctionItem.FunctionKind</a></summary>  <a href="#tealdoc.FunctionItem.FunctionKind."function"">&quot;function&quot;</a>
+  <a href="#tealdoc.FunctionItem.FunctionKind."macroexp"">&quot;macroexp&quot;</a>
+  <a href="#tealdoc.FunctionItem.FunctionKind."metamethod"">&quot;metamethod&quot;</a>
+end</details></code></pre>
+<p>
+Possible function kinds</p>
+<h3 id="tealdoc.FunctionItem.FunctionKind."function"">FunctionItem.FunctionKind.&quot;function&quot;</h3><p>
+Normal function, local, global, or in-record.</p>
+<h3 id="tealdoc.FunctionItem.FunctionKind."macroexp"">FunctionItem.FunctionKind.&quot;macroexp&quot;</h3><p>
+Macro expansion function</p>
+<h3 id="tealdoc.FunctionItem.FunctionKind."metamethod"">FunctionItem.FunctionKind.&quot;metamethod&quot;</h3><p>
+Record metamethod</p>
+<h3 id="tealdoc.FunctionItem.params">FunctionItem.params</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.params">FunctionItem.params</a>: {Param}
+</code></pre>
+<p>
+Function parameters.</p>
+<h3 id="tealdoc.FunctionItem.returns">FunctionItem.returns</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.returns">FunctionItem.returns</a>: {Return}
+</code></pre>
+<p>
+Function return values.</p>
+<h3 id="tealdoc.FunctionItem.typeargs">FunctionItem.typeargs</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.typeargs">FunctionItem.typeargs</a>: {Typearg}
+</code></pre>
+<p>
+Function type arguments.</p>
+<h3 id="tealdoc.FunctionItem.function_kind">FunctionItem.function_kind</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.function_kind">FunctionItem.function_kind</a>: FunctionKind
+</code></pre>
+<p>
+The kind of the function.</p>
+<h3 id="tealdoc.FunctionItem.is_declaration">FunctionItem.is_declaration</h3><pre><code class="code-block"><a href="#tealdoc.FunctionItem.is_declaration">FunctionItem.is_declaration</a>: boolean
+</code></pre>
+<p>
+Whether this function is only a declaration (it does not contain a body).</p>
+<h3 id="tealdoc.VariableItem">VariableItem</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.VariableItem">VariableItem</a></summary>  <a href="#tealdoc.VariableItem.typename">typename</a>: string
+
+end</details></code></pre>
+<p>
+This record represents a variable item in Tealdoc.</p>
+<h3 id="tealdoc.VariableItem.typename">VariableItem.typename</h3><pre><code class="code-block"><a href="#tealdoc.VariableItem.typename">VariableItem.typename</a>: string
+</code></pre>
+<p>
+The name of the type of the variable.</p>
+<h3 id="tealdoc.TypeItem">TypeItem</h3><pre><code class="code-block"><details style="display: inline;" open><summary>record <a href="#tealdoc.TypeItem">TypeItem</a></summary>  <details style="display: inline;"><summary>enum <a href="#tealdoc.TypeItem.TypeKind">TypeKind</a></summary>    <a href="#tealdoc.TypeItem.TypeKind."enum"">&quot;enum&quot;</a>
+    <a href="#tealdoc.TypeItem.TypeKind."interface"">&quot;interface&quot;</a>
+    <a href="#tealdoc.TypeItem.TypeKind."record"">&quot;record&quot;</a>
+    <a href="#tealdoc.TypeItem.TypeKind."type"">&quot;type&quot;</a>
+end</details>
+  <a href="#tealdoc.TypeItem.typename">typename</a>: string
+  <a href="#tealdoc.TypeItem.typeargs">typeargs</a>: {Typearg}
+  <a href="#tealdoc.TypeItem.type_kind">type_kind</a>: TypeKind
+  <a href="#tealdoc.TypeItem.inherits">inherits</a>: {string}
+
+end</details></code></pre>
+<p>
+This record represents a type item in Tealdoc. It is used to represent types, records, interfaces, enums, and type aliases.</p>
+<h3 id="tealdoc.TypeItem.TypeKind">TypeItem.TypeKind</h3><pre><code class="code-block"><details style="display: inline;" open><summary>enum <a href="#tealdoc.TypeItem.TypeKind">TypeItem.TypeKind</a></summary>  <a href="#tealdoc.TypeItem.TypeKind."enum"">&quot;enum&quot;</a>
+  <a href="#tealdoc.TypeItem.TypeKind."interface"">&quot;interface&quot;</a>
+  <a href="#tealdoc.TypeItem.TypeKind."record"">&quot;record&quot;</a>
+  <a href="#tealdoc.TypeItem.TypeKind."type"">&quot;type&quot;</a>
+end</details></code></pre>
+<p>
+Possible kinds of types.</p>
+<h3 id="tealdoc.TypeItem.TypeKind."enum"">TypeItem.TypeKind.&quot;enum&quot;</h3><p>
+Type kind for an enum type.</p>
+<h3 id="tealdoc.TypeItem.TypeKind."interface"">TypeItem.TypeKind.&quot;interface&quot;</h3><p>
+Type kind for an interface type.</p>
+<h3 id="tealdoc.TypeItem.TypeKind."record"">TypeItem.TypeKind.&quot;record&quot;</h3><p>
+Type kind for a record type.</p>
+<h3 id="tealdoc.TypeItem.TypeKind."type"">TypeItem.TypeKind.&quot;type&quot;</h3><p>
+Type kind for a type alias.</p>
+<h3 id="tealdoc.TypeItem.typename">TypeItem.typename</h3><pre><code class="code-block"><a href="#tealdoc.TypeItem.typename">TypeItem.typename</a>: string
+</code></pre>
+<p>
+The name of the type of the type item.</p>
+<h3 id="tealdoc.TypeItem.typeargs">TypeItem.typeargs</h3><pre><code class="code-block"><a href="#tealdoc.TypeItem.typeargs">TypeItem.typeargs</a>: {Typearg}
+</code></pre>
+<p>
+The type arguments of the type item. Only used for records and interfaces.</p>
+<h3 id="tealdoc.TypeItem.type_kind">TypeItem.type_kind</h3><pre><code class="code-block"><a href="#tealdoc.TypeItem.type_kind">TypeItem.type_kind</a>: TypeKind
+</code></pre>
+<p>
+The kind of the type item.</p>
+<h3 id="tealdoc.TypeItem.inherits">TypeItem.inherits</h3><pre><code class="code-block"><a href="#tealdoc.TypeItem.inherits">TypeItem.inherits</a>: {string}
+</code></pre>
+<p>
+Names of inherited types</p>
+<h3 id="tealdoc.process_file">process_file</h3><pre><code class="code-block">function <a href="#tealdoc.process_file">process_file</a>(path: string, env: Env)
+</code></pre>
+<p>
+Process a file with the given path using the parsers registered in the environment. This function reads the file contents and passes it to the appropriate parser based on the file extension. If no parser is found for the file extension, a warning is logged and the file is skipped.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>path</code></b> (<code>string</code>) — The path to the file to process.</li>
+<li><b><code>env</code></b> (<code>Env</code>) — The environment in which the file is processed.</li>
+</ul>
+<h3 id="tealdoc.process_text">process_text</h3><pre><code class="code-block">function <a href="#tealdoc.process_text">process_text</a>(text: string, filename: string, env: Env)
+</code></pre>
+<p>
+Process the given text as a file with the specified filename using the parsers registered in the environment. This function is useful for processing text that is not read from a file, such as text from a string or a buffer. If no parser is found for the file extension, a warning is logged and the text is skipped.</p>
+<h4>Parameters</h4>
+<ul>
+<li><b><code>text</code></b> (<code>string</code>) — The text to process.</li>
+<li><b><code>filename</code></b> (<code>string</code>) — The name of the file being processed, used to determine the file extension.</li>
+<li><b><code>env</code></b> (<code>Env</code>) — The environment in which the text is processed.</li>
+</ul>
+<h3 id="tealdoc.version">version</h3><pre><code class="code-block"><a href="#tealdoc.version">version</a>: string
+</code></pre>
+<p>
+Current version of Tealdoc.</p>
+</main>
+<footer>
+<small>generated using <a href="https://github.com/teal-language/tealdoc" target="_blank">tealdoc</a> 0.1+dev</small>
+</footer>
+</body>
+</html>

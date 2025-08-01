@@ -1,9 +1,14 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local log = require("tealdoc.log")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local log = require("tealdoc.log")
 local tealdoc = require("tealdoc")
 local TealParser = require("tealdoc.parser.teal")
 local MarkdownInput = require("tealdoc.parser.markdown")
 
-local Generator = require("tealdoc.tool.generator")
+
+local Generator = require("tealdoc.generator")
+local signatures = require("tealdoc.generator.signatures")
+local MarkdownGenerator = require("tealdoc.generator.markdown")
+local HTMLGenerator = require("tealdoc.generator.html.generator")
+local detailed_signature_phase = require("tealdoc.generator.html.detailed_signature_phase")
 
 local DefaultEnv = {}
 
@@ -169,188 +174,102 @@ function DefaultEnv.init()
    env:add_tag(local_tag_handler)
 
 
+   local function strip_module_prefix(path, module_name)
+      return path:sub(#module_name + 2)
+   end
+
    local module_header_phase = {
       name = "module_header",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "module")
-
-         local b = generator.builder
-
-         b:h1("Module: " .. item.name)
-         b:line(item.text or "")
+         ctx.builder:h1("Module: " .. item.name)
+         ctx.builder:line(item.text or "")
       end,
    }
 
    local header_phase = {
       name = "header",
-      run = function(generator, item)
+      run = function(ctx, item)
          local path = item.path
 
-         local display_path = path:gsub("%$[^%.]*%.", "")
-
-         generator.builder:h2(display_path)
+         if ctx.path_mode == "full" then
+            local display_path = path:gsub("%$[^%.]*%.", "")
+            ctx.builder:h2(display_path)
+         else
+            ctx.builder:h2(strip_module_prefix(item.path, ctx.module_name))
+         end
       end,
    }
 
    local text_phase = {
       name = "text",
-      run = function(generator, item)
+      run = function(ctx, item)
          if item.text then
-            generator.builder:line(item.text)
+            ctx.builder:paragraph(function()
+               ctx.builder:md(item.text)
+            end)
          end
       end,
    }
 
    local function_signature_phase = {
       name = "function_signature",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "function")
-
-         local params = {}
-         if item.params then
-            for _, param in ipairs(item.params) do
-               if not param.name then
-                  table.insert(params, param.type or "?")
-               else
-                  table.insert(params, param.name .. ": " .. (param.type or "?"))
-               end
-            end
-         end
-         local returns = {}
-         if item.returns then
-            for _, ret in ipairs(item.returns) do
-               table.insert(returns, ret.type or "?")
-            end
-         end
-
-         local typeargs = {}
-         if item.typeargs and #item.typeargs > 0 then
-            for _, typearg in ipairs(item.typeargs) do
-               if typearg.constraint then
-                  table.insert(typeargs, typearg.name .. " is " .. typearg.constraint or "?")
-               else
-                  table.insert(typeargs, typearg.name)
-               end
-            end
-         end
-
-         local b = generator.builder
-
-         b:code_block(function()
-
-            if item.visibility == "record" then
-               local parent = item.parent
-               local parent_item = env.registry[parent]
-               if parent_item and parent_item.kind == "overload" then
-
-                  b:text(parent_item.path)
-               else
-                  b:text(item.path)
-               end
-            else
-               b:text(item.visibility, " ", item.name)
-            end
-
-            if #typeargs > 0 then
-               b:text("<", table.concat(typeargs, ", "), ">")
-            end
-
-            b:text("(", table.concat(params, ", "), ")")
-            if #returns > 0 then
-               b:text(": ", table.concat(returns, ", "))
-            end
-            b:line()
+         ctx.builder:code_block(function()
+            signatures.for_function(ctx, item)
+            ctx.builder:line()
          end)
       end,
    }
 
    local variable_signature_phase = {
       name = "variable_signature",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "variable")
 
-         local b = generator.builder
-         b:code_block(function()
-            if item.visibility ~= "record" then
-               b:text(item.visibility, " ", item.name)
-            else
-               b:text(item.path)
-            end
-            b:text(": ", item.typename)
-            b:line()
+         ctx.builder:code_block(function()
+            signatures.for_variable(ctx, item)
+            ctx.builder:line()
          end)
       end,
    }
 
    local type_signature_phase = {
       name = "type_signature",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "type")
 
-         local b = generator.builder
-         b:code_block(function()
-            if item.visibility ~= "record" then
-               b:text(item.visibility, " ")
-            end
-
-            b:text(item.type_kind, " ")
-
-            if item.visibility == "record" then
-               b:text(item.path)
-            else
-               b:text(item.name)
-            end
-
-            if item.type_kind == "type" then
-               b:text(" = ", item.typename)
-            end
-
-            if item.typeargs and item.type_kind ~= "type" then
-               local typeargs = {}
-               for _, typearg in ipairs(item.typeargs) do
-                  if typearg.constraint then
-                     table.insert(typeargs, typearg.name .. " is " .. typearg.constraint or "?")
-                  else
-                     table.insert(typeargs, typearg.name)
-                  end
-               end
-               b:text("<", table.concat(typeargs, ", "), ">")
-            end
-
-            if item.type_kind == "interface" or item.type_kind == "record" then
-               if item.inherits and #item.inherits > 0 then
-                  b:text(" is ", table.concat(item.inherits, ", "))
-               end
-            end
-
-            b:line("")
+         ctx.builder:code_block(function()
+            signatures.for_type(ctx, item)
+            ctx.builder:line()
          end)
       end,
    }
 
    local type_params_phase = {
       name = "type_params",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "type" or item.kind == "function")
 
          if not item.typeargs or #item.typeargs == 0 then
             return
          end
 
-         local b = generator.builder
-
-         b:h4("Type Parameters")
-         b:unordered_list(function(list_item)
+         ctx.builder:h4("Type Parameters")
+         ctx.builder:unordered_list(function(list_item)
             for _, typearg in ipairs(item.typeargs) do
                list_item(function()
-                  b:text(b:b(b:code(typearg.name or "?")))
+                  ctx.builder:b(function()
+                     ctx.builder:code(typearg.name or "?")
+                  end)
 
                   if typearg.constraint then
-                     b:text(" ( is ", b:code(typearg.constraint), ")")
+                     ctx.builder:text(" ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
                   end
 
                   if typearg.description then
-                     b:text(" — ", typearg.description)
+                     ctx.builder:text(" — ", function() ctx.builder:md(typearg.description) end)
                   end
                end)
             end
@@ -360,25 +279,27 @@ function DefaultEnv.init()
 
    local function_params_phase = {
       name = "function_params",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "function")
 
          if not item.params or #item.params == 0 then
             return
          end
 
-         local b = generator.builder
-
-         b:h4("Parameters")
-         b:unordered_list(function(list_item)
+         ctx.builder:h4("Parameters")
+         ctx.builder:unordered_list(function(list_item)
             for _, param in ipairs(item.params) do
                list_item(function()
                   if param.name then
-                     b:text(b:b(b:code(param.name)))
+                     ctx.builder:b(function()
+                        ctx.builder:code(param.name)
+                     end)
                   end
-                  b:text(" (", b:code(param.type or "?"), ")")
+                  ctx.builder:text(" (", function() ctx.builder:code(param.type or "?") end, ")")
                   if param.description then
-                     b:text(" — ", param.description)
+                     ctx.builder:text(" — ", function()
+                        ctx.builder:md(param.description)
+                     end)
                   end
                end)
             end
@@ -388,24 +309,21 @@ function DefaultEnv.init()
 
    local function_returns_phase = {
       name = "function_returns",
-      run = function(generator, item)
+      run = function(ctx, item)
          assert(item.kind == "function")
 
          if not item.returns or #item.returns == 0 then
             return
          end
 
-         local b = generator.builder
+         ctx.builder:h4("Returns")
 
-         b:h4("Returns")
-
-         b:ordered_list(function(list_item)
+         ctx.builder:ordered_list(function(list_item)
             for _, ret in ipairs(item.returns) do
                list_item(function()
-                  b:text("(", b:code(ret.type or "?"), ")")
-
+                  ctx.builder:text("(", function() ctx.builder:code(ret.type or "?") end, ")")
                   if ret.description then
-                     b:text(" — ", ret.description)
+                     ctx.builder:text(" — ", function() ctx.builder:md(ret.description) end)
                   end
                end)
             end
@@ -413,12 +331,19 @@ function DefaultEnv.init()
       end,
    }
 
-   Generator.item_phases["module"] = { module_header_phase }
-   Generator.item_phases["function"] = { header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase }
-   Generator.item_phases["variable"] = { header_phase, variable_signature_phase, text_phase }
-   Generator.item_phases["type"] = { header_phase, type_signature_phase, text_phase, type_params_phase }
-   Generator.item_phases["enumvalue"] = { header_phase, text_phase }
-   Generator.item_phases["markdown"] = { text_phase }
+   MarkdownGenerator.item_phases["module"] = { module_header_phase }
+   MarkdownGenerator.item_phases["function"] = { header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase }
+   MarkdownGenerator.item_phases["variable"] = { header_phase, variable_signature_phase, text_phase }
+   MarkdownGenerator.item_phases["type"] = { header_phase, type_signature_phase, text_phase, type_params_phase }
+   MarkdownGenerator.item_phases["enumvalue"] = { header_phase, text_phase }
+   MarkdownGenerator.item_phases["markdown"] = { text_phase }
+
+   HTMLGenerator.item_phases["module"] = { module_header_phase, detailed_signature_phase }
+   HTMLGenerator.item_phases["function"] = { header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase }
+   HTMLGenerator.item_phases["variable"] = { header_phase, variable_signature_phase, text_phase }
+   HTMLGenerator.item_phases["type"] = { header_phase, detailed_signature_phase, text_phase, type_params_phase }
+   HTMLGenerator.item_phases["enumvalue"] = { header_phase, text_phase }
+   HTMLGenerator.item_phases["markdown"] = { text_phase }
 
    return env
 end

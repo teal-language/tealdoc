@@ -1,6 +1,7 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local type = type; local argparse = require("argparse")
-local DumpTool = require("tealdoc.tool.dump")
-local MarkdownGenerator = require("tealdoc.tool.markdown")
+local DumpTool = require("tealdoc.dump")
+local MarkdownGenerator = require("tealdoc.generator.markdown")
+local HTMLGenerator = require("tealdoc.generator.html.generator")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
@@ -62,8 +63,32 @@ function CLI:add_default_commands()
          MarkdownGenerator:run(args["output"], self._env)
       end,
    }
+   local html_command = {
+      name = "html",
+      setup = function(command)
+         command:argument("files", "input files"):args("+")
+         command:flag("-a --all", "include all items in the documentation")
+         command:flag("--no-warn-missing", "do not warn about missing items")
+         command:option("-o --output", "output folder"):
+         default("doc")
+      end,
+      handler = function(args)
+         if args["all"] then
+            self._env.include_all = true
+         end
+         if args["no_warn_missing"] then
+            self._env.no_warnings_on_missing = true
+         end
+         local files = args.files
+         for _, file in ipairs(files) do
+            tealdoc.process_file(file, self._env)
+         end
+         HTMLGenerator:run(args["output"], self._env)
+      end,
+   }
    self:add_command(dump_command)
    self:add_command(md_command)
+   self:add_command(html_command)
 end
 
 function CLI:init(env, skip_default_commands)

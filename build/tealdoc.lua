@@ -296,6 +296,11 @@ local tealdoc = { Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param 
 
 
 
+
+
+
+tealdoc.version = "0.1+dev"
+
 function tealdoc.Env.init()
    local env = {
       parser_registry = {},

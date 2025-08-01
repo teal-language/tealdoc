@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tealdoc Documentation</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0
+    }
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #111;
+    }
+    code {
+        background-color: #f4f4f4;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+    }
+    ul, ol {
+        margin: 1em 0;
+    }
+    li {
+        margin: 0.5em 0;
+    }
+    a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    pre code {
+        display: block;
+        width: 100%;
+        background-color: #d0f0f0;
+        padding: 1em;
+        overflow-x: scroll;
+    }
+
+    summary {
+        position: relative;
+        cursor: pointer;
+    }
+
+    summary::marker {
+        content: "";
+    }
+
+    details > summary::after {
+        position: absolute;
+        content: "❯";
+        transform-origin: center;
+        margin-left: 0.5em;
+    }
+    details[open] > summary::after {
+        transform: rotate(90deg);
+    }
+
+    /* Breadcrumb navigation styles */
+    main > nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    main > nav ul li {
+        display: inline;
+    }
+    main > nav ul li a {
+        text-decoration: none;
+    }
+    main > nav ul li a:hover {
+        text-decoration: underline;
+    }
+
+    ul.tree-list {
+        list-style: outside ;
+        line-height: 1.5rem;
+        padding-left: 1.5em;
+        margin: 0;
+    }
+
+    .tree-list li {
+        margin: 0;
+    }
+
+    main {
+        max-width: 800px;
+        width: 100%;
+        margin: 1em auto;
+        padding: 0 10px;
+    }
+    footer {
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+</style>
+</head>
+<body>
+<main>
+<nav>
+<ul>
+<li><a href="../index.html">index</a> / </li>
+<li>docs / </li>
+<li>architecture</li>
+</ul>
+</nav>
+<p>
+<h2>Architecture</h2>
+
+<p>Tealdoc features a flexible, input-language-agnostic architecture.</p>
+
+<ul>
+<li><strong>Registry</strong>: The central piece is the <code>registry</code>, which stores all discovered documentation <code>items</code>.</li>
+<li><strong>Item</strong>: An <code>item</code> is a piece of data in the registry representing a code entity (like a function or record) or an abstract concept. Each item has a unique path and can contain child items.</li>
+<li><strong>Parser</strong>: The input layer that processes source files and populates the registry with items.</li>
+<li><strong>Consumers</strong>: Built-in consumers (like the Markdown generator) that process the registry to create output.</li>
+</ul>
+
+<p>This design allows you to extend Tealdoc with custom tags, parsers for other languages, or new output generators.</p>
+
+<h3>Using Tealdoc Programmatically</h3>
+
+<p>You can use the Tealdoc API to process files and access the registry directly.</p>
+
+<pre><code>local tealdoc = require(&quot;tealdoc&quot;)
+local DefaultEnv = require(&quot;tealdoc.default_env&quot;)
+
+-- Create a default environment, which registers all built-in
+-- parsers, tags, and generator phases.
+local env = DefaultEnv.create()
+
+-- You can configure the environment programmatically
+-- env.include_all = true
+
+tealdoc.process_file(&quot;hello.tl&quot;, env)
+
+for path, item in env.registry:each() do
+    print(path, item.name)
+end
+</code></pre>
+
+<h3>Adding Custom Tags</h3>
+
+<p>You can extend Tealdoc with your own tags by creating a custom tag handler.</p>
+
+<pre><code>local my_tag_handler: tealdoc.TagHandler = {
+    name = &quot;my_tag&quot;,
+    with_param = true,
+    with_description = true,
+    handle = function(ctx: tealdoc.TagHandler.Context)
+        -- `ctx` contains the item, param, description, etc.
+        print(&quot;Parameter:&quot;, ctx.param)
+        print(&quot;Description:&quot;, ctx.description)
+        ctx.item.attributes[&quot;my_attribute&quot;] = &quot;hello world!&quot;
+    end,
+}
+
+-- Then register it with the environment:
+-- env.tag_handlers:add(my_tag_handler)
+</code></pre>
+
+<h3>Plugins</h3>
+
+<p>You can easily extend Tealdoc with plugins. A plugin is a Lua module that implements the <code>tealdoc.Plugin</code> interface. These can be loaded via the command line, using the <code>--plugin</code> option, or programmatically.</p>
+
+<pre><code>local MyPlugin: tealdoc.Plugin = {
+    name = &quot;my_plugin&quot;,
+    
+    run = function(env: tealdoc.Env)
+        --- This function is called when the plugin is loaded.
+        --- You can access the environment and modify it.
+        --- For example, you can add custom tags or parsers.
+    end,
+}
+
+--- Note that the plugins loaded via the command line must behave like Lua modules.
+return MyPlugin
+</code></pre></p>
+</main>
+<footer>
+<small>generated using <a href="https://github.com/teal-language/tealdoc" target="_blank">tealdoc</a> 0.1+dev</small>
+</footer>
+</body>
+</html>

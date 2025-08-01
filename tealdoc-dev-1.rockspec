@@ -3,7 +3,7 @@ package = "tealdoc"
 version = "dev-1"
 source = {
    url = "git+https://github.com/teal-language/tealdoc.git",
-   branch = "prototype"
+   branch = "main"
 }
 description = {
    summary = "A documentation generator written in Teal",
@@ -14,7 +14,9 @@ description = {
 }
 dependencies = {
    "argparse",
-   "tl >= 0.24.7"
+   "tl >= 0.24.7",
+   "lunamark",
+   "LuaFileSystem"
 }
 build = {
    type = "builtin",
@@ -27,9 +29,14 @@ build = {
       ["tealdoc.log"] = "build/tealdoc/log.lua",
       ["tealdoc.parser.teal"] = "build/tealdoc/parser/teal.lua",
       ["tealdoc.parser.markdown"] = "build/tealdoc/parser/markdown.lua",
-      ["tealdoc.tool.dump"] = "build/tealdoc/tool/dump.lua",
-      ["tealdoc.tool.generator"] = "build/tealdoc/tool/generator.lua",
-      ["tealdoc.tool.markdown"] = "build/tealdoc/tool/markdown.lua",
+         ["tealdoc.dump"] = "build/tealdoc/dump.lua",
+         ["tealdoc.generator"] = "build/tealdoc/generator.lua",
+         ["tealdoc.generator.markdown"] = "build/tealdoc/generator/markdown.lua",
+         ["tealdoc.generator.html.generator"] = "build/tealdoc/generator/html/generator.lua",
+         ["tealdoc.generator.signatures"] = "build/tealdoc/generator/signatures.lua",
+         ["tealdoc.generator.html.builder"] = "build/tealdoc/generator/html/builder.lua",
+         ["tealdoc.generator.html.default_css"] = "build/tealdoc/generator/html/default_css.lua",
+         ["tealdoc.generator.html.detailed_signature_phase"] = "build/tealdoc/generator/html/detailed_signature_phase.lua",
    },
    install = {
       lua = {
@@ -41,9 +48,14 @@ build = {
          ["tealdoc.log"] = "src/tealdoc/log.tl",
          ["tealdoc.parser.teal"] = "src/tealdoc/parser/teal.tl",
          ["tealdoc.parser.markdown"] = "src/tealdoc/parser/markdown.tl",
-         ["tealdoc.tool.dump"] = "src/tealdoc/tool/dump.tl",
-         ["tealdoc.tool.generator"] = "src/tealdoc/tool/generator.tl",
-         ["tealdoc.tool.markdown"] = "src/tealdoc/tool/markdown.tl",
+         ["tealdoc.dump"] = "src/tealdoc/dump.tl",
+         ["tealdoc.generator"] = "src/tealdoc/generator.tl",
+         ["tealdoc.generator.markdown"] = "src/tealdoc/generator/markdown.tl",
+         ["tealdoc.generator.html.generator"] = "src/tealdoc/generator/html/generator.tl",
+         ["tealdoc.generator.signatures"] = "src/tealdoc/generator/signatures.tl",
+         ["tealdoc.generator.html.builder"] = "src/tealdoc/generator/html/builder.tl",
+         ["tealdoc.generator.html.default_css"] = "src/tealdoc/generator/html/default_css.tl",
+         ["tealdoc.generator.html.detailed_signature_phase"] = "src/tealdoc/generator/html/detailed_signature_phase.tl",
       },
       bin = {
          "bin/tealdoc"
