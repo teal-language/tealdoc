@@ -34,7 +34,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -79,7 +79,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -88,8 +88,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -130,7 +130,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -142,7 +142,7 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T" }
                     },
                     params = {
-                        { type = "T" }
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -183,7 +183,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -195,7 +195,7 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T", constraint = "math.Numeric" }
                     },
                     params = {
-                        { type = "T" }
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -221,7 +221,6 @@ describe("teal support in tealdoc: record functions", function()
                     typename = "MyRecord",
                     name = "MyRecord",
                     parent = "$test",
-                    
                     visibility = "local",
                     path = "test~MyRecord",
                     location = {
@@ -238,7 +237,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -284,7 +283,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -293,8 +292,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -336,7 +335,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -348,7 +347,7 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T" }
                     },
                     params = {
-                        { type = "T" }
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -390,7 +389,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -402,7 +401,7 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T", constraint = "math.Numeric" }
                     },
                     params = {
-                        { type = "T" }
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -446,7 +445,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -493,7 +492,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -546,7 +545,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -601,7 +600,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -655,7 +654,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -664,7 +663,7 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "MyRecord" }
+                        { name = "self", type = "MyRecord" }
                     }
                 },
             })
@@ -702,7 +701,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -711,9 +710,9 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -754,7 +753,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -766,8 +765,8 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T" }
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "T" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -808,7 +807,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with constrained typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -820,8 +819,8 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T", constraint = "math.Numeric" }
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "T" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -864,11 +863,11 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     params = {
-                        { type = "MyRecord" }
+                        { name = "self", type = "MyRecord" }
                     },
                     location = {
                         filename = "test.tl",
@@ -913,7 +912,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -922,9 +921,9 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -966,7 +965,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -978,8 +977,8 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T" }
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "T" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -1021,7 +1020,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with constrained typeargs",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -1033,8 +1032,8 @@ describe("teal support in tealdoc: record functions", function()
                         { name = "T", constraint = "math.Numeric" }
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "T" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "T" }
                     },
                     returns = {
                         { type = "T" }
@@ -1093,7 +1092,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -1102,8 +1101,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1160,7 +1159,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -1169,9 +1168,9 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1229,7 +1228,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -1238,8 +1237,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1297,7 +1296,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -1306,9 +1305,9 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1358,7 +1357,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -1367,8 +1366,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 5,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1415,7 +1414,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -1424,9 +1423,9 @@ describe("teal support in tealdoc: record functions", function()
                         x = 5,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1473,7 +1472,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_function",
                     location = {
@@ -1482,8 +1481,8 @@ describe("teal support in tealdoc: record functions", function()
                         x = 5,
                     },
                     params = {
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
@@ -1529,7 +1528,7 @@ describe("teal support in tealdoc: record functions", function()
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     parent = "test~MyRecord",
                     path = "test~MyRecord.my_method",
                     location = {
@@ -1538,12 +1537,330 @@ describe("teal support in tealdoc: record functions", function()
                         x = 5,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "integer" },
-                        { type = "string" }
+                        { name = "self", type = "MyRecord" },
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
                     },
                     returns = {
                         { type = "number" }
+                    },
+                },
+            })
+        end)
+    end)
+    describe("record functions added via assignment", function()
+        it("should parse a record function added via assignment", function()
+            util.check_registry([[
+                local record MyRecord
+                    my_function: function(integer, string): number
+                end
+
+                MyRecord.my_function = function(x: integer, y: string): number
+                    return x
+                end
+            ]], {
+                ["test~MyRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "MyRecord",
+                    name = "MyRecord",
+                    
+                    visibility = "local",
+                    path = "test~MyRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyRecord.my_function",
+                    },
+                },
+                ["test~MyRecord.my_function"] = {
+                    name = "my_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~MyRecord",
+                    path = "test~MyRecord.my_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 5,
+                        x = 24,
+                    },
+                    params = {
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
+                    },
+                    returns = {
+                        { type = "number" }
+                    },
+                },
+            })
+        end)
+        it("should parse a record function with generics added via assignment", function()
+            util.check_registry([[
+                local record MyRecord
+                    my_function: function<T is math.Numeric>(T, T): T
+                end
+
+                MyRecord.my_function = function<T is math.Numeric>(x: T, y: T): T
+                    return x
+                end
+            ]], {
+                ["test~MyRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "MyRecord",
+                    name = "MyRecord",
+                    
+                    visibility = "local",
+                    path = "test~MyRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyRecord.my_function",
+                    },
+                },
+                ["test~MyRecord.my_function"] = {
+                    name = "my_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~MyRecord",
+                    path = "test~MyRecord.my_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 5,
+                        x = 24,
+                    },
+                    typeargs = {
+                        { name = "T", constraint = "math.Numeric" }
+                    },
+                    params = {
+                        { name = "x", type = "T" },
+                        { name = "y", type = "T" }
+                    },
+                    returns = {
+                        { type = "T" }
+                    },
+                },
+            })
+        end)
+        it("should parse a record function added via aliased assignment", function()
+            util.check_registry([[
+                local record MyRecord
+                end
+
+                local type alias = MyRecord
+
+                alias.my_function = function(x: integer, y: string): number
+                    return x
+                end
+            ]], {
+                ["test~MyRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "MyRecord",
+                    name = "MyRecord",
+                    
+                    visibility = "local",
+                    path = "test~MyRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyRecord.my_function",
+                    },
+                },
+                ["test~alias"] = {
+                    kind = "type",
+                    name = "alias",
+                    visibility = "local",
+                    type_kind = "type",
+                    path = "test~alias",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 20,
+                    },
+                    typename = "MyRecord"
+                },
+                ["test~MyRecord.my_function"] = {
+                    name = "my_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~MyRecord",
+                    path = "test~MyRecord.my_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 6,
+                        x = 21,
+                    },
+                    params = {
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
+                    },
+                    returns = {
+                        { type = "number" }
+                    },
+                },
+            })
+        end)
+        it("should parse a record function added via conditional assignment", function()
+            util.check_registry([[
+                local record MyRecord
+                    my_function: function(integer, string): number
+                end
+
+                if true then
+                    MyRecord.my_function = function(x: integer, y: string): number
+                        return x
+                    end
+                else 
+                    --- My record function with parameters and returns
+                    MyRecord.my_function = function(x: integer, y: string): number
+                        return x
+                    end
+                end
+            ]], {
+                ["test~MyRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "MyRecord",
+                    name = "MyRecord",
+                    
+                    visibility = "local",
+                    path = "test~MyRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyRecord.my_function",
+                    },
+                },
+                ["test~MyRecord.my_function"] = {
+                    name = "my_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~MyRecord",
+                    path = "test~MyRecord.my_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 11,
+                        x = 28,
+                    },
+                    params = {
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
+                    },
+                    returns = {
+                        { type = "number" }
+                    },
+                },
+            })
+        end)
+        it("should parse a record function added via multiple assignment", function()
+            util.check_registry([[
+                local record MyRecord
+                    my_function: function(integer, string): number
+                end
+                local record AnotherRecord
+                    another_function: function(integer): string
+                end
+                MyRecord.my_function, AnotherRecord.another_function = function(x: integer, y: string): number
+                    return x
+                end, function(x: integer): string
+                    return tostring(x)
+                end
+            ]], {
+                ["test~MyRecord.my_function"] = {
+                    name = "my_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~MyRecord",
+                    path = "test~MyRecord.my_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 7,
+                        x = 56,
+                    },
+                    params = {
+                        { name = "x", type = "integer" },
+                        { name = "y", type = "string" }
+                    },
+                    returns = {
+                        { type = "number" }
+                    },
+                },
+                ["test~AnotherRecord.another_function"] = {
+                    name = "another_function",
+                    visibility = "record",
+                    kind = "function",
+                    function_kind = "function",
+                    parent = "test~AnotherRecord",
+                    path = "test~AnotherRecord.another_function",
+                    location = {
+                        filename = "test.tl",
+                        y = 9,
+                        x = 6,
+                    },
+                    params = {
+                        { name = "x", type = "integer" }
+                    },
+                    returns = {
+                        { type = "string" }
+                    },
+                },
+                ["test~MyRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "MyRecord",
+                    name = "MyRecord",
+                    
+                    visibility = "local",
+                    path = "test~MyRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 1,
+                        x = 1,
+                    },
+                    children = {
+                        "test~MyRecord.my_function",
+                    },
+                },
+                ["test~AnotherRecord"] = {
+                    kind = "type",
+                    type_kind = "record",
+                    typename = "AnotherRecord",
+                    name = "AnotherRecord",
+                    
+                    visibility = "local",
+                    path = "test~AnotherRecord",
+                    parent = "$test",
+                    location = {
+                        filename = "test.tl",
+                        y = 4,
+                        x = 1,
+                    },
+                    children = {
+                        "test~AnotherRecord.another_function",
                     },
                 },
             })

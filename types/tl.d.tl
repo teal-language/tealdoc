@@ -473,6 +473,15 @@ local record tl
         value_comments: {string:{Comment}}
     end
 
+    record Operator
+        y: integer
+        x: integer
+        arity: integer
+        op: string
+        prec: integer
+    end
+
+
     -- TODO: remove useless entries? 
     record Node  is {Node}, Where
         where self.kind ~= nil
@@ -547,14 +556,14 @@ local record tl
         elide_type: boolean
 
         -- expressions
-        --op: Operator
+        op: Operator
         e1: Node
         e2: Node
         constnum: number
         conststr: string
         failstore: boolean
         discarded_tuple: boolean
-        --receiver: Type
+        receiver: Type
 
         -- table literal
         array_len: integer

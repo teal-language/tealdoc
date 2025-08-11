@@ -131,7 +131,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 is_declaration = true,
                 name = "x",
                 text = "my function variable",
@@ -153,7 +153,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 is_declaration = true,
                 name = "x",
                 text = "my function variable",
@@ -180,7 +180,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 is_declaration = true,
                 name = "x",
                 text = "my function variable",
@@ -205,7 +205,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 is_declaration = true,
                 name = "x",
                 text = "my function variable",
@@ -231,7 +231,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
@@ -253,7 +253,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
@@ -280,7 +280,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
@@ -305,7 +305,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
@@ -332,7 +332,7 @@ describe("teal support in tealdoc: variables", function()
         ]], {
             ["test~make_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "make_function",
                 visibility = "local",
                 parent = "$test",
@@ -346,7 +346,7 @@ describe("teal support in tealdoc: variables", function()
             },
             ["test~x"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",

@@ -9,7 +9,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
@@ -33,7 +33,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
@@ -65,7 +65,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
@@ -92,7 +92,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
@@ -118,7 +118,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
@@ -142,7 +142,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
@@ -174,7 +174,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
@@ -201,7 +201,7 @@ describe("teal support in tealdoc: functions", function()
         ]], {
             ["test~my_function"] = {
                 kind = "function",
-                function_kind = "normal",
+                function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",

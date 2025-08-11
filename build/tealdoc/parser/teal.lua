@@ -189,11 +189,10 @@ local function store_item_at_path(item, path, state)
          end
       elseif old_item.kind == "function" and item.kind == "function" then
 
-
          if old_item.is_declaration then
             if old_item.text and item.text then
                log:warning("Both the function declaration and definition for this record function contain tealdoc comments. The comment from the declaration will be discarded.")
-            elseif not item.text then
+            elseif not item.text and old_item.text then
                return nil
             end
          else
@@ -255,15 +254,14 @@ local function function_item_for_node(node, visibility, kind, state)
       for i, ar in ipairs(node.args) do
          if node.is_method and i == 1 then
             item.params[i] = {
+               name = "self",
                type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner)),
             }
          else
             item.params[i] = {
+               name = ar.tk,
                type = ar.argtype and type_to_string(state.type_report, ar.argtype),
             }
-            if visibility ~= "record" then
-               item.params[i].name = ar.tk
-            end
          end
       end
    end
@@ -765,6 +763,41 @@ local function type_declaration_visitor(node, state)
    end
 end
 
+local function assignment_visitor(node, state)
+   assert(node.kind == "assignment")
+
+   for i, var in ipairs(node.vars) do
+      local exp = node.exps[i]
+
+      local receiver = var.receiver
+
+
+      if receiver and receiver.typename == "nominal" and exp and exp.kind == "function" then
+         local parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
+         if parent_path then
+
+            local old_path = state.path
+            local old_parent = state.parent_item
+            state.path = parent_path .. "."
+            state.parent_item = state.env.registry[parent_path]
+            local item = function_item_for_node(exp, "record", "function", state)
+            item.name = var.e2.tk
+            process_comments(node.comments, item, state.env)
+            local path = store_item(item, state)
+            local parent_item = item
+            if not path then
+               parent_item = state.env.registry[state.path .. item.name]
+            end
+            state.path = state.path .. item.name .. "~"
+            state.parent_item = parent_item
+            visit_node(exp.body, state)
+            state.path = old_path
+            state.parent_item = old_parent
+         end
+      end
+   end
+end
+
 
 local function if_visitor(node, state)
    assert(node.kind == "if")
@@ -788,6 +821,7 @@ local node_visitors = {
    ["local_type"] = type_declaration_visitor,
    ["global_type"] = type_declaration_visitor,
    ["local_macroexp"] = macroexp_visitor,
+   ["assignment"] = assignment_visitor,
    ["do"] = body_visitor,
    ["if"] = if_visitor,
    ["if_block"] = body_visitor,

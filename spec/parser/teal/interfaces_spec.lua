@@ -242,7 +242,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
@@ -286,7 +286,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
@@ -338,7 +338,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
@@ -391,7 +391,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
@@ -461,7 +461,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function(integer, integer)"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
@@ -483,7 +483,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function(string, string)"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my overloaded function",
@@ -505,7 +505,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.my_function(boolean, boolean)"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my other overloaded function",
@@ -651,7 +651,7 @@ describe("teal support in tealdoc: interfaces", function()
                 },
                 ["test~MyInterface.__add"] = {
                     kind = "function",
-                    function_kind = "normal",
+                    function_kind = "function",
                     is_declaration = true,
                     name = "__add",
                     text = "my normal function",
