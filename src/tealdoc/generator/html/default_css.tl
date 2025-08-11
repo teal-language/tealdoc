@@ -5,11 +5,15 @@ return [[
     html, body {
         height: 100%;
         margin: 0;
-        padding: 0
+        padding: 0;
     }
     body {
         font-family: Arial, sans-serif;
-        line-height: 1.6; 
+        line-height: 1.6;
+        /* fixes safari resizing some parts of the page */
+        -moz-text-size-adjust: none;
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none; 
     }
     h1, h2, h3, h4, h5, h6 { 
         color: #111;
@@ -37,16 +41,13 @@ return [[
         width: 100%;
         background-color: #d0f0f0;
         padding: 1em;
-        overflow-x: scroll;
+        overflow-x: auto;
     }
 
     summary {
+        list-style: none; /* remove default triangle */
         position: relative;
         cursor: pointer;
-    }
-
-    summary::marker {
-        content: "";
     }
 
     details > summary::after {

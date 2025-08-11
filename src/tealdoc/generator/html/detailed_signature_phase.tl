@@ -9,7 +9,7 @@ local signature: function(ctx: Generator.Phase.Context, item: tealdoc.Item, inde
 local function detailed_signature_for_structure_type(ctx: Generator.Phase.Context, item: tealdoc.TypeItem, indent: string, open?: boolean)
     assert(item.type_kind == "record" or item.type_kind == "interface" or item.type_kind == "enum", "Expected record or interface type, got: " .. item.type_kind)
 
-    ctx.builder:rawtext("<details style=\"display: inline;\""..((ctx.module_name == item.path or open) and " open" or "")..">")
+    ctx.builder:rawtext("<details style=\"display: inline-block;\""..((ctx.module_name == item.path or open) and " open" or "")..">")
     ctx.builder:rawtext("<summary>")
     signatures.for_type(ctx, item)
     ctx.builder:rawtext("</summary>")
