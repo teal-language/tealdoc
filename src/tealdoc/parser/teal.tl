@@ -3,7 +3,7 @@ local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local CommentParser = require("tealdoc.comment_parser")
 local record VisitState
-    env: tealdoc.Env 
+    env: tealdoc.Env
     path: string
     module_name: string
     type_report: tl.TypeReport
@@ -90,7 +90,7 @@ local function children_visitor(node: tl.Node, state: VisitState)
     end
 end
 
-local function is_long_comment(c: tl.Comment): boolean 
+local function is_long_comment(c: tl.Comment): boolean
     return c.text:match("^%-%-%[(=*)%[") ~= nil
 end
 
@@ -119,14 +119,14 @@ local function process_comments(comments: {tl.Comment}, item: tealdoc.Item, env:
     local lines: {string} = {}
     local in_block = false
     for _, comment in ipairs(comments) do
-        if not in_block and comment.text:match("^%-%-%-") then 
-           in_block = true 
-        end 
+        if not in_block and comment.text:match("^%-%-%-") then
+           in_block = true
+        end
         if in_block then
             table.insert(lines, strip_short_comment(comment))
         end
     end
-    
+
     CommentParser.parse_lines(lines, item, env)
     return #lines > 0
 end
@@ -137,7 +137,7 @@ local function typeinfo_to_string(typeinfo: tl.TypeInfo): string
     return typeinfo and typeinfo.str
 end
 
-local function type_to_string(report: tl.TypeReport, typ: tl.Type): string 
+local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
     return typeinfo_to_string(typeinfo_for_type(report, typ))
 end
 
@@ -159,7 +159,7 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 assert(old_item.children)
                 path = path.."#"..tostring(#old_item.children + 1)
                 table.insert(old_item.children, path)
-            else 
+            else
                 assert(is_item_local(old_item))
                 local shadowed_path = old_item.path
                 old_item.path = old_item.path.."#1"
@@ -170,10 +170,10 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                     children = {old_item.path, path},
                     parent = old_item.parent
                 }
-                
+
                 state.env.registry[old_item.path] = old_item
                 state.env.registry[shadowed_path] = shadowed_item
-                
+
                 old_item.parent = shadowed_path
                 item.parent = shadowed_path
             end
@@ -195,7 +195,7 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                 elseif not item.text and old_item.text then
                     return nil -- don't overwrite item we've got from declaration as it was commented so it contains more information
                 end
-            else 
+            else
                 if old_item.text then
                     log:warning(
                         "A function named '%s' is being redefined. The previous definition's comment will be discarded.",
@@ -207,7 +207,7 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
             assert(false) -- TODO: better error handling
         end
     end
- 
+
     state.env.registry[path] = item
     item.path = path
     return path
@@ -248,10 +248,10 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         visibility = visibility,
         location = location_for_node(node)
     }
-    
-    if node.args and #node.args > 0 then 
+
+    if node.args and #node.args > 0 then
         item.params = {}
-        for i, ar in ipairs(node.args) do 
+        for i, ar in ipairs(node.args) do
             if node.is_method and i == 1 then
                 item.params[i] = {
                     name = "self",
@@ -265,7 +265,7 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
             end
         end
     end
-    
+
 
     if node.rets and #node.rets.tuple > 0 then
         item.returns = {}
@@ -283,13 +283,13 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
                 name = typearg.typearg,
                 constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
             }
-        end 
+        end
     end
 
     return item
 end
 
-local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visibility: tealdoc.DeclarationItem.Visibility, kind: tealdoc.FunctionItem.FunctionKind, state: VisitState, owner?: tl.Type): tealdoc.FunctionItem 
+local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visibility: tealdoc.DeclarationItem.Visibility, kind: tealdoc.FunctionItem.FunctionKind, state: VisitState, owner?: tl.Type): tealdoc.FunctionItem
     local item: tealdoc.FunctionItem = {
         kind = "function",
         function_kind = kind,
@@ -297,11 +297,11 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
         is_declaration = true,
         location = location_for_type(t)
     }
-    
+
     if t is tl.GenericType then
         local base = t.t
         assert(base is tl.FunctionType)
-        
+
         item.typeargs = {}
         for i, typearg in ipairs(t.typeargs) do
             local normalized = typearg.typearg:gsub("@.*", "") -- ?
@@ -309,16 +309,16 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
                 name = normalized,
                 constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
             }
-        end 
+        end
 
-        t = base   
+        t = base
     end
     t = t as tl.FunctionType
 
-    
-    if t.args and #t.args.tuple > 0 then 
+
+    if t.args and #t.args.tuple > 0 then
         item.params = {}
-        for i, ar in ipairs(t.args.tuple) do 
+        for i, ar in ipairs(t.args.tuple) do
             if t.is_method and i == 1 and owner then
                 item.params[i] = {
                     type = typeinfo_to_string(typeinfo_for_type(state.type_report, owner))
@@ -330,7 +330,7 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
             end
         end
     end
-    
+
 
     if t.rets and #t.rets.tuple > 0 then
         item.returns = {}
@@ -340,7 +340,7 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
             }
         end
     end
-    
+
     return item
 end
 
@@ -415,15 +415,15 @@ local function function_visitor(node: tl.Node, state: VisitState)
     elseif node.kind == "global_function" then
         visibility = "global"
     else
-        visibility = "record" 
+        visibility = "record"
     end
     local item = function_item_for_node(node, visibility, "function", state)
     item.name = name
     process_comments(node.comments, item, state.env)
     local path = store_item(item, state)
-    
+
     local parent_item: tealdoc.Item = item
-    if is_record and not path then 
+    if is_record and not path then
         -- in some cases we don't store the item we created here and discard it
         -- so we need to get the currently store item with this path
         -- TODO: kinda hacky?
@@ -439,15 +439,15 @@ end
 
 local function macroexp_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "local_macroexp")
-    
+
     assert(node.name.kind == "identifier")
-    local name = node.name.tk     
+    local name = node.name.tk
 
     local macrodef = node.macrodef
     assert(macrodef.kind == "macroexp")
-    
+
     local item = function_item_for_node(macrodef, "local", "macroexp", state)
-    item.name = name 
+    item.name = name
     process_comments(node.comments, item, state.env)
     store_item(item, state)
 end
@@ -461,11 +461,11 @@ local function type_is_function(t: tl.Type): boolean
 end
 
 
-local function variable_declarations_visitor(node: tl.Node, state: VisitState) 
+local function variable_declarations_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "local_declaration" or node.kind == "global_declaration")
-    for i, name in ipairs(node.vars) do 
+    for i, name in ipairs(node.vars) do
         assert(name.kind == "identifier")
-        local decltype = node.decltuple.tuple[i] 
+        local decltype = node.decltuple.tuple[i]
         local typeinfo: tl.TypeInfo
 
         local typename: string
@@ -478,10 +478,10 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
             typeinfo = typeinfo_for_global(state.type_report, name.tk)
             typename = typeinfo_to_string(typeinfo)
         end
-        
+
         local item: tealdoc.Item
         if typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
-            item = item_for_function_typeinfo(typeinfo, 
+            item = item_for_function_typeinfo(typeinfo,
                 node.kind == "local_declaration" and "local" or "global",
                 state
             )
@@ -499,13 +499,13 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
         end
         item.name = name.tk
 
-        process_comments(node.comments, item, state.env) 
+        process_comments(node.comments, item, state.env)
         store_item(item, state)
     end
 end
 
 
-local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitState) 
+local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitState)
 
 local function enum_visitor(t: tl.EnumType, _: tealdoc.TypeItem, state: VisitState)
     -- Extract enum values into a sorted array for stable order
@@ -517,7 +517,7 @@ local function enum_visitor(t: tl.EnumType, _: tealdoc.TypeItem, state: VisitSta
 
     for _, value in ipairs(values) do
         local comments = t.value_comments and t.value_comments[value]
-        
+
         local item: tealdoc.Item = {
             kind = "enumvalue",
             name = "\""..value.."\"",
@@ -532,18 +532,18 @@ end
 local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.TypeDeclType, visibility: tealdoc.DeclarationItem.Visibility, state: VisitState)
     local def = t.def
     local typeargs: {tealdoc.Typearg}
-    
+
     if def is tl.GenericType and def.typeargs then
         typeargs = {}
         for i, typearg in ipairs(def.typeargs) do
             typeargs[i] = {
                 name = typearg.typearg,
-                constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint) 
+                constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
             }
         end
         def = def.t
     end
-    
+
     local typekind: tealdoc.TypeItem.TypeKind = "type"
     if def.typename == "record" then
         typekind = "record"
@@ -565,10 +565,10 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
     process_comments(comments, item, state.env)
 
     local path = store_item(item, state, t)
-    
+
     local typenum = typenum_for_type(state.type_report, t)
     if typenum then
-       state.typenum_to_path[typenum] = path 
+       state.typenum_to_path[typenum] = path
     end
 
     if def is tl.RecordLikeType or def is tl.EnumType then
@@ -585,7 +585,7 @@ end
 
 
 record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeItem, state: VisitState)
-    -- TODO: should we somehow store the contents of where clause to generate more matching signatures? 
+    -- TODO: should we somehow store the contents of where clause to generate more matching signatures?
 
     -- TODO: mess!
     local inherited_field_has_comments: {string: boolean} = {}
@@ -603,7 +603,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                 if not visited_typeids[resolved.typeid] then
                     visited_typeids[resolved.typeid] = true
                     table.insert(declaration.inherits, type_to_string(state.type_report, iface))
-            
+
                     if resolved is tl.RecordLikeType then
                         for field_name, _ in pairs(resolved.fields) do
                             inherited_field_has_comments[field_name] = resolved.field_comments and resolved.field_comments[field_name] ~= nil or false
@@ -624,10 +624,10 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
     local has_metafields = false
 
     local function field_visitor(name: string, field_type: tl.Type, comments: {{tl.Comment}}, meta?: boolean)
-        -- here we assume that if the inherited field is shadowed that it has the same type 
+        -- here we assume that if the inherited field is shadowed that it has the same type
         -- TODO: cleanup
         if meta then
-            if inherited_metafield_has_comments[name] ~= nil then -- is a inherited field 
+            if inherited_metafield_has_comments[name] ~= nil then -- is a inherited field
                 if comments and inherited_metafield_has_comments[name] then
                     log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
                 elseif not comments then
@@ -640,18 +640,18 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                     kind = "metafields",
                     name = "$meta",
                 }
-                
+
                 state.path = store_item(metafields_item, state) .. "."
                 state.parent_item = metafields_item
             end
-        else 
-            if inherited_field_has_comments[name] ~= nil then -- is a inherited field 
+        else
+            if inherited_field_has_comments[name] ~= nil then -- is a inherited field
                 if comments and inherited_field_has_comments[name] then
                     log:warning("Field '%s' in record '%s' has comments both in the record and in the interface it inherits from. The comments from the interface will be discarded.", name, t.typename)
                 elseif not comments then
                     return
                 end
-            end 
+            end
         end
         -- inner type declarations
         if field_type is tl.TypeDeclType then
@@ -660,7 +660,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                 assert(#comments == 1)
                 c = comments[1]
             end
-            
+
             typedecl_visitor(name, c, field_type, "record", state)
             return
         end
@@ -674,7 +674,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             }
 
             local base_path = store_item(overload_item, state)
-            
+
             for i, function_type in ipairs(field_type.types) do
                 local item = item_for_function_type(function_type, "record", meta and "metamethod" or "function", state, t)
                 item.name = name
@@ -684,7 +684,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                         param_types[param_idx] = param.type
                     end
                 end
-                 
+
                 local path = base_path.."("..table.concat(param_types, ", ")..")"
                 store_item_at_path(item, path, state)
                 item.parent = base_path
@@ -692,7 +692,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                 if comments then
                     process_comments(comments[i], item, state.env)
                 end
-                
+
             end
             return
         end
@@ -701,7 +701,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
 
         if type_is_function(field_type) then
             item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", meta and "metamethod" or "function", state, t)
-                
+
         else
             local field_item: tealdoc.VariableItem = {
                 kind = "variable",
@@ -733,7 +733,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
 
     if t.meta_fields then
         local old_path = state.path
-        local old_parent = state.parent_item 
+        local old_parent = state.parent_item
         for _, field_name in ipairs(t.meta_field_order) do
             local field_type = t.meta_fields[field_name]
             local comments: {{tl.Comment}}
@@ -748,7 +748,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             state.parent_item = old_parent
         end
     end
-end 
+end
 
 
 
@@ -765,12 +765,12 @@ end
 
 local function assignment_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "assignment")
-    
+
     for i, var in ipairs(node.vars) do
         local exp = node.exps[i]
         -- TODO: should we handle the case when receiver is not a record, f.e. it is a local variable?
         local receiver = var.receiver
-        
+
         -- we only care about parameter names in the simplest case of "Foo.x = function ..."
         if receiver and receiver is tl.NominalType and exp and exp.kind == "function" then
             local parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
@@ -806,7 +806,7 @@ local function if_visitor(node: tl.Node, state: VisitState)
     end
 end
 
-local function body_visitor(node: tl.Node, state: VisitState) 
+local function body_visitor(node: tl.Node, state: VisitState)
     assert(node.body)
     visit_node(node.body, state)
 end
@@ -831,7 +831,7 @@ local node_visitors: {tl.NodeKind: function(node: tl.Node, state: VisitState)}  
     ["repeat"] = body_visitor
 }
 
-visit_node = function(node: tl.Node, state: VisitState) 
+visit_node = function(node: tl.Node, state: VisitState)
     if node.f == "@internal" then
         return
     end
@@ -846,7 +846,7 @@ local type_visitors: {tl.TypeName: function(t: tl.Type, item: tealdoc.TypeItem, 
     ["enum"] = enum_visitor
 }
 
-visit_type = function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState) 
+visit_type = function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState)
     if type_visitors[t.typename] then
         type_visitors[t.typename](t, item, state)
     end
@@ -901,7 +901,7 @@ local function get_sourcedir_from_config(): string
             return ""
         end
     end
-end 
+end
 
 function TealParser.init(source_dir?: string): TealParser
     source_dir = source_dir or get_sourcedir_from_config()
@@ -925,7 +925,7 @@ TealParser.file_extensions = {".tl", ".d.tl"}
 
 local function get_module_name_from_path(path: string, source_dir: string): string
     local path_separator = package.config:sub(1, 1)
-        
+
     -- Remove source_dir prefix if present
     local relative_path = path
     if source_dir and  source_dir ~= "" then
@@ -938,28 +938,28 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
             end
         end
     end
-    
+
     -- Split path into components
     local components: {string} = {}
     for component in relative_path:gmatch("[^" .. path_separator .. "]+") do
         table.insert(components, component)
     end
-    
+
     if #components == 0 then
         return ""
     end
-    
+
     -- Remove file extension from last component
     local last = components[#components]
     components[#components] = last:match("^([^%.]+)") or last
-    
+
     return table.concat(components, ".")
 end
 
 function TealParser:process(text: string, path: string, env: tealdoc.Env)
     -- TODO: handle errors
     local result = tl.check_string(text, self.tl_env, path)
-    
+
     local reporter = result.env.reporter
 
     local module_name = get_module_name_from_path(path, self.source_dir)

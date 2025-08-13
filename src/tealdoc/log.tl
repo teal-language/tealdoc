@@ -1,5 +1,5 @@
 local record log
-    enum Level 
+    enum Level
         "debug"
         "info"
         "warning"
@@ -18,7 +18,7 @@ end
 
 log.threshold = os.getenv("DEBUG") and "debug" or "info"
 log.use_color = os.getenv("NO_COLOR") == nil
-log.output = io.stdout 
+log.output = io.stdout
 
 local level_to_int: {log.Level: number} = {
     ["debug"] = 0,
@@ -43,7 +43,7 @@ function log:log(level: log.Level, message: string, ...: any)
     end
     local formatted = message:format(...)
     local color = level_to_ansi_color[level]
-    local decorated: string 
+    local decorated: string
     if self.use_color then
         decorated = string.format("%s[%s] %s%s\n", color, level, formatted, ansi_reset)
     else

@@ -30,21 +30,21 @@ local record Generator
     end
 
     interface Base
-        builder: Builder    
+        builder: Builder
         run: function(self, filename: string, env: tealdoc.Env)
     end
 
-    enum PathMode 
+    enum PathMode
         "full" -- full path to the item
         "relative" -- relative path to the item from the module
         "none" -- no path, just the item name
     end
 
     interface Phase
-        interface Context 
+        interface Context
             builder: Builder
             module_name: string
-            path_mode: PathMode 
+            path_mode: PathMode
             env: tealdoc.Env
             filter: function(item: tealdoc.Item, env: tealdoc.Env): boolean
         end

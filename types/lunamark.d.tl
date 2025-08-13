@@ -1,6 +1,6 @@
 local record lunamark
     record writer
-        record html 
+        record html
             record options
             end
 
@@ -9,7 +9,7 @@ local record lunamark
     end
 
     record reader
-        record markdown 
+        record markdown
             record options
                 fenced_code_blocks: boolean
             end

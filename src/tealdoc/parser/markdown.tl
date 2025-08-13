@@ -10,8 +10,8 @@ function MarkdownInput:process(text: string, filename: string, env: tealdoc.Env)
         path = "$"..module_name,
         kind = "markdown",
         text = text,
-        name = module_name,     
-   } 
+        name = module_name,
+   }
    env.registry[item.path] = item
 
    table.insert(env.modules, module_name)
