@@ -19,7 +19,7 @@ local function get_name(ctx: Generator.Phase.Context, item: tealdoc.Item): strin
     if ctx.path_mode == "full" then
         return item.path
     elseif ctx.path_mode == "relative" then
-        return ctx.module_name == item.path and item.name or strip_module_prefix(item.path, ctx.module_name) 
+        return ctx.module_name == item.path and item.name or strip_module_prefix(item.path, ctx.module_name)
     else -- "none"
         return item.name
     end
@@ -53,7 +53,7 @@ function signatures.for_function(ctx: Generator.Phase.Context, fn: tealdoc.Funct
             end
         end
     end
-        
+
     local name = get_name(ctx, fn)
 
     -- fix overloaded functions names

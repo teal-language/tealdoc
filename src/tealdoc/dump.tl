@@ -1,6 +1,6 @@
 local tealdoc = require("tealdoc")
 
-local record DumpTool 
+local record DumpTool
     run: function(registry: {string: tealdoc.Item})
 end
 
@@ -14,7 +14,7 @@ DumpTool.run = function(registry: {string: tealdoc.Item})
         if item.location then
             print("\tlocation: "..item.location.filename..":"..item.location.y..":"..item.location.x)
         end
-        if item.text then 
+        if item.text then
             print("\ttext: "..item.text)
         end
         if item.attributes then
@@ -23,27 +23,27 @@ DumpTool.run = function(registry: {string: tealdoc.Item})
                 print("\t\t"..k.." = "..tostring(v))
             end
         end
-        if item is tealdoc.FunctionItem then 
+        if item is tealdoc.FunctionItem then
             print("\tname: "..tostring(item.name))
-            if item.params then 
+            if item.params then
                 print("\tparams:")
-                for _, param in ipairs(item.params) do 
+                for _, param in ipairs(item.params) do
                     print("\t\t"..tostring(param.name)..":")
                     print("\t\t\tdescription = "..tostring(param.description))
                     print("\t\t\ttype = "..tostring(param.type))
                 end
             end
-            if item.returns then 
+            if item.returns then
                 print("\treturns:")
-                for i, ret in ipairs(item.returns) do 
+                for i, ret in ipairs(item.returns) do
                     print("\t\t"..i..":")
                     print("\t\t\tdescription = "..tostring(ret.description))
                     print("\t\t\ttype = "..tostring(ret.type))
                 end
             end
-            if item.typeargs then 
+            if item.typeargs then
                 print("\ttypeargs:")
-                for i, typearg in ipairs(item.typeargs) do 
+                for i, typearg in ipairs(item.typeargs) do
                     print("\t\t"..i..":")
                     print("\t\t\tname = "..tostring(typearg.name))
                     print("\t\t\tconstraint = "..tostring(typearg.constraint))
@@ -64,9 +64,9 @@ DumpTool.run = function(registry: {string: tealdoc.Item})
             if item.typename then
                 print("\ttypename: "..tostring(item.typename))
             end
-            if item.typeargs then 
+            if item.typeargs then
                 print("\ttypeargs:")
-                for i, typearg in ipairs(item.typeargs) do 
+                for i, typearg in ipairs(item.typeargs) do
                     print("\t\t"..i..":")
                     print("\t\t\tname = "..tostring(typearg.name))
                     print("\t\t\tconstraint = "..tostring(typearg.constraint))

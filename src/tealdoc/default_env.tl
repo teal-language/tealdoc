@@ -55,7 +55,7 @@ function DefaultEnv.init(): tealdoc.Env
                     item.location.y,
                     item.location.x
                 )
-                return 
+                return
             end
 
             if param.name and param.name ~= ctx.param then
@@ -108,7 +108,7 @@ function DefaultEnv.init(): tealdoc.Env
                     item.location.y,
                     item.location.x
                 )
-                return 
+                return
             end
 
             if typearg.name and typearg.name ~= ctx.param then
@@ -137,7 +137,7 @@ function DefaultEnv.init(): tealdoc.Env
                 log:error("return tag can only exist in function comments")
                 return
             end
-            
+
             local matched = false
             if item.returns then
                 for _, ret in ipairs(item.returns) do
@@ -146,7 +146,7 @@ function DefaultEnv.init(): tealdoc.Env
                         matched = true
                         break
                     end
-                end 
+                end
             end
             if not matched then
                 log:error(
@@ -172,7 +172,7 @@ function DefaultEnv.init(): tealdoc.Env
     env:add_tag(param_tag_handler)
     env:add_tag(typearg_tag_handler)
     env:add_tag(local_tag_handler)
-    
+
     -- TODO: better place for this
     local function strip_module_prefix(path: string, module_name: string): string
         return path:sub(#module_name + 2) -- +2 for the dot after module name
@@ -195,7 +195,7 @@ function DefaultEnv.init(): tealdoc.Env
             if ctx.path_mode == "full" then
                 local display_path = path:gsub("%$[^%.]*%.", "")
                 ctx.builder:h2(display_path)
-            else 
+            else
                 ctx.builder:h2(strip_module_prefix(item.path, ctx.module_name))
             end
         end
@@ -227,7 +227,7 @@ function DefaultEnv.init(): tealdoc.Env
         name = "variable_signature",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
             assert(item is tealdoc.VariableItem)
-            
+
             ctx.builder:code_block(function()
                 signatures.for_variable(ctx, item)
                 ctx.builder:line()
@@ -239,7 +239,7 @@ function DefaultEnv.init(): tealdoc.Env
         name = "type_signature",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
             assert(item is tealdoc.TypeItem)
-            
+
             ctx.builder:code_block(function()
                 signatures.for_type(ctx, item)
                 ctx.builder:line()
@@ -260,14 +260,14 @@ function DefaultEnv.init(): tealdoc.Env
             ctx.builder:unordered_list(function(list_item: function(content: function))
                 for _, typearg in ipairs(item.typeargs) do
                     list_item(function()
-                        ctx.builder:b(function() 
+                        ctx.builder:b(function()
                             ctx.builder:code(typearg.name or "?")
                         end)
 
                         if typearg.constraint then
                             ctx.builder:text(" ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
-                        end                                 
-                    
+                        end
+
                         if typearg.description then
                             ctx.builder:text(" — ", function() ctx.builder:md(typearg.description) end)
                         end

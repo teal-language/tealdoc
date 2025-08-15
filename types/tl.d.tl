@@ -93,7 +93,7 @@ local record TypeReporter
    get_typenum: function(self, tl.Type): integer
 end
 
-local record tl 
+local record tl
 
     record Comment
       x: integer
@@ -482,10 +482,10 @@ local record tl
     end
 
 
-    -- TODO: remove useless entries? 
+    -- TODO: remove useless entries?
     record Node  is {Node}, Where
         where self.kind ~= nil
-        
+
         record ExpectedContext
             kind: NodeKind
             name: string

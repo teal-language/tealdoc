@@ -8,7 +8,7 @@ local tl = require("tl")
 
 local record CLI
     record Command -- TODO: description, alias?
-        type Handler = function(args: argparse.Args) 
+        type Handler = function(args: argparse.Args)
         type Setup = function(command: argparse.Command)
         name: string
         setup: Setup
@@ -16,16 +16,16 @@ local record CLI
     end
 
     init: function(CLI, env: tealdoc.Env, skip_default_commands?: boolean)
-    run: function(CLI)    
+    run: function(CLI)
     add_default_commands: function(CLI)
     add_command: function(CLI, command: Command)
-    
+
     _parser: argparse.Parser
     _commands: {string: Command.Handler}
     _env: tealdoc.Env
 end
 
-function CLI:add_default_commands() 
+function CLI:add_default_commands()
     local dump_command: CLI.Command = {
         name = "dump",
         setup = function(command: argparse.Command)
@@ -106,10 +106,10 @@ function CLI:add_command(command: CLI.Command)
     assert(command.name and command.setup and command.handler)
     local c = self._parser:command(command.name, nil, nil)
     command.setup(c)
-    self._commands[command.name] = command.handler 
+    self._commands[command.name] = command.handler
 end
 
-function CLI:run() 
+function CLI:run()
     local args = self._parser:parse(nil)
     local command_name = args["command"]
 

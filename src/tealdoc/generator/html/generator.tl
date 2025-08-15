@@ -18,7 +18,7 @@ end
 
 local function filter(item: tealdoc.Item, env: tealdoc.Env): boolean
     local is_module_record = env.registry["$"..item.path] ~= nil
-    
+
     if not env.include_all then
         local has_local_tag = item.attributes and item.attributes["local"]
         local is_declared_as_local = item is tealdoc.DeclarationItem and item.visibility == "local"
@@ -54,7 +54,7 @@ function HTMLGenerator.generate_item(self: HTMLGenerator, builder: HTMLBuilder, 
         path_mode = "relative",
     }
     local phases = self.item_phases[item.kind]
-    if phases and not (item.path == module_name) then -- skip module record 
+    if phases and not (item.path == module_name) then -- skip module record
         for _, phase in ipairs(phases) do
             if phase.name == "header" then -- hack
                 builder:rawtext("<h3 id=\"" .. item.path .. "\">")
@@ -86,10 +86,10 @@ function HTMLGenerator:generate_breadcrumbs(b: HTMLBuilder, visited: {string}, e
         for i, v in ipairs(visited) do
             if i == #visited then -- last item is not a link
                 item(function()
-                    b:text(v) 
+                    b:text(v)
                 end)
             elseif i == 1 then -- first item is always index
-                local prefix = string.rep("../", #visited - 2) 
+                local prefix = string.rep("../", #visited - 2)
                 item(function()
                     b:rawtext("<a href=\"" .. prefix .. v .. ".html\">")
                     b:text(v)
@@ -173,16 +173,16 @@ local function convert_modules_to_tree(modules: {string}): ModuleNode
         for part in module_path:gmatch("[^.]+") do
             table.insert(parts, part)
         end
-        
+
         local current_path = ""
         local current_parent = root
-        
+
         for i, part in ipairs(parts) do
             if i > 1 then
                 current_path = current_path .. "."
             end
             current_path = current_path .. part
-            
+
             if not node_map[current_path] then
                 local new_node: ModuleNode = {
                     name = part,
@@ -192,7 +192,7 @@ local function convert_modules_to_tree(modules: {string}): ModuleNode
                 node_map[current_path] = new_node
                 table.insert(current_parent.children, new_node)
             end
-            
+
             current_parent = node_map[current_path]
         end
     end
@@ -214,7 +214,7 @@ function HTMLGenerator:generate_modules(filename: string, index_builder: HTMLBui
 
         if not module_item then
             index_builder:text(node.name)
-        else 
+        else
             local path = cur_filename .."/".. node.name
 
             self:file(path, function(b: HTMLBuilder)
