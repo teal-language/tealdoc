@@ -299,7 +299,7 @@ local record tealdoc
     version: string 
 end
 
-tealdoc.version = "0.1+dev"
+tealdoc.version = "0.2"
 
 function tealdoc.Env.init(): tealdoc.Env
     local env: tealdoc.Env = {

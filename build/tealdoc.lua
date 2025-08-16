@@ -299,7 +299,7 @@ local tealdoc = { Location = {}, Env = {}, Typearg = {}, FunctionItem = { Param 
 
 
 
-tealdoc.version = "0.1+dev"
+tealdoc.version = "0.2"
 
 function tealdoc.Env.init()
    local env = {
