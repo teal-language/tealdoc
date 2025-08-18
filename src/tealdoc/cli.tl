@@ -60,7 +60,9 @@ function CLI:add_default_commands()
             for _, file in ipairs(files) do
                 tealdoc.process_file(file, self._env)
             end
-            MarkdownGenerator:run(args["output"] as string, self._env)
+            
+            local generator = MarkdownGenerator.init(args["output"] as string)
+            generator:run(self._env)
         end
     }
     local html_command: CLI.Command = {
@@ -83,7 +85,9 @@ function CLI:add_default_commands()
             for _, file in ipairs(files) do
                 tealdoc.process_file(file, self._env)
             end
-            HTMLGenerator:run(args["output"] as string, self._env)
+            local generator = HTMLGenerator.init(args["output"] as string)
+            generator:run(self._env)
+            --HTMLGenerator:run(args["output"] as string, self._env)
         end
     }
     self:add_command(dump_command)
