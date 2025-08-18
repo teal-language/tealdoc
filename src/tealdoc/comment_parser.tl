@@ -43,7 +43,7 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
         local has_tag = false
         for tag_name, handler in pairs(env.tag_registry) do
             if handler.has_param then
-                local pattern = "^@" .. tag_name .. "%s+(%w+)%s*(.*)"
+                local pattern = "^@" .. tag_name .. "%s+([^%s]+)%s*(.*)"
                 local param, rest = trimmed:match(pattern)
                 if param then
                     has_tag = true
