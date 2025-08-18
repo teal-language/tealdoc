@@ -37,12 +37,12 @@ local function typenum_for_global(report: tl.TypeReport, name: string): integer
     return typenum
 end
 
-local function typeinfo_for_global(report: tl.TypeReport, name: string): tl.TypeInfo
-    local typenum = typenum_for_global(report, name)
-    if not typenum then return end
-    local typeinfo = report.types[typenum]
-    return typeinfo
-end
+-- local function typeinfo_for_global(report: tl.TypeReport, name: string): tl.TypeInfo
+--     local typenum = typenum_for_global(report, name)
+--     if not typenum then return end
+--     local typeinfo = report.types[typenum]
+--     return typeinfo
+-- end
 
 local function typenum_for_node(report: tl.TypeReport, node: tl.Node): integer
     return typenum_for_position(report, node.f, node.x, node.y)
@@ -466,28 +466,27 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
     for i, name in ipairs(node.vars) do
         assert(name.kind == "identifier")
         local decltype = node.decltuple.tuple[i]
-        local typeinfo: tl.TypeInfo
 
-        local typename: string
-        if decltype then
-            typename = type_to_string(state.type_report, decltype)
-        elseif node.kind == "local_declaration" then
-            typeinfo = typeinfo_for_node(state.type_report, name)
-            typename = typeinfo_to_string(typeinfo)
+        local typenum: integer
+        if node.kind == "local_declaration" then
+            typenum = typenum_for_node(state.type_report, name)
         elseif node.kind == "global_declaration" then
-            typeinfo = typeinfo_for_global(state.type_report, name.tk)
-            typename = typeinfo_to_string(typeinfo)
+            typenum = typenum_for_global(state.type_report, name.tk)
         end
 
+        assert(typenum)
+        local typeinfo = state.type_report.types[typenum]
+        local typename = typeinfo_to_string(typeinfo)
+
         local item: tealdoc.Item
-        if typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
+        if decltype and type_is_function(decltype) then
+            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
+            item.is_declaration = true
+        elseif typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
             item = item_for_function_typeinfo(typeinfo,
                 node.kind == "local_declaration" and "local" or "global",
                 state
             )
-        elseif decltype and type_is_function(decltype) then
-            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
-            item.is_declaration = true
         else
             local variable_item = {
                 kind = "variable",
@@ -500,7 +499,8 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
         item.name = name.tk
 
         process_comments(node.comments, item, state.env)
-        store_item(item, state)
+        local path = store_item(item, state)
+        state.typenum_to_path[typenum] = path 
     end
 end
 
@@ -768,12 +768,16 @@ local function assignment_visitor(node: tl.Node, state: VisitState)
 
     for i, var in ipairs(node.vars) do
         local exp = node.exps[i]
-        -- TODO: should we handle the case when receiver is not a record, f.e. it is a local variable?
-        local receiver = var.receiver
-
         -- we only care about parameter names in the simplest case of "Foo.x = function ..."
-        if receiver and receiver is tl.NominalType and exp and exp.kind == "function" then
-            local parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
+        if exp and exp.kind == "function" and var.receiver then
+            local receiver = var.receiver
+            local parent_path: string
+
+            if receiver is tl.NominalType then
+                parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
+            elseif receiver and receiver is tl.EmptyTableType then -- support for local x = {} and x.y = function ...
+                parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver)]
+            end
             if parent_path then -- it breaks on cross file record?
                 -- TODO: lots of duplicate code from function_visitor!
                 local old_path = state.path

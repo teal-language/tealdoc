@@ -37,12 +37,12 @@ local function typenum_for_global(report, name)
    return typenum
 end
 
-local function typeinfo_for_global(report, name)
-   local typenum = typenum_for_global(report, name)
-   if not typenum then return end
-   local typeinfo = report.types[typenum]
-   return typeinfo
-end
+
+
+
+
+
+
 
 local function typenum_for_node(report, node)
    return typenum_for_position(report, node.f, node.x, node.y)
@@ -466,28 +466,27 @@ local function variable_declarations_visitor(node, state)
    for i, name in ipairs(node.vars) do
       assert(name.kind == "identifier")
       local decltype = node.decltuple.tuple[i]
-      local typeinfo
 
-      local typename
-      if decltype then
-         typename = type_to_string(state.type_report, decltype)
-      elseif node.kind == "local_declaration" then
-         typeinfo = typeinfo_for_node(state.type_report, name)
-         typename = typeinfo_to_string(typeinfo)
+      local typenum
+      if node.kind == "local_declaration" then
+         typenum = typenum_for_node(state.type_report, name)
       elseif node.kind == "global_declaration" then
-         typeinfo = typeinfo_for_global(state.type_report, name.tk)
-         typename = typeinfo_to_string(typeinfo)
+         typenum = typenum_for_global(state.type_report, name.tk)
       end
 
+      assert(typenum)
+      local typeinfo = state.type_report.types[typenum]
+      local typename = typeinfo_to_string(typeinfo)
+
       local item
-      if typeinfo and typeinfo.t == 0x20 then
+      if decltype and type_is_function(decltype) then
+         item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "function", state)
+         item.is_declaration = true
+      elseif typeinfo and typeinfo.t == 0x20 then
          item = item_for_function_typeinfo(typeinfo,
          node.kind == "local_declaration" and "local" or "global",
          state)
 
-      elseif decltype and type_is_function(decltype) then
-         item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "function", state)
-         item.is_declaration = true
       else
          local variable_item = {
             kind = "variable",
@@ -500,7 +499,8 @@ local function variable_declarations_visitor(node, state)
       item.name = name.tk
 
       process_comments(node.comments, item, state.env)
-      store_item(item, state)
+      local path = store_item(item, state)
+      state.typenum_to_path[typenum] = path
    end
 end
 
@@ -769,11 +769,15 @@ local function assignment_visitor(node, state)
    for i, var in ipairs(node.vars) do
       local exp = node.exps[i]
 
-      local receiver = var.receiver
+      if exp and exp.kind == "function" and var.receiver then
+         local receiver = var.receiver
+         local parent_path
 
-
-      if receiver and receiver.typename == "nominal" and exp and exp.kind == "function" then
-         local parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
+         if receiver.typename == "nominal" then
+            parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
+         elseif receiver and receiver.typename == "emptytable" then
+            parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver)]
+         end
          if parent_path then
 
             local old_path = state.path

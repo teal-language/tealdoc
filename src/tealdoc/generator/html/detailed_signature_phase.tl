@@ -39,6 +39,17 @@ signature = function(ctx: Generator.Phase.Context, item: tealdoc.Item, indent?: 
     elseif item is tealdoc.VariableItem then
         ctx.builder:rawtext(indent)
         signatures.for_variable(ctx, item)
+        if item.children then -- table variables may contain functions attached functions
+            for _, child in ipairs(item.children) do
+                ctx.builder:line()
+                local child_item = ctx.env.registry[child]
+                assert(child_item, "Child item not found: " .. child)
+                assert(child_item is tealdoc.FunctionItem, "Expected function item, got: " .. child_item.kind)
+                if not ctx.filter or ctx.filter(child_item, ctx.env) then
+                    signature(ctx, child_item, indent)
+                end
+            end
+        end
     elseif item is tealdoc.TypeItem then
         ctx.builder:rawtext(indent)
         if item.type_kind == "record" or item.type_kind == "interface" or item.type_kind == "enum" then
