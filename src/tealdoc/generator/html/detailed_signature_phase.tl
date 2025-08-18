@@ -32,7 +32,7 @@ signature = function(ctx: Generator.Phase.Context, item: tealdoc.Item, indent?: 
     if not indent then
         indent = ""
     end
-    
+
     if item is tealdoc.FunctionItem then
         ctx.builder:rawtext(indent)
         signatures.for_function(ctx, item, indent ~= "")

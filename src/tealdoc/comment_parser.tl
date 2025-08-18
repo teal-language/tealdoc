@@ -19,7 +19,7 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
     local current_tag: string
 
     local function end_tag()
-        if not current_context or not current_tag then 
+        if not current_context or not current_tag then
             return
         end
         env.tag_registry[current_tag].handle(current_context)
@@ -34,7 +34,7 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
         current_context = {
             item = item,
             param = param,
-            description = handler.has_description and description 
+            description = handler.has_description and description
         }
     end
 
@@ -45,18 +45,18 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
             if handler.has_param then
                 local pattern = "^@" .. tag_name .. "%s+(%w+)%s*(.*)"
                 local param, rest = trimmed:match(pattern)
-                if param then 
+                if param then
                     has_tag = true
                     start_tag(handler, param, rest)
                 end
             elseif handler.has_description then
                 local pattern = "^@" .. tag_name .. "%s+(.*)"
                 local description = trimmed:match(pattern)
-                if description then 
+                if description then
                     has_tag = true
                     start_tag(handler, nil, description)
                 end
-            else 
+            else
                 local pattern = "^@" .. tag_name
                 if trimmed:match(pattern) then
                     has_tag = true
@@ -72,9 +72,9 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
         if in_text then
             if not item.text then
                 item.text = line
-            else 
+            else
                 item.text = item.text.." "..line
-            end 
+            end
         elseif not has_tag and current_context and current_context.description then
             current_context.description = current_context.description.." "..line
         end

@@ -1,5 +1,5 @@
 return [[
-    * { 
+    * {
         box-sizing: border-box;
     }
     html, body {
@@ -13,17 +13,17 @@ return [[
         /* fixes safari resizing some parts of the page */
         -moz-text-size-adjust: none;
         -webkit-text-size-adjust: none;
-        text-size-adjust: none; 
+        text-size-adjust: none;
     }
-    h1, h2, h3, h4, h5, h6 { 
+    h1, h2, h3, h4, h5, h6 {
         color: #111;
     }
-    code { 
+    code {
         background-color: #f4f4f4;
         padding: 0.2em 0.4em;
         border-radius: 4px;
     }
-    ul, ol { 
+    ul, ol {
         margin: 1em 0;
     }
     li {
@@ -61,16 +61,16 @@ return [[
     }
 
     /* Breadcrumb navigation styles */
-    main > nav ul { 
+    main > nav ul {
         list-style: none;
         padding: 0;
         margin: 0;
     }
-    main > nav ul li { 
-        display: inline; 
+    main > nav ul li {
+        display: inline;
     }
     main > nav ul li a {
-        text-decoration: none; 
+        text-decoration: none;
     }
     main > nav ul li a:hover {
         text-decoration: underline;

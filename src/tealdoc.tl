@@ -5,7 +5,7 @@ local log = require("tealdoc.log")
 --- You can use it to programmatically interact with Tealdoc.
 --- You can also use it to extend Tealdoc using plugins.
 local record tealdoc
-    
+
     --- Plugin is an abstract base interface for tealdoc plugins.
     --- Plugins can be used to extend Tealdoc functionality.
     --- When using the CLI you can load plugins using the `--plugin` option
@@ -27,7 +27,7 @@ local record tealdoc
     --- Each parser is responsible for a specific set of file extensions.
     --- You can register a parser using the `add_parser` method of the `tealdoc.Env` interface.
     interface Parser
-        
+
         --- Process file contents.
         --- This function is called by Tealdoc when a file with a registered extension is processed.
         --- @param self The parser instance.
@@ -53,7 +53,7 @@ local record tealdoc
 
         --- Context is the context in which the tag is encountered.
         interface Context
-            --- The item to which the tag belongs.  
+            --- The item to which the tag belongs.
             item: Item
             --- The parameter of the tag if any.
             --- Only applicable if has_param of the tag is true.
@@ -81,7 +81,7 @@ local record tealdoc
     --- It is used to store the location of an item in the source code.
     record Location
         --- The path to the file where the item is located.
-        filename: string 
+        filename: string
         --- The column number where the item is located.
         x: integer
         --- The line number where the item is located.
@@ -92,7 +92,7 @@ local record tealdoc
     --- Item is an abstract base interface for Tealdoc items.
     --- Items represent documentation entities such as functions, variables, types, etc.
     --- Items can also represent abstract concepts like namespaces or modules.
-    interface Item 
+    interface Item
         --- The kind of the item, e.g. "function", "variable", "type", etc.
         --- This is used to differentiate between different types of items.
         kind: string
@@ -117,7 +117,7 @@ local record tealdoc
         attributes: {string: any}
         --- The location of the item in the source code.
         location: Location
-    end 
+    end
 
 
     --- Env is the environment in which Tealdoc operates.
@@ -128,7 +128,7 @@ local record tealdoc
         --- The registry of items, which is a table mapping paths to items.
         --- This is used to store all the items that are processed by Tealdoc.
         --- The keys are the paths of the items, and the values are the items themselves.
-        registry: {string: Item} 
+        registry: {string: Item}
 
         --- The list of modules that are processed by Tealdoc.
         --- This is used to store the names of the modules that are documented.
@@ -152,7 +152,7 @@ local record tealdoc
         add_parser: function(self, parser: Parser)
 
         --- Add a tag to the environment.
-        --- The tag must implement the `tealdoc.Tag` interface. 
+        --- The tag must implement the `tealdoc.Tag` interface.
         --- @param self The environment to which the tag is added.
         --- @param tag The tag to add.
         add_tag: function(self, tag: Tag)
@@ -168,7 +168,7 @@ local record tealdoc
     end
 
     --- This record represents a type argument for a function or type.
-    record Typearg 
+    record Typearg
         --- The name of the type argument.
         name: string
         --- The constraint of the type argument if any.
@@ -177,13 +177,13 @@ local record tealdoc
         description: string
     end
 
-    
+
 
     --- This interface represents a declaration item in Tealdoc.
     --- It is used to represent declarations of functions, variables, and types.
     interface DeclarationItem is Item
         --- Possible visibilities for declarations.
-        enum Visibility 
+        enum Visibility
             --- Local visibility, for local variables and functions.
             "local"
             --- Global visibility, for global variables and functions.
@@ -196,12 +196,12 @@ local record tealdoc
     end
 
     --- This record represents a function item in Tealdoc.
-    record FunctionItem 
-        is DeclarationItem 
+    record FunctionItem
+        is DeclarationItem
         where self.kind == "function"
 
         --- This record represents a parameter of a function.
-        record Param 
+        record Param
             --- The name of the parameter.
             name: string
             --- The type of the parameter.
@@ -211,7 +211,7 @@ local record tealdoc
         end
 
         --- This record represents a return value of a function.
-        record Return 
+        record Return
             --- The type of the return value.
             type: string
             --- The description of the return value.
@@ -227,7 +227,7 @@ local record tealdoc
             --- Record metamethod
             "metamethod"
         end
-        
+
         --- Function parameters.
         params: {Param}
         --- Function return values.
@@ -237,7 +237,7 @@ local record tealdoc
         --- The kind of the function.
         function_kind: FunctionKind
         --- Whether this function is only a declaration (it does not contain a body).
-        is_declaration: boolean -- maybe better name?      
+        is_declaration: boolean -- maybe better name?
     end
 
     --- This record represents a variable item in Tealdoc.
@@ -251,7 +251,7 @@ local record tealdoc
 
     --- This record represents a type item in Tealdoc.
     --- It is used to represent types, records, interfaces, enums, and type aliases.
-    record TypeItem 
+    record TypeItem
         is DeclarationItem
         where self.kind == "type"
 
@@ -296,7 +296,7 @@ local record tealdoc
     process_text: function(text: string, path: string, env: Env)
 
     --- Current version of Tealdoc.
-    version: string 
+    version: string
 end
 
 tealdoc.version = "0.2+dev"
@@ -332,7 +332,7 @@ end
 
 
 function tealdoc.process_file(path: string, env: tealdoc.Env)
-   
+
     local file = io.open(path, "r")
     if not file then
         log:error("Could not open file: " .. path)
@@ -342,7 +342,7 @@ function tealdoc.process_file(path: string, env: tealdoc.Env)
     file:close()
 
     tealdoc.process_text(text, path, env)
-end 
+end
 
 function tealdoc.process_text(text: string, path: string, env: tealdoc.Env)
     local filename = path:match("([^/\\]*)$") or path
