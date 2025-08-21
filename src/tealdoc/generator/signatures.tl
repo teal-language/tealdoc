@@ -1,6 +1,8 @@
 local Generator = require("tealdoc.generator")
 local tealdoc = require("tealdoc")
 
+local attr = Generator.attr
+
 local record signatures
 end
 
@@ -67,31 +69,31 @@ function signatures.for_function(ctx: Generator.Phase.Context, fn: tealdoc.Funct
         if fn.function_kind == "metamethod" then
             ctx.builder:text("metamethod ")
         end
-        ctx.builder:link(fn.path, name)
+        ctx.builder:link(fn.path, attr("name"), name)
         ctx.builder:text(": function")
     else
-        ctx.builder:text(visibility(fn), fn.function_kind, " ", function()
-            ctx.builder:link(fn.path, name)
+        ctx.builder:text(attr("signature"), visibility(fn), fn.function_kind, " ", function()
+            ctx.builder:link(fn.path, attr("name"), name)
         end)
     end
     if #typeargs > 0 then
-        ctx.builder:text("<", table.concat(typeargs, ", "), ">")
+        ctx.builder:text(attr("typeargs"), "<", table.concat(typeargs, ", "), ">")
     end
 
-    ctx.builder:text("(", table.concat(params, ", "), ")")
+    ctx.builder:text(attr("params"), "(", table.concat(params, ", "), ")")
     if #returns > 0 then
-        ctx.builder:text(": ", table.concat(returns, ", "))
+        ctx.builder:text(attr("returns"), ": ", table.concat(returns, ", "))
     end
 end
 
 function signatures.for_variable(ctx: Generator.Phase.Context, var: tealdoc.VariableItem)
-    ctx.builder:text(visibility(var), function() ctx.builder:link(var.path, get_name(ctx, var)) end, ": ", var.typename)
+    ctx.builder:text(attr("variable"), visibility(var), function() ctx.builder:link(var.path, get_name(ctx, var)) end, ": ", var.typename)
 end
 
 function signatures.for_type(ctx: Generator.Phase.Context, item: tealdoc.TypeItem)
-    ctx.builder:text(visibility(item), item.type_kind, " ", function () ctx.builder:link(item.path, get_name(ctx, item)) end)
+    ctx.builder:text(attr("name"), visibility(item), item.type_kind, " ", function () ctx.builder:link(item.path, get_name(ctx, item)) end)
     if item.type_kind == "type" then
-        ctx.builder:text(" = ", item.typename)
+        ctx.builder:text(attr("type"), " = ", item.typename)
     elseif item.typeargs and #item.typeargs > 0 then
         local typeargs: {string} = {}
         for _, typearg in ipairs(item.typeargs) do
@@ -101,10 +103,10 @@ function signatures.for_type(ctx: Generator.Phase.Context, item: tealdoc.TypeIte
                 table.insert(typeargs, typearg.name)
             end
         end
-        ctx.builder:text("<", table.concat(typeargs, ", "), ">")
+        ctx.builder:text(attr("typeargs"), "<", table.concat(typeargs, ", "), ">")
 
         if item.inherits and #item.inherits > 0 then
-            ctx.builder:text(" is ", table.concat(item.inherits, ", "))
+            ctx.builder:text(attr("inherits"), " is ", table.concat(item.inherits, ", "))
         end
     end
 end

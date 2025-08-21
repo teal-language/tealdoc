@@ -2,15 +2,21 @@ local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 
 local record Generator
-    interface Builder
-        type Content = string | function(b: Builder)
+    record Attribute 
+        name: string
+    end
 
-        h1: function(self, content: Content): Builder
-        h2: function(self, content: Content): Builder
-        h3: function(self, content: Content): Builder
-        h4: function(self, content: Content): Builder
-        h5: function(self, content: Content): Builder
-        h6: function(self, content: Content): Builder
+    attr: function(name: string): Attribute
+
+    interface Builder
+        type Content = string | function(b: Builder) | Attribute
+
+        h1: function(self, ...: Content): Builder
+        h2: function(self, ...: Content): Builder
+        h3: function(self, ...: Content): Builder
+        h4: function(self, ...: Content): Builder
+        h5: function(self, ...: Content): Builder
+        h6: function(self, ...: Content): Builder
         line: function(self, ...: Content): Builder
         rawline: function(self, ...: Content): Builder
         text: function(self, ...: Content): Builder
@@ -22,9 +28,9 @@ local record Generator
         ordered_list: function(self, content: function(item: function(content: function))): Builder
         unordered_list: function(self, content: function(item: function(content: function))): Builder
 
-        b: function(self, content: Content): Builder
-        i: function(self, content: Content): Builder
-        code: function(self, content: Content): Builder
+        b: function(self, ...: Content): Builder
+        i: function(self, ...: Content): Builder
+        code: function(self, ...: Content): Builder
         md: function(self, content: string): Builder
 
         build: function(self): string
@@ -66,6 +72,10 @@ local record Generator
         run: function(self, env: tealdoc.Env)
         init: function(): Base
     end
+end
+
+Generator.attr = function(name: string): Generator.Attribute
+    return {name = name}
 end
 
 local function filter(item: tealdoc.Item, env: tealdoc.Env): boolean

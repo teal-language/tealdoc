@@ -18,34 +18,34 @@ end
 
 
 
-MarkdownBuilder.h1 = function(self, content)
+MarkdownBuilder.h1 = function(self, ...)
    self:rawtext("# ")
-   self:line(content)
+   self:line(...)
    return self
 end
-MarkdownBuilder.h2 = function(self, content)
+MarkdownBuilder.h2 = function(self, ...)
    self:rawtext("## ")
-   self:line(content)
+   self:line(...)
    return self
 end
-MarkdownBuilder.h3 = function(self, content)
+MarkdownBuilder.h3 = function(self, ...)
    self:rawtext("### ")
-   self:line(content)
+   self:line(...)
    return self
 end
-MarkdownBuilder.h4 = function(self, content)
+MarkdownBuilder.h4 = function(self, ...)
    self:rawtext("#### ")
-   self:line(content)
+   self:line(...)
    return self
 end
-MarkdownBuilder.h5 = function(self, content)
+MarkdownBuilder.h5 = function(self, ...)
    self:rawtext("##### ")
-   self:line(content)
+   self:line(...)
    return self
 end
-MarkdownBuilder.h6 = function(self, content)
+MarkdownBuilder.h6 = function(self, ...)
    self:rawtext("###### ")
-   self:line(content)
+   self:line(...)
    return self
 end
 MarkdownBuilder.line = function(self, ...)
@@ -70,7 +70,7 @@ MarkdownBuilder.text = function(self, ...)
       local c = select(i, ...)
       if type(c) == "string" then
          table.insert(self.output, escape_markdown(c))
-      else
+      elseif type(c) == "function" then
          c(self)
       end
    end
@@ -88,7 +88,7 @@ MarkdownBuilder.rawtext = function(self, ...)
       local c = select(i, ...)
       if type(c) == "string" then
          table.insert(self.output, c)
-      else
+      elseif type(c) == "function" then
          c(self)
       end
    end
@@ -136,21 +136,21 @@ MarkdownBuilder.unordered_list = function(self, content)
    return self
 end
 
-MarkdownBuilder.b = function(self, text)
+MarkdownBuilder.b = function(self, ...)
    self:rawtext("**")
-   self:text(text)
+   self:text(...)
    self:rawtext("**")
    return self
 end
-MarkdownBuilder.i = function(self, text)
+MarkdownBuilder.i = function(self, ...)
    self:rawtext("*")
-   self:text(text)
+   self:text(...)
    self:rawtext("*")
    return self
 end
-MarkdownBuilder.code = function(self, text)
+MarkdownBuilder.code = function(self, ...)
    self:rawtext("`")
-   self:text(text)
+   self:text(...)
    self:rawtext("`")
    return self
 end

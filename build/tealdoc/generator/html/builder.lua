@@ -26,46 +26,46 @@ end
 
 
 
-function HTMLBuilder:tag(tag, content)
+function HTMLBuilder:tag(tag, ...)
    self:rawtext("<", tag, ">")
-   self:text(content)
+   self:text(...)
    self:rawline("</", tag, ">")
    return self
 end
 
-HTMLBuilder.h1 = function(self, content)
+HTMLBuilder.h1 = function(self, ...)
    self:rawtext("<h1>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h1>")
    return self
 end
-HTMLBuilder.h2 = function(self, content)
+HTMLBuilder.h2 = function(self, ...)
    self:rawtext("<h2>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h2>")
    return self
 end
-HTMLBuilder.h3 = function(self, content)
+HTMLBuilder.h3 = function(self, ...)
    self:rawtext("<h3>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h3>")
    return self
 end
-HTMLBuilder.h4 = function(self, content)
+HTMLBuilder.h4 = function(self, ...)
    self:rawtext("<h4>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h4>")
    return self
 end
-HTMLBuilder.h5 = function(self, content)
+HTMLBuilder.h5 = function(self, ...)
    self:rawtext("<h5>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h5>")
    return self
 end
-HTMLBuilder.h6 = function(self, content)
+HTMLBuilder.h6 = function(self, ...)
    self:rawtext("<h6>")
-   self:text(content)
+   self:text(...)
    self:rawline("</h6>")
    return self
 end
@@ -99,7 +99,7 @@ HTMLBuilder.text = function(self, ...)
       local c = select(i, ...)
       if type(c) == "string" then
          table.insert(self.output, escape_html(c))
-      else
+      elseif type(c) == "function" then
          c(self)
       end
    end
@@ -117,7 +117,7 @@ HTMLBuilder.rawtext = function(self, ...)
       local c = select(i, ...)
       if type(c) == "string" then
          table.insert(self.output, c)
-      else
+      elseif type(c) == "function" then
          c(self)
       end
    end
@@ -162,21 +162,21 @@ HTMLBuilder.unordered_list = function(self, content)
    return self
 end
 
-HTMLBuilder.b = function(self, text)
+HTMLBuilder.b = function(self, ...)
    self:rawtext("<b>")
-   self:text(text)
+   self:text(...)
    self:rawtext("</b>")
    return self
 end
-HTMLBuilder.i = function(self, text)
+HTMLBuilder.i = function(self, ...)
    self:rawtext("<i>")
-   self:text(text)
+   self:text(...)
    self:rawtext("</i>")
    return self
 end
-HTMLBuilder.code = function(self, text)
+HTMLBuilder.code = function(self, ...)
    self:rawtext("<code>")
-   self:text(text)
+   self:text(...)
    self:rawtext("</code>")
    return self
 end

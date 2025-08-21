@@ -1,7 +1,7 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local type = type; local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 
-local Generator = { Base = {} }
+local Generator = { Attribute = {}, Base = {} }
 
 
 
@@ -67,6 +67,16 @@ local Generator = { Base = {} }
 
 
 
+
+
+
+
+
+
+
+Generator.attr = function(name)
+   return { name = name }
+end
 
 local function filter(item, env)
    local is_module_record = env.registry["$" .. item.path] ~= nil

@@ -13,6 +13,8 @@ local detailed_signature_phase = require("tealdoc.generator.html.detailed_signat
 local DefaultEnv = {}
 
 
+local attr = Generator.attr
+
 function DefaultEnv.init()
    local env = tealdoc.Env.init()
 
@@ -182,8 +184,8 @@ function DefaultEnv.init()
       name = "module_header",
       run = function(ctx, item)
          assert(item.kind == "module")
-         ctx.builder:h1("Module: " .. item.name)
-         ctx.builder:line(item.text or "")
+         ctx.builder:h1(attr("name"), "Module: " .. item.name)
+         ctx.builder:line(attr("text"), item.text or "")
       end,
    }
 
@@ -194,9 +196,9 @@ function DefaultEnv.init()
 
          if ctx.path_mode == "full" then
             local display_path = path:gsub("%$[^%.]*%.", "")
-            ctx.builder:h2(display_path)
+            ctx.builder:h2(attr("path"), display_path)
          else
-            ctx.builder:h2(strip_module_prefix(item.path, ctx.module_name))
+            ctx.builder:h2(attr("path"), strip_module_prefix(item.path, ctx.module_name))
          end
       end,
    }
@@ -205,7 +207,7 @@ function DefaultEnv.init()
       name = "text",
       run = function(ctx, item)
          if item.text then
-            ctx.builder:paragraph(function()
+            ctx.builder:paragraph(attr("text"), function()
                ctx.builder:md(item.text)
             end)
          end
@@ -256,20 +258,20 @@ function DefaultEnv.init()
             return
          end
 
-         ctx.builder:h4("Type Parameters")
+         ctx.builder:h4(attr("header"), "Type Parameters")
          ctx.builder:unordered_list(function(list_item)
             for _, typearg in ipairs(item.typeargs) do
                list_item(function()
                   ctx.builder:b(function()
-                     ctx.builder:code(typearg.name or "?")
+                     ctx.builder:code(attr("name"), typearg.name or "?")
                   end)
 
                   if typearg.constraint then
-                     ctx.builder:text(" ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
+                     ctx.builder:text(attr("constraint"), " ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
                   end
 
                   if typearg.description then
-                     ctx.builder:text(" — ", function() ctx.builder:md(typearg.description) end)
+                     ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(typearg.description) end)
                   end
                end)
             end
@@ -286,18 +288,18 @@ function DefaultEnv.init()
             return
          end
 
-         ctx.builder:h4("Parameters")
+         ctx.builder:h4(attr("name"), "Parameters")
          ctx.builder:unordered_list(function(list_item)
             for _, param in ipairs(item.params) do
                list_item(function()
                   if param.name then
                      ctx.builder:b(function()
-                        ctx.builder:code(param.name)
+                        ctx.builder:code(attr("name"), param.name)
                      end)
                   end
-                  ctx.builder:text(" (", function() ctx.builder:code(param.type or "?") end, ")")
+                  ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
                   if param.description then
-                     ctx.builder:text(" — ", function()
+                     ctx.builder:text(attr("description"), " — ", function()
                         ctx.builder:md(param.description)
                      end)
                   end
@@ -316,14 +318,14 @@ function DefaultEnv.init()
             return
          end
 
-         ctx.builder:h4("Returns")
+         ctx.builder:h4(attr("header"), "Returns")
 
          ctx.builder:ordered_list(function(list_item)
             for _, ret in ipairs(item.returns) do
                list_item(function()
-                  ctx.builder:text("(", function() ctx.builder:code(ret.type or "?") end, ")")
+                  ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
                   if ret.description then
-                     ctx.builder:text(" — ", function() ctx.builder:md(ret.description) end)
+                     ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(ret.description) end)
                   end
                end)
             end

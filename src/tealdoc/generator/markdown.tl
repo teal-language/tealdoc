@@ -18,34 +18,34 @@ end
 
 local type Content = Generator.Builder.Content
 
-MarkdownBuilder.h1 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h1 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("# ")
-    self:line(content)
+    self:line(...)
     return self
 end
-MarkdownBuilder.h2 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h2 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("## ")
-    self:line(content)
+    self:line(...)
     return self
 end
-MarkdownBuilder.h3 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h3 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("### ")
-    self:line(content)
+    self:line(...)
     return self
 end
-MarkdownBuilder.h4 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h4 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("#### ")
-    self:line(content)
+    self:line(...)
     return self
 end
-MarkdownBuilder.h5 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h5 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("##### ")
-    self:line(content)
+    self:line(...)
     return self
 end
-MarkdownBuilder.h6 = function(self, content: Content): MarkdownBuilder
+MarkdownBuilder.h6 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("###### ")
-    self:line(content)
+    self:line(...)
     return self
 end
 MarkdownBuilder.line = function(self, ...: Content): MarkdownBuilder
@@ -70,7 +70,7 @@ MarkdownBuilder.text = function(self, ...: Content): MarkdownBuilder
         local c = select(i, ...)
         if c is string then
             table.insert(self.output, escape_markdown(c))
-        else
+        elseif c is function then
             c(self)
         end
     end
@@ -88,7 +88,7 @@ MarkdownBuilder.rawtext = function(self, ...: Content): MarkdownBuilder
         local c = select(i, ...)
         if c is string then
             table.insert(self.output, c)
-        else
+        elseif c is function then
             c(self)
         end
     end
@@ -136,21 +136,21 @@ MarkdownBuilder.unordered_list = function(self, content: function(item: function
     return self
 end
 
-MarkdownBuilder.b = function(self, text: Content): MarkdownBuilder
+MarkdownBuilder.b = function(self, ...: Content): MarkdownBuilder
     self:rawtext("**")
-    self:text(text)
+    self:text(...)
     self:rawtext("**")
     return self
 end
-MarkdownBuilder.i = function(self, text: Content): MarkdownBuilder
+MarkdownBuilder.i = function(self, ...: Content): MarkdownBuilder
     self:rawtext("*")
-    self:text(text)
+    self:text(...)
     self:rawtext("*")
     return self
 end
-MarkdownBuilder.code = function(self, text: Content): MarkdownBuilder
+MarkdownBuilder.code = function(self, ...: Content): MarkdownBuilder
     self:rawtext("`")
-    self:text(text)
+    self:text(...)
     self:rawtext("`")
     return self
 end
