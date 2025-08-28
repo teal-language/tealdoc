@@ -26,7 +26,7 @@ local record ModuleNode
     children: {ModuleNode}
 end
 
-local function make_file(path: string, content: function(b: HTMLBuilder))
+local function make_file(path: string, title: string, content: function(b: HTMLBuilder))
     local b = HTMLBuilder.init()
 
     b:rawline("<!DOCTYPE html>")
@@ -34,7 +34,7 @@ local function make_file(path: string, content: function(b: HTMLBuilder))
     b:rawline("<head>")
     b:rawline("<meta charset=\"UTF-8\">")
     b:rawline("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-    b:rawline("<title>Tealdoc Documentation</title>")
+    b:rawline("<title>"..title.."</title>")
     b:rawline("<style>")
     b:rawline(default_css)
     b:rawline("</style>")
@@ -197,7 +197,7 @@ HTMLGenerator.init = function(output: string): Generator.Base
     end
 
     base.on_end = function(_, env: tealdoc.Env)
-        make_file(output .. "/index", function(b: HTMLBuilder)
+        make_file(output .. "/index", "Index - Documentation", function(b: HTMLBuilder)
             b:rawline("<main>")
             b:h1("Documentation Index")
             local visited = {"index"}
@@ -214,7 +214,7 @@ HTMLGenerator.init = function(output: string): Generator.Base
                 else
                     local path = cur_filename .."/".. node.name
 
-                    make_file(path, function(moduleBuilder: HTMLBuilder)
+                    make_file(path, node.name .. " - " .. node.path.." - Documentation", function(moduleBuilder: HTMLBuilder)
                         moduleBuilder:rawline("<main>")
                         generate_breadcrumbs(moduleBuilder, visited, env)
                         moduleBuilder:rawtext(module_name_to_builder[node.path]:build())

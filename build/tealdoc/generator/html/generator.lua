@@ -26,7 +26,7 @@ HTMLGenerator.item_phases = {}
 
 
 
-local function make_file(path, content)
+local function make_file(path, title, content)
    local b = HTMLBuilder.init()
 
    b:rawline("<!DOCTYPE html>")
@@ -34,7 +34,7 @@ local function make_file(path, content)
    b:rawline("<head>")
    b:rawline("<meta charset=\"UTF-8\">")
    b:rawline("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-   b:rawline("<title>Tealdoc Documentation</title>")
+   b:rawline("<title>" .. title .. "</title>")
    b:rawline("<style>")
    b:rawline(default_css)
    b:rawline("</style>")
@@ -197,7 +197,7 @@ HTMLGenerator.init = function(output)
    end
 
    base.on_end = function(_, env)
-      make_file(output .. "/index", function(b)
+      make_file(output .. "/index", "Index - Documentation", function(b)
          b:rawline("<main>")
          b:h1("Documentation Index")
          local visited = { "index" }
@@ -214,7 +214,7 @@ HTMLGenerator.init = function(output)
             else
                local path = cur_filename .. "/" .. node.name
 
-               make_file(path, function(moduleBuilder)
+               make_file(path, node.name .. " - " .. node.path .. " - Documentation", function(moduleBuilder)
                   moduleBuilder:rawline("<main>")
                   generate_breadcrumbs(moduleBuilder, visited, env)
                   moduleBuilder:rawtext(module_name_to_builder[node.path]:build())
