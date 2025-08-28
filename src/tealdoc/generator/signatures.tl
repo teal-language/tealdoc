@@ -14,8 +14,12 @@ local function visibility(item: tealdoc.DeclarationItem): string
 end
 
 local function strip_module_prefix(path: string, module_name: string): string
+    if path:sub(1, 1) == "$" then
+        path = path:sub(2)
+    end
     return path:sub(#module_name + 2) -- +2 for the dot after module name
 end
+
 
 local function get_name(ctx: Generator.Phase.Context, item: tealdoc.Item): string
     if ctx.path_mode == "full" then

@@ -9,14 +9,14 @@ describe("teal support in tealdoc: enums", function()
                 "B"
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 text = "my enum",
                 visibility = "local",
                 typename = "MyEnum",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -24,26 +24,26 @@ describe("teal support in tealdoc: enums", function()
                 },
                 type_kind = "enum",
                 children = {
-                    "test~MyEnum.\"A\"",
-                    "test~MyEnum.\"B\""
+                    "$test~MyEnum.\"A\"",
+                    "$test~MyEnum.\"B\""
                 },
             },
-            ["test~MyEnum.\"A\""] = {
+            ["$test~MyEnum.\"A\""] = {
                 kind = "enumvalue",
                 name = "\"A\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"A\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"A\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
                     x = 1,
                 },
             },
-            ["test~MyEnum.\"B\""] = {
+            ["$test~MyEnum.\"B\""] = {
                 kind = "enumvalue",
                 name = "\"B\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"B\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"B\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -63,14 +63,14 @@ describe("teal support in tealdoc: enums", function()
                 "B"
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 text = "my enum",
                 visibility = "local",
                 typename = "MyEnum",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -78,15 +78,15 @@ describe("teal support in tealdoc: enums", function()
                 },
                 type_kind = "enum",
                 children = {
-                    "test~MyEnum.\"A\"",
-                    "test~MyEnum.\"B\""
+                    "$test~MyEnum.\"A\"",
+                    "$test~MyEnum.\"B\""
                 },
             },
-            ["test~MyEnum.\"A\""] = {
+            ["$test~MyEnum.\"A\""] = {
                 kind = "enumvalue",
                 name = "\"A\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"A\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"A\"",
                 text = "A value",
                 location = {
                     filename = "test.tl",
@@ -94,12 +94,12 @@ describe("teal support in tealdoc: enums", function()
                     x = 1,
                 },
             },
-            ["test~MyEnum.\"B\""] = {
+            ["$test~MyEnum.\"B\""] = {
                 kind = "enumvalue",
                 name = "\"B\"",
-                parent = "test~MyEnum",
+                parent = "$test~MyEnum",
                 text = "B value",
-                path = "test~MyEnum.\"B\"",
+                path = "$test~MyEnum.\"B\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -117,14 +117,14 @@ describe("teal support in tealdoc: enums", function()
                 "B"
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 text = "my enum",
                 visibility = "global",
                 typename = "MyEnum",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -132,26 +132,26 @@ describe("teal support in tealdoc: enums", function()
                 },
                 type_kind = "enum",
                 children = {
-                    "test~MyEnum.\"A\"",
-                    "test~MyEnum.\"B\""
+                    "$test~MyEnum.\"A\"",
+                    "$test~MyEnum.\"B\""
                 },
             },
-            ["test~MyEnum.\"A\""] = {
+            ["$test~MyEnum.\"A\""] = {
                 kind = "enumvalue",
                 name = "\"A\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"A\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"A\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
                     x = 1,
                 },
             },
-            ["test~MyEnum.\"B\""] = {
+            ["$test~MyEnum.\"B\""] = {
                 kind = "enumvalue",
                 name = "\"B\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"B\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"B\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -171,14 +171,14 @@ describe("teal support in tealdoc: enums", function()
                 "B"
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 text = "my enum",
                 visibility = "global",
                 typename = "MyEnum",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -186,15 +186,15 @@ describe("teal support in tealdoc: enums", function()
                 },
                 type_kind = "enum",
                 children = {
-                    "test~MyEnum.\"A\"",
-                    "test~MyEnum.\"B\""
+                    "$test~MyEnum.\"A\"",
+                    "$test~MyEnum.\"B\""
                 },
             },
-            ["test~MyEnum.\"A\""] = {
+            ["$test~MyEnum.\"A\""] = {
                 kind = "enumvalue",
                 name = "\"A\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"A\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"A\"",
                 text = "A value",
                 location = {
                     filename = "test.tl",
@@ -202,11 +202,11 @@ describe("teal support in tealdoc: enums", function()
                     x = 1,
                 },
             },
-            ["test~MyEnum.\"B\""] = {
+            ["$test~MyEnum.\"B\""] = {
                 kind = "enumvalue",
                 name = "\"B\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"B\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"B\"",
                 text = "B value",
                 location = {
                     filename = "test.tl",
@@ -225,14 +225,14 @@ describe("teal support in tealdoc: enums", function()
                 "A"
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 text = "my enum",
                 visibility = "local",
                 typename = "MyEnum",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -240,26 +240,26 @@ describe("teal support in tealdoc: enums", function()
                 },
                 type_kind = "enum",
                 children = {
-                    "test~MyEnum.\"A\"",
-                    "test~MyEnum.\"B\""
+                    "$test~MyEnum.\"A\"",
+                    "$test~MyEnum.\"B\""
                 },
             },
-            ["test~MyEnum.\"A\""] = {
+            ["$test~MyEnum.\"A\""] = {
                 kind = "enumvalue",
                 name = "\"A\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"A\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"A\"",
                 location = {
                     filename = "test.tl",
                     y = 2,
                     x = 1,
                 },
             },
-            ["test~MyEnum.\"B\""] = {
+            ["$test~MyEnum.\"B\""] = {
                 kind = "enumvalue",
                 name = "\"B\"",
-                parent = "test~MyEnum",
-                path = "test~MyEnum.\"B\"",
+                parent = "$test~MyEnum",
+                path = "$test~MyEnum.\"B\"",
                 location = {
                     filename = "test.tl",
                     y = 2,

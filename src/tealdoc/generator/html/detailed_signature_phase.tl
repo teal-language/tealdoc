@@ -15,7 +15,23 @@ local function detailed_signature_for_structure_type(ctx: Generator.Phase.Contex
     ctx.builder:rawtext("</summary>")
     local old_path_mode = ctx.path_mode
     ctx.path_mode = "none" -- no need to show full path in detailed signature
-    if item.children then
+
+    local is_record_module = ctx.module_name == item.path
+    if is_record_module then
+        local categories_order, categories = Generator.categories_for_module_record(item, ctx.env)
+        for idx, category in ipairs(categories_order) do
+            if idx ~= 1 then -- prevent record members starting with empty line
+                ctx.builder:line()
+            end
+            if category:sub(1, 1) ~= "$" then -- skip special categories
+                ctx.builder:line(indent.."  ", "-- ", category)
+            end
+            for _, child in ipairs(categories[category]) do
+                signature(ctx, child, indent.."  ")
+                ctx.builder:line()
+            end
+        end
+    elseif item.children then
         for _, child in ipairs(item.children) do
             local child_item = ctx.env.registry[child]
             assert(child_item, "Child item not found: " .. child)
@@ -90,12 +106,13 @@ local detailed_signature_phase: Generator.Phase = {
                     signature(ctx, item)
                 end
             else
-                for _, child in ipairs(item.children) do
-                    local child_item = ctx.env.registry[child]
-                    assert(child_item, "Child item not found: " .. child)
-                    if not ctx.filter or ctx.filter(child_item, ctx.env) then
-                        signature(ctx, child_item)
-                        builder:line()
+                local category_order, categories = Generator.categories_for_module(item, ctx.module_name, ctx.env)
+                for _, category in ipairs(category_order) do
+                    if categories[category] then
+                        for _, child in ipairs(categories[category]) do
+                            signature(ctx, child)
+                            builder:line()
+                        end
                     end
                 end
             end

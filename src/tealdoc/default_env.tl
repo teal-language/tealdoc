@@ -170,15 +170,32 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local category_tag_handler: tealdoc.Tag = {
+        name = "category",
+        has_param = true,
+        handle = function(ctx: tealdoc.Tag.Context)
+            local item = ctx.item
+            if not item.attributes then
+                item.attributes = {}
+            end
+            item.attributes["category"] = ctx.param
+        end
+    }
+
     env:add_tag(return_tag_handler)
     env:add_tag(param_tag_handler)
     env:add_tag(typearg_tag_handler)
     env:add_tag(local_tag_handler)
+    env:add_tag(category_tag_handler)
 
     -- TODO: better place for this
     local function strip_module_prefix(path: string, module_name: string): string
+        if path:sub(1, 1) == "$" then
+            path = path:sub(2)
+        end
         return path:sub(#module_name + 2) -- +2 for the dot after module name
     end
+
 
     local module_header_phase: Generator.Phase = {
         name = "module_header",

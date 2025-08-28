@@ -8,14 +8,14 @@ describe("teal support in tealdoc: macroexps", function()
                 return nil
             end
         ]], {
-            ["test~my_macroexp"] = {
+            ["$test~my_macroexp"] = {
                 kind = "function",
                 function_kind = "macroexp",
                 name = "my_macroexp",
                 text = "my macroexp",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_macroexp",
+                path = "$test~my_macroexp",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -32,14 +32,14 @@ describe("teal support in tealdoc: macroexps", function()
                 return x + y
             end
         ]], {
-            ["test~my_macroexp"] = {
+            ["$test~my_macroexp"] = {
                 kind = "function",
                 function_kind = "macroexp",
                 name = "my_macroexp",
                 text = "my macroexp",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_macroexp",
+                path = "$test~my_macroexp",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -65,14 +65,14 @@ describe("teal support in tealdoc: macroexps", function()
     --             return x
     --         end
     --     ]], {
-    --         ["test~my_macroexp"] = {
+    --         ["$test~my_macroexp"] = {
     --             kind = "function",
     --             function_kind = "macroexp",
     --             name = "my_macroexp",
     --             text = "my macroexp",
     --             visibility = "local",
     --             parent = "$test",
-    --             path = "test~my_macroexp",
+    --             path = "$test~my_macroexp",
     --             location = {
     --                 filename = "test.tl",
     --                 y = 2,
@@ -92,14 +92,14 @@ describe("teal support in tealdoc: macroexps", function()
     --             return x
     --         end
     --     ]], {
-    --         ["test~my_macroexp"] = {
+    --         ["$test~my_macroexp"] = {
     --             kind = "function",
     --             function_kind = "macroexp",
     --             name = "my_macroexp",
     --             text = "my macroexp",
     --             visibility = "local",
     --             parent = "$test",
-    --             path = "test~my_macroexp",
+    --             path = "$test~my_macroexp",
     --             location = {
     --                 filename = "test.tl",
     --                 y = 2,

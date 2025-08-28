@@ -983,7 +983,7 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
 
     local state: VisitState = {
         env = env,
-        path = module_name.."~",
+        path = "$"..module_name.."~",
         module_name = module_name,
         type_report = reporter.tr,
         typenum_to_path = self.typenum_to_path,

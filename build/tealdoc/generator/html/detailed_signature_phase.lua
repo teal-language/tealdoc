@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local type = type; local Generator = require("tealdoc.generator")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local type = type; local Generator = require("tealdoc.generator")
 local tealdoc = require("tealdoc")
 local HTMLBuilder = require("tealdoc.generator.html.builder")
 local signatures = require("tealdoc.generator.signatures")
@@ -15,7 +15,23 @@ local function detailed_signature_for_structure_type(ctx, item, indent, open)
    ctx.builder:rawtext("</summary>")
    local old_path_mode = ctx.path_mode
    ctx.path_mode = "none"
-   if item.children then
+
+   local is_record_module = ctx.module_name == item.path
+   if is_record_module then
+      local categories_order, categories = Generator.categories_for_module_record(item, ctx.env)
+      for idx, category in ipairs(categories_order) do
+         if idx ~= 1 then
+            ctx.builder:line()
+         end
+         if category:sub(1, 1) ~= "$" then
+            ctx.builder:line(indent .. "  ", "-- ", category)
+         end
+         for _, child in ipairs(categories[category]) do
+            signature(ctx, child, indent .. "  ")
+            ctx.builder:line()
+         end
+      end
+   elseif item.children then
       for _, child in ipairs(item.children) do
          local child_item = ctx.env.registry[child]
          assert(child_item, "Child item not found: " .. child)
@@ -90,12 +106,13 @@ local detailed_signature_phase = {
                signature(ctx, item)
             end
          else
-            for _, child in ipairs(item.children) do
-               local child_item = ctx.env.registry[child]
-               assert(child_item, "Child item not found: " .. child)
-               if not ctx.filter or ctx.filter(child_item, ctx.env) then
-                  signature(ctx, child_item)
-                  builder:line()
+            local category_order, categories = Generator.categories_for_module(item, ctx.module_name, ctx.env)
+            for _, category in ipairs(category_order) do
+               if categories[category] then
+                  for _, child in ipairs(categories[category]) do
+                     signature(ctx, child)
+                     builder:line()
+                  end
                end
             end
          end

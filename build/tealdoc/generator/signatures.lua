@@ -14,8 +14,12 @@ local function visibility(item)
 end
 
 local function strip_module_prefix(path, module_name)
+   if path:sub(1, 1) == "$" then
+      path = path:sub(2)
+   end
    return path:sub(#module_name + 2)
 end
+
 
 local function get_name(ctx, item)
    if ctx.path_mode == "full" then

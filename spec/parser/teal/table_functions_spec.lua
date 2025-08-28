@@ -10,29 +10,29 @@ describe("should support functions attached to tables", function()
                 return true
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "{}",
                 name = "x",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 1,
                     x = 7,
                 },
                 children = {
-                    "test~x.y",
+                    "$test~x.y",
                 },
             },
-            ["test~x.y"] = {
+            ["$test~x.y"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "y",
                 visibility = "record",
-                parent = "test~x",
-                path = "test~x.y",
+                parent = "$test~x",
+                path = "$test~x.y",
                 text = "my function",
                 location = {
                     filename = "test.tl",
@@ -58,29 +58,29 @@ describe("should support functions attached to tables", function()
                 return a
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "{}",
                 name = "x",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 1,
                     x = 7,
                 },
                 children = {
-                    "test~x.y",
+                    "$test~x.y",
                 },
             },
-            ["test~x.y"] = {
+            ["$test~x.y"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "y",
                 visibility = "record",
-                parent = "test~x",
-                path = "test~x.y",
+                parent = "$test~x",
+                path = "$test~x.y",
                 text = "my function",
                 location = {
                     filename = "test.tl",
@@ -105,29 +105,29 @@ describe("should support functions attached to tables", function()
                 return true
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "{}",
                 name = "x",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 1,
                     x = 7,
                 },
                 children = {
-                    "test~x.y",
+                    "$test~x.y",
                 },
             },
-            ["test~x.y"] = {
+            ["$test~x.y"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "y",
                 visibility = "record",
-                parent = "test~x",
-                path = "test~x.y",
+                parent = "$test~x",
+                path = "$test~x.y",
                 location = {
                     filename = "test.tl",
                     y = 3,
@@ -151,29 +151,29 @@ describe("should support functions attached to tables", function()
                 return a
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "{}",
                 name = "x",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 1,
                     x = 7,
                 },
                 children = {
-                    "test~x.y",
+                    "$test~x.y",
                 },
             },
-            ["test~x.y"] = {
+            ["$test~x.y"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "y",
                 visibility = "record",
-                parent = "test~x",
-                path = "test~x.y",
+                parent = "$test~x",
+                path = "$test~x.y",
                 location = {
                     filename = "test.tl",
                     y = 3,

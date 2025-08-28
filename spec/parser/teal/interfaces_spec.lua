@@ -8,7 +8,7 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -16,7 +16,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -32,7 +32,7 @@ describe("teal support in tealdoc: interfaces", function()
                 global interface MyInterface
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -40,7 +40,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -56,7 +56,7 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface<T>
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface<T>",
@@ -64,7 +64,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -81,7 +81,7 @@ describe("teal support in tealdoc: interfaces", function()
                 global interface MyInterface<T>
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface<T>",
@@ -89,7 +89,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -106,7 +106,7 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface<T is math.Numeric>
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface<T is math.Numeric>",
@@ -114,7 +114,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -131,7 +131,7 @@ describe("teal support in tealdoc: interfaces", function()
                 global interface MyInterface<T is math.Numeric>
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface<T is math.Numeric>",
@@ -139,7 +139,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "global",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -162,7 +162,7 @@ describe("teal support in tealdoc: interfaces", function()
                     b: string
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -170,39 +170,39 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.a",
-                        "test~MyInterface.b",
+                        "$test~MyInterface.a",
+                        "$test~MyInterface.b",
                     },
                 },
-                ["test~MyInterface.a"] = {
+                ["$test~MyInterface.a"] = {
                     kind = "variable",
                     name = "a",
                     typename = "integer",
                     text = "my field",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.a",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.a",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 8,
                     },
                 },
-                ["test~MyInterface.b"] = {
+                ["$test~MyInterface.b"] = {
                     kind = "variable",
                     name = "b",
                     typename = "string",
                     text = "my other field",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.b",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.b",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -222,7 +222,7 @@ describe("teal support in tealdoc: interfaces", function()
                     my_function: function()
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -230,25 +230,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.my_function",
+                        "$test~MyInterface.my_function",
                     },
                 },
-                ["test~MyInterface.my_function"] = {
+                ["$test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.my_function",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -266,7 +266,7 @@ describe("teal support in tealdoc: interfaces", function()
                     my_function: function(integer, integer): integer, integer
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -274,25 +274,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.my_function",
+                        "$test~MyInterface.my_function",
                     },
                 },
-                ["test~MyInterface.my_function"] = {
+                ["$test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.my_function",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -318,7 +318,7 @@ describe("teal support in tealdoc: interfaces", function()
                     my_function: function<T>(x: T): T
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -326,25 +326,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.my_function",
+                        "$test~MyInterface.my_function",
                     },
                 },
-                ["test~MyInterface.my_function"] = {
+                ["$test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.my_function",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -371,7 +371,7 @@ describe("teal support in tealdoc: interfaces", function()
                     my_function: function<T is math.Numeric>(x: T): T
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -379,25 +379,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.my_function",
+                        "$test~MyInterface.my_function",
                     },
                 },
-                ["test~MyInterface.my_function"] = {
+                ["$test~MyInterface.my_function"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.my_function",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -430,7 +430,7 @@ describe("teal support in tealdoc: interfaces", function()
                     my_function: function(boolean, boolean): boolean
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -438,36 +438,36 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.my_function",
+                        "$test~MyInterface.my_function",
                     },
                 },
-                ["test~MyInterface.my_function"] = {
+                ["$test~MyInterface.my_function"] = {
                     kind = "overload",
                     name = "my_function",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.my_function",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.my_function",
                     children = {
-                        "test~MyInterface.my_function(integer, integer)",
-                        "test~MyInterface.my_function(string, string)",
-                        "test~MyInterface.my_function(boolean, boolean)",
+                        "$test~MyInterface.my_function(integer, integer)",
+                        "$test~MyInterface.my_function(string, string)",
+                        "$test~MyInterface.my_function(boolean, boolean)",
                     },
                 },
-                ["test~MyInterface.my_function(integer, integer)"] = {
+                ["$test~MyInterface.my_function(integer, integer)"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my function",
                     visibility = "record",
-                    parent = "test~MyInterface.my_function",
-                    path = "test~MyInterface.my_function(integer, integer)",
+                    parent = "$test~MyInterface.my_function",
+                    path = "$test~MyInterface.my_function(integer, integer)",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -481,15 +481,15 @@ describe("teal support in tealdoc: interfaces", function()
                         { type = "integer" },
                     }
                 },
-                ["test~MyInterface.my_function(string, string)"] = {
+                ["$test~MyInterface.my_function(string, string)"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my overloaded function",
                     visibility = "record",
-                    parent = "test~MyInterface.my_function",
-                    path = "test~MyInterface.my_function(string, string)",
+                    parent = "$test~MyInterface.my_function",
+                    path = "$test~MyInterface.my_function(string, string)",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -503,15 +503,15 @@ describe("teal support in tealdoc: interfaces", function()
                         { type = "string" },
                     }
                 },
-                ["test~MyInterface.my_function(boolean, boolean)"] = {
+                ["$test~MyInterface.my_function(boolean, boolean)"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "my_function",
                     text = "my other overloaded function",
                     visibility = "record",
-                    parent = "test~MyInterface.my_function",
-                    path = "test~MyInterface.my_function(boolean, boolean)",
+                    parent = "$test~MyInterface.my_function",
+                    path = "$test~MyInterface.my_function(boolean, boolean)",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -537,7 +537,7 @@ describe("teal support in tealdoc: interfaces", function()
                     metamethod __add: function(a: MyInterface, b: MyInterface): MyInterface
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -545,34 +545,34 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.$meta",
+                        "$test~MyInterface.$meta",
                     },
                 },
-                ["test~MyInterface.$meta"] = {
+                ["$test~MyInterface.$meta"] = {
                     kind = "metafields",
                     name = "$meta",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.$meta",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.$meta",
                     children = {
-                        "test~MyInterface.$meta.__add",
+                        "$test~MyInterface.$meta.__add",
                     },
                 },
-                ["test~MyInterface.$meta.__add"] = {
+                ["$test~MyInterface.$meta.__add"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     text = "my __add metamethod",
                     visibility = "record",
-                    parent = "test~MyInterface.$meta",
-                    path = "test~MyInterface.$meta.__add",
+                    parent = "$test~MyInterface.$meta",
+                    path = "$test~MyInterface.$meta.__add",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -599,7 +599,7 @@ describe("teal support in tealdoc: interfaces", function()
                     __add: function(a: MyInterface): MyInterface
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -607,35 +607,35 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.__add",
-                        "test~MyInterface.$meta"
+                        "$test~MyInterface.__add",
+                        "$test~MyInterface.$meta"
                     },
                 },
-                ["test~MyInterface.$meta"] = {
+                ["$test~MyInterface.$meta"] = {
                     kind = "metafields",
                     name = "$meta",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.$meta",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.$meta",
                     children = {
-                        "test~MyInterface.$meta.__add"
+                        "$test~MyInterface.$meta.__add"
                     },
                 },
-                ["test~MyInterface.$meta.__add"] = {
+                ["$test~MyInterface.$meta.__add"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     text = "my __add metamethod",
                     visibility = "record",
-                    parent = "test~MyInterface.$meta",
-                    path = "test~MyInterface.$meta.__add",
+                    parent = "$test~MyInterface.$meta",
+                    path = "$test~MyInterface.$meta.__add",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -649,15 +649,15 @@ describe("teal support in tealdoc: interfaces", function()
                         { type = "MyInterface" }
                     }
                 },
-                ["test~MyInterface.__add"] = {
+                ["$test~MyInterface.__add"] = {
                     kind = "function",
                     function_kind = "function",
                     is_declaration = true,
                     name = "__add",
                     text = "my normal function",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.__add",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.__add",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -683,7 +683,7 @@ describe("teal support in tealdoc: interfaces", function()
                     metamethod __add: function(a: MyInterface, b: string): MyInterface
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -691,44 +691,44 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.$meta",
+                        "$test~MyInterface.$meta",
                     },
                 },
-                ["test~MyInterface.$meta"] = {
+                ["$test~MyInterface.$meta"] = {
                     kind = "metafields",
                     name = "$meta",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.$meta",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.$meta",
                     children = {
-                        "test~MyInterface.$meta.__add",
+                        "$test~MyInterface.$meta.__add",
                     },
                 },
-                ["test~MyInterface.$meta.__add"] = {
+                ["$test~MyInterface.$meta.__add"] = {
                     kind = "overload",
                     name = "__add",
-                    parent = "test~MyInterface.$meta",
-                    path = "test~MyInterface.$meta.__add",
+                    parent = "$test~MyInterface.$meta",
+                    path = "$test~MyInterface.$meta.__add",
                     children = {
-                        "test~MyInterface.$meta.__add(MyInterface, MyInterface)",
-                        "test~MyInterface.$meta.__add(MyInterface, string)",
+                        "$test~MyInterface.$meta.__add(MyInterface, MyInterface)",
+                        "$test~MyInterface.$meta.__add(MyInterface, string)",
                     },
                 },
-                ["test~MyInterface.$meta.__add(MyInterface, MyInterface)"] = {
+                ["$test~MyInterface.$meta.__add(MyInterface, MyInterface)"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     text = "my __add metamethod",
                     visibility = "record",
-                    parent = "test~MyInterface.$meta.__add",
-                    path = "test~MyInterface.$meta.__add(MyInterface, MyInterface)",
+                    parent = "$test~MyInterface.$meta.__add",
+                    path = "$test~MyInterface.$meta.__add(MyInterface, MyInterface)",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -742,15 +742,15 @@ describe("teal support in tealdoc: interfaces", function()
                         { type = "MyInterface" }
                     }
                 },
-                ["test~MyInterface.$meta.__add(MyInterface, string)"] = {
+                ["$test~MyInterface.$meta.__add(MyInterface, string)"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     text = "my overloaded __add metamethod",
                     visibility = "record",
-                    parent = "test~MyInterface.$meta.__add",
-                    path = "test~MyInterface.$meta.__add(MyInterface, string)",
+                    parent = "$test~MyInterface.$meta.__add",
+                    path = "$test~MyInterface.$meta.__add(MyInterface, string)",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -777,7 +777,7 @@ describe("teal support in tealdoc: interfaces", function()
                     end
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -785,25 +785,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedInterface"
+                        "$test~MyInterface.NestedInterface"
                     },
                 },
-                ["test~MyInterface.NestedInterface"] = {
+                ["$test~MyInterface.NestedInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "NestedInterface",
                     name = "NestedInterface",
                     text = "my nested interface",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedInterface",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -821,7 +821,7 @@ describe("teal support in tealdoc: interfaces", function()
                     end
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -829,25 +829,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedInterface"
+                        "$test~MyInterface.NestedInterface"
                     },
                 },
-                ["test~MyInterface.NestedInterface"] = {
+                ["$test~MyInterface.NestedInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "NestedInterface<T>",
                     name = "NestedInterface",
                     text = "my nested interface",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedInterface",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -866,7 +866,7 @@ describe("teal support in tealdoc: interfaces", function()
                     end
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -874,25 +874,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedInterface"
+                        "$test~MyInterface.NestedInterface"
                     },
                 },
-                ["test~MyInterface.NestedInterface"] = {
+                ["$test~MyInterface.NestedInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "NestedInterface<T is math.Numeric>",
                     name = "NestedInterface",
                     text = "my nested interface",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedInterface",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -914,7 +914,7 @@ describe("teal support in tealdoc: interfaces", function()
                     end
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -922,43 +922,43 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedInterface"
+                        "$test~MyInterface.NestedInterface"
                     },
                 },
-                ["test~MyInterface.NestedInterface"] = {
+                ["$test~MyInterface.NestedInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "NestedInterface",
                     name = "NestedInterface",
                     text = "my nested interface",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedInterface",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 5,
                     },
                     children = {
-                        "test~MyInterface.NestedInterface.DeeplyNestedInterface"
+                        "$test~MyInterface.NestedInterface.DeeplyNestedInterface"
                     },
                 },
-                ["test~MyInterface.NestedInterface.DeeplyNestedInterface"] = {
+                ["$test~MyInterface.NestedInterface.DeeplyNestedInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "DeeplyNestedInterface",
                     name = "DeeplyNestedInterface",
                     text = "my deeply nested interface",
                     visibility = "record",
-                    parent = "test~MyInterface.NestedInterface",
-                    path = "test~MyInterface.NestedInterface.DeeplyNestedInterface",
+                    parent = "$test~MyInterface.NestedInterface",
+                    path = "$test~MyInterface.NestedInterface.DeeplyNestedInterface",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -978,7 +978,7 @@ describe("teal support in tealdoc: interfaces", function()
                     end
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -986,40 +986,40 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedEnum"
+                        "$test~MyInterface.NestedEnum"
                     },
                 },
-                ["test~MyInterface.NestedEnum"] = {
+                ["$test~MyInterface.NestedEnum"] = {
                     kind = "type",
                     type_kind = "enum",
                     typename = "NestedEnum",
                     name = "NestedEnum",
                     text = "my nested enum",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedEnum",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedEnum",
                     location = {
                         filename = "test.tl",
                         y = 4,
                         x = 5,
                     },
                     children = {
-                        "test~MyInterface.NestedEnum.\"A\"",
-                        "test~MyInterface.NestedEnum.\"B\""
+                        "$test~MyInterface.NestedEnum.\"A\"",
+                        "$test~MyInterface.NestedEnum.\"B\""
                     }
                 },
-                ["test~MyInterface.NestedEnum.\"A\""] = {
+                ["$test~MyInterface.NestedEnum.\"A\""] = {
                     kind = "enumvalue",
                     name = "\"A\"",
-                    parent = "test~MyInterface.NestedEnum",
-                    path = "test~MyInterface.NestedEnum.\"A\"",
+                    parent = "$test~MyInterface.NestedEnum",
+                    path = "$test~MyInterface.NestedEnum.\"A\"",
                     
                     location = {
                         filename = "test.tl",
@@ -1027,11 +1027,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 5,
                     }
                 },
-                ["test~MyInterface.NestedEnum.\"B\""] = {
+                ["$test~MyInterface.NestedEnum.\"B\""] = {
                     kind = "enumvalue",
                     name = "\"B\"",
-                    parent = "test~MyInterface.NestedEnum",
-                    path = "test~MyInterface.NestedEnum.\"B\"",
+                    parent = "$test~MyInterface.NestedEnum",
+                    path = "$test~MyInterface.NestedEnum.\"B\"",
                     
                     location = {
                         filename = "test.tl",
@@ -1049,7 +1049,7 @@ describe("teal support in tealdoc: interfaces", function()
                     type NestedType = string
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -1057,25 +1057,25 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 1,
                     },
                     children = {
-                        "test~MyInterface.NestedType"
+                        "$test~MyInterface.NestedType"
                     },
                 },
-                ["test~MyInterface.NestedType"] = {
+                ["$test~MyInterface.NestedType"] = {
                     kind = "type",
                     type_kind = "type",
                     typename = "string",
                     name = "NestedType",
                     text = "my nested type alias",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.NestedType",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.NestedType",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -1093,28 +1093,28 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface is A
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 3,
@@ -1132,16 +1132,16 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface is A
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     children = {
-                        "test~A.myField"
+                        "$test~A.myField"
                     },
                     location = {
                         filename = "test.tl",
@@ -1149,27 +1149,27 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 1,
                     }
                 },
-                ["test~A.myField"] = {
+                ["$test~A.myField"] = {
                     kind = "variable",
                     typename = "string",
                     name = "myField",
                     visibility = "record",
-                    parent = "test~A",
-                    path = "test~A.myField",
+                    parent = "$test~A",
+                    path = "$test~A.myField",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 14,
                     }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -1187,41 +1187,41 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface is A
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~A.$meta"
+                        "$test~A.$meta"
                     }
                 },
-                ["test~A.$meta"] = {
+                ["$test~A.$meta"] = {
                     kind = "metafields",
                     name = "$meta",
-                    parent = "test~A",
-                    path = "test~A.$meta",
+                    parent = "$test~A",
+                    path = "$test~A.$meta",
                     children = {
-                        "test~A.$meta.__add"
+                        "$test~A.$meta.__add"
                     }
                 },
-                ["test~A.$meta.__add"] = {
+                ["$test~A.$meta.__add"] = {
                     kind = "function",
                     function_kind = "metamethod",
                     is_declaration = true,
                     name = "__add",
                     
                     visibility = "record",
-                    parent = "test~A.$meta",
-                    path = "test~A.$meta.__add",
+                    parent = "$test~A.$meta",
+                    path = "$test~A.$meta.__add",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -1235,14 +1235,14 @@ describe("teal support in tealdoc: interfaces", function()
                         { type = "A" }
                     }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -1263,28 +1263,28 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface is B, C
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     }
                 },
-                ["test~B"] = {
+                ["$test~B"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "B",
                     name = "B",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~B",
+                    path = "$test~B",
                     location = {
                         filename = "test.tl",
                         y = 3,
@@ -1292,14 +1292,14 @@ describe("teal support in tealdoc: interfaces", function()
                     },
                     inherits = { "A" }
                 },
-                ["test~C"] = {
+                ["$test~C"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "C",
                     name = "C",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~C",
+                    path = "$test~C",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -1307,14 +1307,14 @@ describe("teal support in tealdoc: interfaces", function()
                     },
                     inherits = { "A" }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -1330,7 +1330,7 @@ describe("teal support in tealdoc: interfaces", function()
                 local interface MyInterface is { MyInterface }
                 end
             ]], {
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
@@ -1338,7 +1338,7 @@ describe("teal support in tealdoc: interfaces", function()
                     text = "my interface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 2,
@@ -1357,16 +1357,16 @@ describe("teal support in tealdoc: interfaces", function()
                     myField: string
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     children = {
-                        "test~A.myField"
+                        "$test~A.myField"
                     },
                     location = {
                         filename = "test.tl",
@@ -1374,27 +1374,27 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 1,
                     }
                 },
-                ["test~A.myField"] = {
+                ["$test~A.myField"] = {
                     kind = "variable",
                     typename = "string",
                     name = "myField",
                     visibility = "record",
-                    parent = "test~A",
-                    path = "test~A.myField",
+                    parent = "$test~A",
+                    path = "$test~A.myField",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 14,
                     }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -1414,16 +1414,16 @@ describe("teal support in tealdoc: interfaces", function()
                     myField: string
                 end
             ]], {
-                ["test~A"] = {
+                ["$test~A"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "A",
                     name = "A",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~A",
+                    path = "$test~A",
                     children = {
-                        "test~A.myField"
+                        "$test~A.myField"
                     },
                     location = {
                         filename = "test.tl",
@@ -1431,29 +1431,29 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 1,
                     }
                 },
-                ["test~A.myField"] = {
+                ["$test~A.myField"] = {
                     kind = "variable",
                     typename = "string",
                     name = "myField",
                     visibility = "record",
-                    parent = "test~A",
-                    path = "test~A.myField",
+                    parent = "$test~A",
+                    path = "$test~A.myField",
                     location = {
                         filename = "test.tl",
                         y = 2,
                         x = 14,
                     }
                 },
-                ["test~MyInterface"] = {
+                ["$test~MyInterface"] = {
                     kind = "type",
                     type_kind = "interface",
                     typename = "MyInterface",
                     name = "MyInterface",
                     visibility = "local",
                     parent = "$test",
-                    path = "test~MyInterface",
+                    path = "$test~MyInterface",
                     children = {
-                        "test~MyInterface.myField"
+                        "$test~MyInterface.myField"
                     },
                     location = {
                         filename = "test.tl",
@@ -1462,14 +1462,14 @@ describe("teal support in tealdoc: interfaces", function()
                     },
                     inherits = { "A" },
                 },
-                ["test~MyInterface.myField"] = {
+                ["$test~MyInterface.myField"] = {
                     kind = "variable",
                     typename = "string",
                     name = "myField",
                     text = "my shadowed field",
                     visibility = "record",
-                    parent = "test~MyInterface",
-                    path = "test~MyInterface.myField",
+                    parent = "$test~MyInterface",
+                    path = "$test~MyInterface.myField",
                     location = {
                         filename = "test.tl",
                         y = 6,

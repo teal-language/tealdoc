@@ -7,14 +7,14 @@ describe("teal support in tealdoc: types", function()
             --- my type
             local type MyType = integer
         ]], {
-            ["test~MyType"] = {
+            ["$test~MyType"] = {
                 kind = "type",
                 name = "MyType",
                 typename = "integer",
                 text = "my type",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyType",
+                path = "$test~MyType",
                 type_kind = "type",
                 location = {
                     filename = "test.tl",
@@ -30,14 +30,14 @@ describe("teal support in tealdoc: types", function()
             --- my type
             global type MyType = integer
         ]], {
-            ["test~MyType"] = {
+            ["$test~MyType"] = {
                 kind = "type",
                 name = "MyType",
                 typename = "integer",
                 text = "my type",
                 visibility = "global",
                 parent = "$test",
-                path = "test~MyType",
+                path = "$test~MyType",
                 type_kind = "type",
                 location = {
                     filename = "test.tl",
@@ -62,14 +62,14 @@ describe("teal support in tealdoc: types", function()
             local type MyRecord = record
             end
         ]], {
-            ["test~MyRecord"] = {
+            ["$test~MyRecord"] = {
                 kind = "type",
                 name = "MyRecord",
                 typename = "MyRecord",
                 text = "my record",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyRecord",
+                path = "$test~MyRecord",
                 type_kind = "record",
                 location = {
                     filename = "test.tl",
@@ -85,14 +85,14 @@ describe("teal support in tealdoc: types", function()
             local type MyInterface = interface
             end
         ]], {
-            ["test~MyInterface"] = {
+            ["$test~MyInterface"] = {
                 kind = "type",
                 name = "MyInterface",
                 typename = "MyInterface",
                 text = "my interface",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyInterface",
+                path = "$test~MyInterface",
                 type_kind = "interface",
                 location = {
                     filename = "test.tl",
@@ -108,14 +108,14 @@ describe("teal support in tealdoc: types", function()
             local type MyEnum = enum
             end
         ]], {
-            ["test~MyEnum"] = {
+            ["$test~MyEnum"] = {
                 kind = "type",
                 name = "MyEnum",
                 typename = "MyEnum",
                 text = "my enum",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyEnum",
+                path = "$test~MyEnum",
                 type_kind = "enum",
                 location = {
                     filename = "test.tl",
@@ -131,14 +131,14 @@ describe("teal support in tealdoc: types", function()
             local type MyRecord = record<T>
             end
         ]], {
-            ["test~MyRecord"] = {
+            ["$test~MyRecord"] = {
                 kind = "type",
                 name = "MyRecord",
                 typename = "MyRecord<T>",
                 text = "my record",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyRecord",
+                path = "$test~MyRecord",
                 type_kind = "record",
                 typeargs = { {name = "T"} },
                 location = {
@@ -155,14 +155,14 @@ describe("teal support in tealdoc: types", function()
             local type MyRecord = record<T is math.Numeric>
             end
         ]], {
-            ["test~MyRecord"] = {
+            ["$test~MyRecord"] = {
                 kind = "type",
                 name = "MyRecord",
                 typename = "MyRecord<T is math.Numeric>",
                 text = "my record",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyRecord",
+                path = "$test~MyRecord",
                 type_kind = "record",
                 typeargs = { {name = "T", constraint = "math.Numeric" } },
                 location = {
@@ -179,14 +179,14 @@ describe("teal support in tealdoc: types", function()
             local type MyInterface = interface<T>
             end
         ]], {
-            ["test~MyInterface"] = {
+            ["$test~MyInterface"] = {
                 kind = "type",
                 name = "MyInterface",
                 typename = "MyInterface<T>",
                 text = "my interface",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyInterface",
+                path = "$test~MyInterface",
                 type_kind = "interface",
                 typeargs = { {name = "T"} },
                 location = {
@@ -203,14 +203,14 @@ describe("teal support in tealdoc: types", function()
             local type MyInterface = interface<T is math.Numeric>
             end
         ]], {
-            ["test~MyInterface"] = {
+            ["$test~MyInterface"] = {
                 kind = "type",
                 name = "MyInterface",
                 typename = "MyInterface<T is math.Numeric>",
                 text = "my interface",
                 visibility = "local",
                 parent = "$test",
-                path = "test~MyInterface",
+                path = "$test~MyInterface",
                 type_kind = "interface",
                 typeargs = { {name = "T", constraint = "math.Numeric" } },
                 location = {

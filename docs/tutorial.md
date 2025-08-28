@@ -148,3 +148,18 @@ By default, Tealdoc includes all of the module's contents and all global functio
 *   To **include** local items that would normally be excluded, use the `--all` command-line flag or set `env.include_all = true` when using the API.
 
 If there are multiple conflicting declarations (e.g., two global functions with the same name), the last one processed is chosen, and a warning is emitted if a Tealdoc comment from a previous declaration is ignored as a result.
+
+### Categories
+You can add `@category <category_name>` tags to your module members to group them into categories. This can help organize your documentation and make it easier to navigate.
+```
+local record Logger
+    --- @category callbacks
+    on_message: function(message: string)
+
+    --- @category methods
+    log: function(self, message: string)
+
+    --- @category methods
+    error: function(self, message: string)
+end
+```

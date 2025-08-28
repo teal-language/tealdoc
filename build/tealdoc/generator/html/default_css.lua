@@ -98,4 +98,20 @@ return [[
         text-align: center;
         padding: 10px 0;
     }
+    .category {
+        border-bottom: 2px solid #d8d8d8ff;
+    }
+    .muted {
+        color: #555;
+    }
+    h1:hover .title-link,
+    h2:hover .title-link,
+    h3:hover .title-link {
+        visibility: visible;
+    }
+
+    .title-link {
+        visibility: hidden;
+        font-size: 0.8em;
+    }
 ]]

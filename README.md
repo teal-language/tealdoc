@@ -188,6 +188,21 @@ By default, Tealdoc includes all of the module's contents and all global functio
 
 If there are multiple conflicting declarations (e.g., two global functions with the same name), the last one processed is chosen, and a warning is emitted if a Tealdoc comment from a previous declaration is ignored as a result.
 
+### Categories
+You can add `@category <category_name>` tags to your module members to group them into categories. This can help organize your documentation and make it easier to navigate.
+```
+local record Logger
+    --- @category callbacks
+    on_message: function(message: string)
+
+    --- @category methods
+    log: function(self, message: string)
+
+    --- @category methods
+    error: function(self, message: string)
+end
+```
+
 
 ## CLI Reference
 
@@ -294,189 +309,33 @@ return MyPlugin
 > The API reference is generated from the source code using tealdoc itself.
 # Module: tealdoc
 This module exposes the public API of Tealdoc.  You can use it to programmatically interact with Tealdoc. You can also use it to extend Tealdoc using plugins.
-## tealdoc.Plugin
+## tealdoc.DeclarationItem
 ```
-interface tealdoc.Plugin
-```
-
-Plugin is an abstract base interface for tealdoc plugins. Plugins can be used to extend Tealdoc functionality. When using the CLI you can load plugins using the `--plugin` option followed by the plugin package name, which will be resolved the same way as Lua modules.
-## tealdoc.Plugin.name
-```
-tealdoc.Plugin.name: string
+interface tealdoc.DeclarationItem
 ```
 
-The name of the plugin used for identification purposes.
-## tealdoc.Plugin.run
+This interface represents a declaration item in Tealdoc. It is used to represent declarations of functions, variables, and types.
+## tealdoc.DeclarationItem.Visibility
 ```
-function tealdoc.Plugin.run(env: tealdoc.Env)
-```
-
-Run the plugin. This function is called when the plugin is loaded. You may use this function to modify the environment in order to extend the Tealdoc functionality.
-#### Parameters
-
-- **`env`** (`tealdoc.Env`) — The environment in which the plugin is running.
-
-## tealdoc.Parser
-```
-interface tealdoc.Parser
+enum tealdoc.DeclarationItem.Visibility
 ```
 
-Parser is an abstract base interface for Tealdoc parsers. Parsers are used to process source files and extract documentation items from them. Parsers must add the items to the `env.registry` table. Each parser is responsible for a specific set of file extensions. You can register a parser using the `add_parser` method of the `tealdoc.Env` interface.
-## tealdoc.Parser.process
+Possible visibilities for declarations.
+## tealdoc.DeclarationItem.Visibility."global"
+
+Global visibility, for global variables and functions.
+## tealdoc.DeclarationItem.Visibility."local"
+
+Local visibility, for local variables and functions.
+## tealdoc.DeclarationItem.Visibility."record"
+
+Record visibility, for record fields and nested types.
+## tealdoc.DeclarationItem.visibility
 ```
-function tealdoc.Parser.process(self: Parser, text: string, path: string, env: tealdoc.Env)
+tealdoc.DeclarationItem.visibility: Visibility
 ```
 
-Process file contents. This function is called by Tealdoc when a file with a registered extension is processed.
-#### Parameters
-
-- **`self`** (`Parser`) — The parser instance.
-- **`text`** (`string`) — The contents of the file as a string.
-- **`path`** (`string`) — The path of the file being processed.
-- **`env`** (`tealdoc.Env`) — The environment in which the parser is running.
-
-## tealdoc.Parser.file_extensions
-```
-tealdoc.Parser.file_extensions: {string}
-```
-
-A list of file extensions that this parser can handle. This is used to register the parser in the `tealdoc.Env` environment. Each extension should start with a dot (e.g. ".lua", ".md").
-## tealdoc.Tag
-```
-interface tealdoc.Tag
-```
-
-Tag is an abstract base interface for Tealdoc tags. Tags are used to annotate items with additional metadata. Tags can be used to provide additional information about an item, such as parameters, descriptions, or other attributes. Tags can be registered in the `tealdoc.Env` environment using the `add_tag` method.
-## tealdoc.Tag.Context
-```
-interface tealdoc.Tag.Context
-```
-
-Context is the context in which the tag is encountered.
-## tealdoc.Tag.Context.item
-```
-tealdoc.Tag.Context.item: Item
-```
-
-The item to which the tag belongs.
-## tealdoc.Tag.Context.param
-```
-tealdoc.Tag.Context.param: string
-```
-
-The parameter of the tag if any. Only applicable if has_param of the tag is true.
-## tealdoc.Tag.Context.description
-```
-tealdoc.Tag.Context.description: string
-```
-
-The description of the tag if any. Only applicable if has_description of the tag is true.
-## tealdoc.Tag.name
-```
-tealdoc.Tag.name: string
-```
-
-The name of the tag, which is used to identify the tag in the comments.
-## tealdoc.Tag.handle
-```
-function tealdoc.Tag.handle(ctx: Context)
-```
-
-Function which is called when the tag is encountered in the comments.
-#### Parameters
-
-- **`ctx`** (`Context`) — The context in which the tag is encountered.
-
-## tealdoc.Tag.has_param
-```
-tealdoc.Tag.has_param: boolean
-```
-
-Whether the tag has a parameter. If true, the tag expects a parameter after the tag name. For example, `@param name description` has a parameter `name`.
-## tealdoc.Tag.has_description
-```
-tealdoc.Tag.has_description: boolean
-```
-
-Whether the tag has a description. If true, the tag expects a description after the tag name or parameter. For example, `@description This is a description` has a description `This is a description`.
-## tealdoc.Location
-```
-record tealdoc.Location
-```
-
-This record represents a location in a file. It is used to store the location of an item in the source code.
-## tealdoc.Location.filename
-```
-tealdoc.Location.filename: string
-```
-
-The path to the file where the item is located.
-## tealdoc.Location.x
-```
-tealdoc.Location.x: integer
-```
-
-The column number where the item is located.
-## tealdoc.Location.y
-```
-tealdoc.Location.y: integer
-```
-
-The line number where the item is located.
-## tealdoc.Item
-```
-interface tealdoc.Item
-```
-
-Item is an abstract base interface for Tealdoc items. Items represent documentation entities such as functions, variables, types, etc. Items can also represent abstract concepts like namespaces or modules.
-## tealdoc.Item.kind
-```
-tealdoc.Item.kind: string
-```
-
-The kind of the item, e.g. "function", "variable", "type", etc. This is used to differentiate between different types of items.
-## tealdoc.Item.path
-```
-tealdoc.Item.path: string
-```
-
-The path to the item, which is used as a unique identifier.
-## tealdoc.Item.name
-```
-tealdoc.Item.name: string
-```
-
-The name of the item, which is used for display purposes. This is usually the same as the last part of the path.
-## tealdoc.Item.children
-```
-tealdoc.Item.children: {string}
-```
-
-The children of the item, which are other items that are related to this item. This is used to represent hierarchical relationships between items. For example, a record type may have fields that are also items. The children are stored as an array of paths of the children.
-## tealdoc.Item.parent
-```
-tealdoc.Item.parent: string
-```
-
-The parent of the item, which is the path to the parent item.
-## tealdoc.Item.text
-```
-tealdoc.Item.text: string
-```
-
-The text of the item, which is the documentation content. This is usually a multiline string that contains the documentation for the item. It may include markdown or other formatting. If the item does not have any documentation, this may be nil.
-## tealdoc.Item.attributes
-```
-tealdoc.Item.attributes: {string : <any type>}
-```
-
-The attributes of the item, which are additional metadata.
-## tealdoc.Item.location
-```
-tealdoc.Item.location: Location
-```
-
-The location of the item in the source code.
+The visibility of the declaration.
 ## tealdoc.Env
 ```
 record tealdoc.Env
@@ -539,57 +398,6 @@ Initialize a new environment. This function creates a new environment with empty
 
 1. (`Env`)
 
-## tealdoc.Typearg
-```
-record tealdoc.Typearg
-```
-
-This record represents a type argument for a function or type.
-## tealdoc.Typearg.name
-```
-tealdoc.Typearg.name: string
-```
-
-The name of the type argument.
-## tealdoc.Typearg.constraint
-```
-tealdoc.Typearg.constraint: string
-```
-
-The constraint of the type argument if any.
-## tealdoc.Typearg.description
-```
-tealdoc.Typearg.description: string
-```
-
-The description of the type argument.
-## tealdoc.DeclarationItem
-```
-interface tealdoc.DeclarationItem
-```
-
-This interface represents a declaration item in Tealdoc. It is used to represent declarations of functions, variables, and types.
-## tealdoc.DeclarationItem.Visibility
-```
-enum tealdoc.DeclarationItem.Visibility
-```
-
-Possible visibilities for declarations.
-## tealdoc.DeclarationItem.Visibility."global"
-
-Global visibility, for global variables and functions.
-## tealdoc.DeclarationItem.Visibility."local"
-
-Local visibility, for local variables and functions.
-## tealdoc.DeclarationItem.Visibility."record"
-
-Record visibility, for record fields and nested types.
-## tealdoc.DeclarationItem.visibility
-```
-tealdoc.DeclarationItem.visibility: Visibility
-```
-
-The visibility of the declaration.
 ## tealdoc.FunctionItem
 ```
 record tealdoc.FunctionItem
@@ -683,18 +491,189 @@ tealdoc.FunctionItem.is_declaration: boolean
 ```
 
 Whether this function is only a declaration (it does not contain a body).
-## tealdoc.VariableItem
+## tealdoc.Item
 ```
-record tealdoc.VariableItem
-```
-
-This record represents a variable item in Tealdoc.
-## tealdoc.VariableItem.typename
-```
-tealdoc.VariableItem.typename: string
+interface tealdoc.Item
 ```
 
-The name of the type of the variable.
+Item is an abstract base interface for Tealdoc items. Items represent documentation entities such as functions, variables, types, etc. Items can also represent abstract concepts like namespaces or modules.
+## tealdoc.Item.kind
+```
+tealdoc.Item.kind: string
+```
+
+The kind of the item, e.g. "function", "variable", "type", etc. This is used to differentiate between different types of items.
+## tealdoc.Item.path
+```
+tealdoc.Item.path: string
+```
+
+The path to the item, which is used as a unique identifier.
+## tealdoc.Item.name
+```
+tealdoc.Item.name: string
+```
+
+The name of the item, which is used for display purposes. This is usually the same as the last part of the path.
+## tealdoc.Item.children
+```
+tealdoc.Item.children: {string}
+```
+
+The children of the item, which are other items that are related to this item. This is used to represent hierarchical relationships between items. For example, a record type may have fields that are also items. The children are stored as an array of paths of the children.
+## tealdoc.Item.parent
+```
+tealdoc.Item.parent: string
+```
+
+The parent of the item, which is the path to the parent item.
+## tealdoc.Item.text
+```
+tealdoc.Item.text: string
+```
+
+The text of the item, which is the documentation content. This is usually a multiline string that contains the documentation for the item. It may include markdown or other formatting. If the item does not have any documentation, this may be nil.
+## tealdoc.Item.attributes
+```
+tealdoc.Item.attributes: {string : <any type>}
+```
+
+The attributes of the item, which are additional metadata.
+## tealdoc.Item.location
+```
+tealdoc.Item.location: Location
+```
+
+The location of the item in the source code.
+## tealdoc.Location
+```
+record tealdoc.Location
+```
+
+This record represents a location in a file. It is used to store the location of an item in the source code.
+## tealdoc.Location.filename
+```
+tealdoc.Location.filename: string
+```
+
+The path to the file where the item is located.
+## tealdoc.Location.x
+```
+tealdoc.Location.x: integer
+```
+
+The column number where the item is located.
+## tealdoc.Location.y
+```
+tealdoc.Location.y: integer
+```
+
+The line number where the item is located.
+## tealdoc.Parser
+```
+interface tealdoc.Parser
+```
+
+Parser is an abstract base interface for Tealdoc parsers. Parsers are used to process source files and extract documentation items from them. Parsers must add the items to the `env.registry` table. Each parser is responsible for a specific set of file extensions. You can register a parser using the `add_parser` method of the `tealdoc.Env` interface.
+## tealdoc.Parser.process
+```
+function tealdoc.Parser.process(self: Parser, text: string, path: string, env: tealdoc.Env)
+```
+
+Process file contents. This function is called by Tealdoc when a file with a registered extension is processed.
+#### Parameters
+
+- **`self`** (`Parser`) — The parser instance.
+- **`text`** (`string`) — The contents of the file as a string.
+- **`path`** (`string`) — The path of the file being processed.
+- **`env`** (`tealdoc.Env`) — The environment in which the parser is running.
+
+## tealdoc.Parser.file_extensions
+```
+tealdoc.Parser.file_extensions: {string}
+```
+
+A list of file extensions that this parser can handle. This is used to register the parser in the `tealdoc.Env` environment. Each extension should start with a dot (e.g. ".lua", ".md").
+## tealdoc.Plugin
+```
+interface tealdoc.Plugin
+```
+
+Plugin is an abstract base interface for tealdoc plugins. Plugins can be used to extend Tealdoc functionality. When using the CLI you can load plugins using the `--plugin` option followed by the plugin package name, which will be resolved the same way as Lua modules.
+## tealdoc.Plugin.name
+```
+tealdoc.Plugin.name: string
+```
+
+The name of the plugin used for identification purposes.
+## tealdoc.Plugin.run
+```
+function tealdoc.Plugin.run(env: tealdoc.Env)
+```
+
+Run the plugin. This function is called when the plugin is loaded. You may use this function to modify the environment in order to extend the Tealdoc functionality.
+#### Parameters
+
+- **`env`** (`tealdoc.Env`) — The environment in which the plugin is running.
+
+## tealdoc.Tag
+```
+interface tealdoc.Tag
+```
+
+Tag is an abstract base interface for Tealdoc tags. Tags are used to annotate items with additional metadata. Tags can be used to provide additional information about an item, such as parameters, descriptions, or other attributes. Tags can be registered in the `tealdoc.Env` environment using the `add_tag` method.
+## tealdoc.Tag.Context
+```
+interface tealdoc.Tag.Context
+```
+
+Context is the context in which the tag is encountered.
+## tealdoc.Tag.Context.item
+```
+tealdoc.Tag.Context.item: Item
+```
+
+The item to which the tag belongs.
+## tealdoc.Tag.Context.param
+```
+tealdoc.Tag.Context.param: string
+```
+
+The parameter of the tag if any. Only applicable if has_param of the tag is true.
+## tealdoc.Tag.Context.description
+```
+tealdoc.Tag.Context.description: string
+```
+
+The description of the tag if any. Only applicable if has_description of the tag is true.
+## tealdoc.Tag.name
+```
+tealdoc.Tag.name: string
+```
+
+The name of the tag, which is used to identify the tag in the comments.
+## tealdoc.Tag.handle
+```
+function tealdoc.Tag.handle(ctx: Context)
+```
+
+Function which is called when the tag is encountered in the comments.
+#### Parameters
+
+- **`ctx`** (`Context`) — The context in which the tag is encountered.
+
+## tealdoc.Tag.has_param
+```
+tealdoc.Tag.has_param: boolean
+```
+
+Whether the tag has a parameter. If true, the tag expects a parameter after the tag name. For example, `@param name description` has a parameter `name`.
+## tealdoc.Tag.has_description
+```
+tealdoc.Tag.has_description: boolean
+```
+
+Whether the tag has a description. If true, the tag expects a description after the tag name or parameter. For example, `@description This is a description` has a description `This is a description`.
 ## tealdoc.TypeItem
 ```
 record tealdoc.TypeItem
@@ -743,6 +722,42 @@ tealdoc.TypeItem.inherits: {string}
 ```
 
 Names of inherited types
+## tealdoc.Typearg
+```
+record tealdoc.Typearg
+```
+
+This record represents a type argument for a function or type.
+## tealdoc.Typearg.name
+```
+tealdoc.Typearg.name: string
+```
+
+The name of the type argument.
+## tealdoc.Typearg.constraint
+```
+tealdoc.Typearg.constraint: string
+```
+
+The constraint of the type argument if any.
+## tealdoc.Typearg.description
+```
+tealdoc.Typearg.description: string
+```
+
+The description of the type argument.
+## tealdoc.VariableItem
+```
+record tealdoc.VariableItem
+```
+
+This record represents a variable item in Tealdoc.
+## tealdoc.VariableItem.typename
+```
+tealdoc.VariableItem.typename: string
+```
+
+The name of the type of the variable.
 ## tealdoc.process_file
 ```
 function tealdoc.process_file(path: string, env: Env)

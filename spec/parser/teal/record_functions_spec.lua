@@ -11,14 +11,14 @@ describe("teal support in tealdoc: record functions", function()
                 function MyRecord.my_function()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -26,17 +26,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -56,7 +56,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -64,24 +64,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -107,7 +107,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -115,24 +115,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -160,7 +160,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -168,24 +168,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -215,31 +215,31 @@ describe("teal support in tealdoc: record functions", function()
                 function MyRecord.my_function()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     parent = "$test",
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -260,7 +260,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -268,24 +268,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -312,7 +312,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -320,24 +320,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -366,7 +366,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -374,24 +374,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -421,7 +421,7 @@ describe("teal support in tealdoc: record functions", function()
                 function MyRecord.my_function()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -429,25 +429,25 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     is_declaration = true,
                     text = "My record function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 3,
@@ -468,7 +468,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -476,25 +476,25 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     is_declaration = true,
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 3,
@@ -521,7 +521,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -529,25 +529,25 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     is_declaration = true,
                     text = "My record function with typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -576,7 +576,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -584,25 +584,25 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     is_declaration = true,
                     text = "My record function with constrained typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 4,
@@ -631,7 +631,7 @@ describe("teal support in tealdoc: record functions", function()
                 function MyRecord:my_method()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -639,24 +639,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -678,7 +678,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -686,24 +686,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -730,7 +730,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -738,24 +738,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -784,7 +784,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -792,24 +792,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with constrained typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -840,7 +840,7 @@ describe("teal support in tealdoc: record functions", function()
                 function MyRecord:my_method()
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -848,24 +848,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     params = {
                         { name = "self", type = "MyRecord" }
                     },
@@ -889,7 +889,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -897,24 +897,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -942,7 +942,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -950,24 +950,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -997,7 +997,7 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
@@ -1005,24 +1005,24 @@ describe("teal support in tealdoc: record functions", function()
                     parent = "$test",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     location = {
                         filename = "test.tl",
                         y = 1,
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with constrained typeargs",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -1055,14 +1055,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1070,15 +1070,15 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~alias"] = {
+                ["$test~alias"] = {
                     kind = "type",
                     name = "alias",
                     visibility = "local",
                     type_kind = "type",
-                    path = "test~alias",
+                    path = "$test~alias",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1087,14 +1087,14 @@ describe("teal support in tealdoc: record functions", function()
                     },
                     typename = "MyRecord"
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -1122,14 +1122,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1137,15 +1137,15 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~alias"] = {
+                ["$test~alias"] = {
                     kind = "type",
                     name = "alias",
                     visibility = "local",
                     type_kind = "type",
-                    path = "test~alias",
+                    path = "$test~alias",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1154,14 +1154,14 @@ describe("teal support in tealdoc: record functions", function()
                     },
                     typename = "MyRecord"
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -1191,14 +1191,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1206,15 +1206,15 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~alias"] = {
+                ["$test~alias"] = {
                     kind = "type",
                     name = "alias",
                     visibility = "local",
                     type_kind = "type",
-                    path = "test~alias",
+                    path = "$test~alias",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1223,14 +1223,14 @@ describe("teal support in tealdoc: record functions", function()
                     },
                     typename = "MyRecord"
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 8,
@@ -1259,14 +1259,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1274,15 +1274,15 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~alias"] = {
+                ["$test~alias"] = {
                     kind = "type",
                     name = "alias",
                     visibility = "local",
                     type_kind = "type",
-                    path = "test~alias",
+                    path = "$test~alias",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1291,14 +1291,14 @@ describe("teal support in tealdoc: record functions", function()
                     },
                     typename = "MyRecord"
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 8,
@@ -1334,14 +1334,14 @@ describe("teal support in tealdoc: record functions", function()
                     end
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1349,17 +1349,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -1391,14 +1391,14 @@ describe("teal support in tealdoc: record functions", function()
                     end
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1406,17 +1406,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -1449,14 +1449,14 @@ describe("teal support in tealdoc: record functions", function()
                     end
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1464,17 +1464,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     text = "My record function with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -1506,13 +1506,13 @@ describe("teal support in tealdoc: record functions", function()
                     end
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1520,17 +1520,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_method",
+                        "$test~MyRecord.my_method",
                     },
                 },
-                ["test~MyRecord.my_method"] = {
+                ["$test~MyRecord.my_method"] = {
                     name = "my_method",
                     text = "My record method with parameters and returns",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_method",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_method",
                     location = {
                         filename = "test.tl",
                         y = 10,
@@ -1559,14 +1559,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1574,16 +1574,16 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -1609,14 +1609,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1624,16 +1624,16 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 5,
@@ -1663,14 +1663,14 @@ describe("teal support in tealdoc: record functions", function()
                     return x
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1678,15 +1678,15 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~alias"] = {
+                ["$test~alias"] = {
                     kind = "type",
                     name = "alias",
                     visibility = "local",
                     type_kind = "type",
-                    path = "test~alias",
+                    path = "$test~alias",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1695,13 +1695,13 @@ describe("teal support in tealdoc: record functions", function()
                     },
                     typename = "MyRecord"
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 6,
@@ -1734,14 +1734,14 @@ describe("teal support in tealdoc: record functions", function()
                     end
                 end
             ]], {
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1749,16 +1749,16 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 11,
@@ -1788,13 +1788,13 @@ describe("teal support in tealdoc: record functions", function()
                     return tostring(x)
                 end
             ]], {
-                ["test~MyRecord.my_function"] = {
+                ["$test~MyRecord.my_function"] = {
                     name = "my_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~MyRecord",
-                    path = "test~MyRecord.my_function",
+                    parent = "$test~MyRecord",
+                    path = "$test~MyRecord.my_function",
                     location = {
                         filename = "test.tl",
                         y = 7,
@@ -1808,13 +1808,13 @@ describe("teal support in tealdoc: record functions", function()
                         { type = "number" }
                     },
                 },
-                ["test~AnotherRecord.another_function"] = {
+                ["$test~AnotherRecord.another_function"] = {
                     name = "another_function",
                     visibility = "record",
                     kind = "function",
                     function_kind = "function",
-                    parent = "test~AnotherRecord",
-                    path = "test~AnotherRecord.another_function",
+                    parent = "$test~AnotherRecord",
+                    path = "$test~AnotherRecord.another_function",
                     location = {
                         filename = "test.tl",
                         y = 9,
@@ -1827,14 +1827,14 @@ describe("teal support in tealdoc: record functions", function()
                         { type = "string" }
                     },
                 },
-                ["test~MyRecord"] = {
+                ["$test~MyRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "MyRecord",
                     name = "MyRecord",
                     
                     visibility = "local",
-                    path = "test~MyRecord",
+                    path = "$test~MyRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1842,17 +1842,17 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~MyRecord.my_function",
+                        "$test~MyRecord.my_function",
                     },
                 },
-                ["test~AnotherRecord"] = {
+                ["$test~AnotherRecord"] = {
                     kind = "type",
                     type_kind = "record",
                     typename = "AnotherRecord",
                     name = "AnotherRecord",
                     
                     visibility = "local",
-                    path = "test~AnotherRecord",
+                    path = "$test~AnotherRecord",
                     parent = "$test",
                     location = {
                         filename = "test.tl",
@@ -1860,7 +1860,7 @@ describe("teal support in tealdoc: record functions", function()
                         x = 1,
                     },
                     children = {
-                        "test~AnotherRecord.another_function",
+                        "$test~AnotherRecord.another_function",
                     },
                 },
             })

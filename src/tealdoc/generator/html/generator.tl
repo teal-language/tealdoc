@@ -5,6 +5,9 @@ local default_css = require("tealdoc.generator.html.default_css")
 local lfs = require("lfs")
 
 local function strip_module_prefix(path: string, module_name: string): string
+    if path:sub(1, 1) == "$" then
+        path = path:sub(2)
+    end
     return path:sub(#module_name + 2) -- +2 for the dot after module name
 end
 
@@ -110,6 +113,32 @@ HTMLGenerator.init = function(output: string): Generator.Base
         ctx.path_mode = "relative"
     end
 
+    base.on_category_start = function(_, _: tealdoc.Item, category: string, ctx: Generator.Phase.Context, _: tealdoc.Env)
+        if category ~= "$module_record" then
+            local category_name: string
+            if category == "$uncategorized" then
+                category_name = ""
+            elseif category:sub(1, 1) == "$" then
+                category_name = category:sub(2) -- remove the leading $
+            else
+                category_name = category
+            end
+
+
+            ctx.builder:rawline("<h2 class=\"category\" id=\"category-" .. category_name .. "\">")
+            if category_name ~= "" then
+                ctx.builder:rawtext("<span class=\"muted\">")
+                ctx.builder:text("Category: ")
+                ctx.builder:rawtext("</span>")
+                ctx.builder:text(category_name)
+                ctx.builder:rawtext("<a class=\"title-link\" href=\"#category-" .. category_name .. "\">")
+                ctx.builder:text("🔗")
+                ctx.builder:rawtext("</a>")
+            end
+            ctx.builder:rawline("</h2>")
+        end
+    end
+
     base.on_start = function(_, env: tealdoc.Env)
         for _, item in ipairs(env.modules) do
             local parts = {}
@@ -147,11 +176,20 @@ HTMLGenerator.init = function(output: string): Generator.Base
         if phase.name == "header" then
             ctx.builder:rawtext("<h3 id=\"" .. item.path .. "\">")
             ctx.builder:text(strip_module_prefix(item.path, ctx.module_name))
+            ctx.builder:rawtext("<a class=\"title-link\" href=\"#".. item.path .. "\">")
+            ctx.builder:text("🔗")
+            ctx.builder:rawtext("</a>")
             ctx.builder:rawtext("</h3>")
             return false
         elseif phase.name == "module_header" then
             ctx.builder:rawtext("<h1 id=\"" .. item.name .. "\">")
-            ctx.builder:text("Module "..(item.name))
+            ctx.builder:rawtext("<span class=\"muted\">")
+            ctx.builder:text("Module ")
+            ctx.builder:rawtext("</span>")
+            ctx.builder:text(item.name)
+            ctx.builder:rawtext("<a class=\"title-link\" href=\"#".. item.name .. "\">")
+            ctx.builder:text("🔗")
+            ctx.builder:rawtext("</a>")
             ctx.builder:rawtext("</h1>")
             return false
         end

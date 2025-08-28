@@ -7,14 +7,14 @@ describe("teal support in tealdoc: functions", function()
             local function my_function()
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -31,14 +31,14 @@ describe("teal support in tealdoc: functions", function()
                 return x + y, x * y
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -63,14 +63,14 @@ describe("teal support in tealdoc: functions", function()
                 return x
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -90,14 +90,14 @@ describe("teal support in tealdoc: functions", function()
                 return x
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "local",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -116,14 +116,14 @@ describe("teal support in tealdoc: functions", function()
             global function my_function()
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -140,14 +140,14 @@ describe("teal support in tealdoc: functions", function()
                 return x + y, x * y
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -172,14 +172,14 @@ describe("teal support in tealdoc: functions", function()
                 return x
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -199,14 +199,14 @@ describe("teal support in tealdoc: functions", function()
                 return x
             end
         ]], {
-            ["test~my_function"] = {
+            ["$test~my_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "my_function",
                 text = "my function",
                 visibility = "global",
                 parent = "$test",
-                path = "test~my_function",
+                path = "$test~my_function",
                 location = {
                     filename = "test.tl",
                     y = 2,

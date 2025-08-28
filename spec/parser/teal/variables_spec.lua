@@ -6,14 +6,14 @@ describe("teal support in tealdoc: variables", function()
             --- my variable
             local x: integer = 42
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "x",
                 text = "my variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -28,14 +28,14 @@ describe("teal support in tealdoc: variables", function()
             --- my variable
             local x = 42
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "x",
                 text = "my variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -50,14 +50,14 @@ describe("teal support in tealdoc: variables", function()
             --- my variable
             global x: integer = 42
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "x",
                 text = "my variable",
                 visibility = "global",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -72,14 +72,14 @@ describe("teal support in tealdoc: variables", function()
             --- my variable
             global x = 42
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "x",
                 text = "my variable",
                 visibility = "global",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -94,28 +94,28 @@ describe("teal support in tealdoc: variables", function()
             --- my variables
             local x, y = 42, 43
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "x",
                 text = "my variables",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
                     x = 7,
                 }
             },
-            ["test~y"] = {
+            ["$test~y"] = {
                 kind = "variable",
                 typename = "integer",
                 name = "y",
                 text = "my variables",
                 visibility = "local",
                 parent = "$test",
-                path = "test~y",
+                path = "$test~y",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -129,7 +129,7 @@ describe("teal support in tealdoc: variables", function()
             --- my function variable
             local x: function()
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 is_declaration = true,
@@ -137,7 +137,7 @@ describe("teal support in tealdoc: variables", function()
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -151,7 +151,7 @@ describe("teal support in tealdoc: variables", function()
             --- my function variable
             local x: function(a: integer, b: string): boolean
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 is_declaration = true,
@@ -159,7 +159,7 @@ describe("teal support in tealdoc: variables", function()
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -178,7 +178,7 @@ describe("teal support in tealdoc: variables", function()
             --- my function variable
             local x: function<T>(a: T): T
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 is_declaration = true,
@@ -186,7 +186,7 @@ describe("teal support in tealdoc: variables", function()
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 4,
@@ -203,7 +203,7 @@ describe("teal support in tealdoc: variables", function()
             --- my function variable
             local x: function<T is tl.Numeric>(a: T): T
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 is_declaration = true,
@@ -211,7 +211,7 @@ describe("teal support in tealdoc: variables", function()
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 4,
@@ -229,14 +229,14 @@ describe("teal support in tealdoc: variables", function()
             local x = function() 
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -251,14 +251,14 @@ describe("teal support in tealdoc: variables", function()
             local x = function(a: integer, b: string): boolean
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -278,14 +278,14 @@ describe("teal support in tealdoc: variables", function()
             local x = function<T>(a: T): T
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -303,14 +303,14 @@ describe("teal support in tealdoc: variables", function()
             local x = function<T is tl.Numeric>(a: T): T
             end
         ]], {
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 2,
@@ -330,13 +330,13 @@ describe("teal support in tealdoc: variables", function()
             --- my function variable
             local x = make_function()
         ]], {
-            ["test~make_function"] = {
+            ["$test~make_function"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "make_function",
                 visibility = "local",
                 parent = "$test",
-                path = "test~make_function",
+                path = "$test~make_function",
                 location = {
                     filename = "test.tl",
                     y = 1,
@@ -344,14 +344,14 @@ describe("teal support in tealdoc: variables", function()
                 },
                 returns = { { type = "function(integer, string): boolean" } }
             },
-            ["test~x"] = {
+            ["$test~x"] = {
                 kind = "function",
                 function_kind = "function",
                 name = "x",
                 text = "my function variable",
                 visibility = "local",
                 parent = "$test",
-                path = "test~x",
+                path = "$test~x",
                 location = {
                     filename = "test.tl",
                     y = 1,
