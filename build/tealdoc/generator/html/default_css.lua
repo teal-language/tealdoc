@@ -42,6 +42,7 @@ return [[
         background-color: #d0f0f0;
         padding: 1em;
         overflow-x: auto;
+        position: relative;
     }
 
     summary {
@@ -113,5 +114,34 @@ return [[
     .title-link {
         visibility: hidden;
         font-size: 0.8em;
+    }
+
+    .signature-controls {
+        position: absolute;
+        top: 1em;
+        right: 1em;
+        z-index: 1000;
+    }
+
+    @media (max-width: 600px) {
+        .signature-controls {
+            position: relative;
+            top: auto;
+            right: auto;
+        }
+    }
+
+    .signature-controls button {
+        font-family: inherit;
+        font-size: inherit;
+        border: none;
+        background: none;
+        color: #555;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+    }
+    .signature-controls button:hover {
+        text-decoration: underline;
     }
 ]]

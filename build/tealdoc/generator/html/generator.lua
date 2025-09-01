@@ -2,6 +2,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 local Generator = require("tealdoc.generator")
 local HTMLBuilder = require("tealdoc.generator.html.builder")
 local default_css = require("tealdoc.generator.html.default_css")
+local default_js = require("tealdoc.generator.html.default_js")
 local lfs = require("lfs")
 
 local function strip_module_prefix(path, module_name)
@@ -26,7 +27,8 @@ HTMLGenerator.item_phases = {}
 
 
 
-local function make_file(path, title, content)
+
+local function make_file(path, title, description, content)
    local b = HTMLBuilder.init()
 
    b:rawline("<!DOCTYPE html>")
@@ -34,7 +36,20 @@ local function make_file(path, title, content)
    b:rawline("<head>")
    b:rawline("<meta charset=\"UTF-8\">")
    b:rawline("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+   b:rawline("<meta name=\"robots\" content=\"index, follow\">")
    b:rawline("<title>" .. title .. "</title>")
+   b:rawline("<meta property=\"og:title\" content=\"" .. title .. "\">")
+   b:rawline("<meta property=\"og:type\" content=\"website\">")
+   b:rawline("<meta property=\"og:site_name\" content=\"Teal Documentation\">")
+   b:rawline("<meta property=\"og:locale\" content=\"en_US\">")
+
+   b:rawline("<meta name=\"description\" content=\"" .. description .. "\">")
+   b:rawline("<meta property=\"og:description\" content=\"" .. description .. "\">")
+
+
+
+
+
    b:rawline("<style>")
    b:rawline(default_css)
    b:rawline("</style>")
@@ -44,6 +59,9 @@ local function make_file(path, title, content)
    b:rawline("<footer>")
    b:rawline("<small>generated using <a href=\"https://github.com/teal-language/tealdoc\" target=\"_blank\">tealdoc</a> " .. tealdoc.version .. "</small>")
    b:rawline("</footer>")
+   b:rawline("<script>")
+   b:rawline(default_js)
+   b:rawline("</script>")
    b:rawline("</body>")
    b:rawline("</html>")
 
@@ -53,6 +71,7 @@ local function make_file(path, title, content)
    file:write(b:build())
    file:close()
 end
+
 
 local function generate_breadcrumbs(b, visited, env)
    b:rawline("<nav>")
@@ -197,7 +216,8 @@ HTMLGenerator.init = function(output)
    end
 
    base.on_end = function(_, env)
-      make_file(output .. "/index", "Index - Documentation", function(b)
+
+      make_file(output .. "/index", "Index - Documentation", "Documentation Index", function(b)
          b:rawline("<main>")
          b:h1("Documentation Index")
          local visited = { "index" }
@@ -213,15 +233,17 @@ HTMLGenerator.init = function(output)
                b:text(node.name)
             else
                local path = cur_filename .. "/" .. node.name
+               local link = path:sub(#output + 2)
 
-               make_file(path, node.name .. " - " .. node.path .. " - Documentation", function(moduleBuilder)
+               local description = "Documentation for " .. node.name
+
+               make_file(path, node.name .. " - " .. node.path .. " - Documentation", description, function(moduleBuilder)
                   moduleBuilder:rawline("<main>")
                   generate_breadcrumbs(moduleBuilder, visited, env)
                   moduleBuilder:rawtext(module_name_to_builder[node.path]:build())
                   moduleBuilder:rawline("</main>")
                end)
 
-               local link = path:sub(#output + 2)
                b:rawtext("<a href=\"" .. link .. ".html\">")
                b:text(node.name)
                b:rawtext("</a>")

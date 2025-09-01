@@ -2,6 +2,7 @@ local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
 local HTMLBuilder = require("tealdoc.generator.html.builder")
 local default_css = require("tealdoc.generator.html.default_css")
+local default_js = require("tealdoc.generator.html.default_js")
 local lfs = require("lfs")
 
 local function strip_module_prefix(path: string, module_name: string): string
@@ -26,7 +27,8 @@ local record ModuleNode
     children: {ModuleNode}
 end
 
-local function make_file(path: string, title: string, content: function(b: HTMLBuilder))
+-- TODO: favicon?
+local function make_file(path: string, title: string, description: string, content: function(b: HTMLBuilder))
     local b = HTMLBuilder.init()
 
     b:rawline("<!DOCTYPE html>")
@@ -34,7 +36,20 @@ local function make_file(path: string, title: string, content: function(b: HTMLB
     b:rawline("<head>")
     b:rawline("<meta charset=\"UTF-8\">")
     b:rawline("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
+    b:rawline("<meta name=\"robots\" content=\"index, follow\">")
     b:rawline("<title>"..title.."</title>")
+    b:rawline("<meta property=\"og:title\" content=\""..title.."\">")
+    b:rawline("<meta property=\"og:type\" content=\"website\">")
+    b:rawline("<meta property=\"og:site_name\" content=\"Teal Documentation\">")
+    b:rawline("<meta property=\"og:locale\" content=\"en_US\">")
+
+    b:rawline("<meta name=\"description\" content=\""..description.."\">")
+    b:rawline("<meta property=\"og:description\" content=\""..description.."\">")
+
+    -- TODO: get from config
+    -- b:rawline("<link rel=\"canonical\" href=\""..url.."\">")
+    -- b:rawline("<meta property=\"og:url\" content=\""..url.."\">")
+ 
     b:rawline("<style>")
     b:rawline(default_css)
     b:rawline("</style>")
@@ -44,15 +59,19 @@ local function make_file(path: string, title: string, content: function(b: HTMLB
     b:rawline("<footer>")
     b:rawline("<small>generated using <a href=\"https://github.com/teal-language/tealdoc\" target=\"_blank\">tealdoc</a> " .. tealdoc.version .. "</small>")
     b:rawline("</footer>")
+    b:rawline("<script>")
+    b:rawline(default_js)
+    b:rawline("</script>")
     b:rawline("</body>")
     b:rawline("</html>")
-    
+
     local file = io.open(path..".html", "w")
     assert(file)
 
     file:write(b:build())
     file:close()
 end
+
 
 local function generate_breadcrumbs(b: HTMLBuilder, visited: {string}, env: tealdoc.Env)
     b:rawline("<nav>")
@@ -197,7 +216,8 @@ HTMLGenerator.init = function(output: string): Generator.Base
     end
 
     base.on_end = function(_, env: tealdoc.Env)
-        make_file(output .. "/index", "Index - Documentation", function(b: HTMLBuilder)
+        -- TODO: better description!
+        make_file(output .. "/index", "Index - Documentation", "Documentation Index", function(b: HTMLBuilder) 
             b:rawline("<main>")
             b:h1("Documentation Index")
             local visited = {"index"}
@@ -213,15 +233,17 @@ HTMLGenerator.init = function(output: string): Generator.Base
                     b:text(node.name)
                 else
                     local path = cur_filename .."/".. node.name
+                    local link = path:sub(#output + 2)
 
-                    make_file(path, node.name .. " - " .. node.path.." - Documentation", function(moduleBuilder: HTMLBuilder)
+                    local description = "Documentation for " .. node.name -- TODO: more content for description
+
+                    make_file(path, node.name .. " - " .. node.path.." - Documentation", description, function(moduleBuilder: HTMLBuilder)
                         moduleBuilder:rawline("<main>")
                         generate_breadcrumbs(moduleBuilder, visited, env)
                         moduleBuilder:rawtext(module_name_to_builder[node.path]:build())
                         moduleBuilder:rawline("</main>")
                     end)
 
-                    local link = path:sub(#output + 2)
                     b:rawtext("<a href=\"" ..link.. ".html\">")
                     b:text(node.name)
                     b:rawtext("</a>")
