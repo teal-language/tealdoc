@@ -755,11 +755,13 @@ end
 local function type_declaration_visitor(node, state)
    assert(node.kind == "local_type" or node.kind == "global_type")
    assert(node.var.kind == "identifier")
-   assert(node.value)
-   local name = node.var.tk
-   local newtype = node.value.newtype
-   if newtype then
-      typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+   if node.value then
+      assert(node.value)
+      local name = node.var.tk
+      local newtype = node.value.newtype
+      if newtype then
+         typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
+      end
    end
 end
 
