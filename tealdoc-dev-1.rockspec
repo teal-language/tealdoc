@@ -16,7 +16,7 @@ dependencies = {
    "argparse",
    "tl >= 0.24.7",
    "lunamark",
-   "LuaFileSystem"
+   "luafilesystem"
 }
 build = {
    type = "builtin",
@@ -29,14 +29,15 @@ build = {
       ["tealdoc.log"] = "build/tealdoc/log.lua",
       ["tealdoc.parser.teal"] = "build/tealdoc/parser/teal.lua",
       ["tealdoc.parser.markdown"] = "build/tealdoc/parser/markdown.lua",
-         ["tealdoc.dump"] = "build/tealdoc/dump.lua",
-         ["tealdoc.generator"] = "build/tealdoc/generator.lua",
-         ["tealdoc.generator.markdown"] = "build/tealdoc/generator/markdown.lua",
-         ["tealdoc.generator.html.generator"] = "build/tealdoc/generator/html/generator.lua",
-         ["tealdoc.generator.signatures"] = "build/tealdoc/generator/signatures.lua",
-         ["tealdoc.generator.html.builder"] = "build/tealdoc/generator/html/builder.lua",
-         ["tealdoc.generator.html.default_css"] = "build/tealdoc/generator/html/default_css.lua",
-         ["tealdoc.generator.html.detailed_signature_phase"] = "build/tealdoc/generator/html/detailed_signature_phase.lua",
+      ["tealdoc.dump"] = "build/tealdoc/dump.lua",
+      ["tealdoc.generator"] = "build/tealdoc/generator.lua",
+      ["tealdoc.generator.markdown"] = "build/tealdoc/generator/markdown.lua",
+      ["tealdoc.generator.html.generator"] = "build/tealdoc/generator/html/generator.lua",
+      ["tealdoc.generator.signatures"] = "build/tealdoc/generator/signatures.lua",
+      ["tealdoc.generator.html.builder"] = "build/tealdoc/generator/html/builder.lua",
+      ["tealdoc.generator.html.default_css"] = "build/tealdoc/generator/html/default_css.lua",
+      ["tealdoc.generator.html.detailed_signature_phase"] = "build/tealdoc/generator/html/detailed_signature_phase.lua",
+      ["tealdoc.generator.html.default_js"] = "build/tealdoc/generator/html/default_js.lua",
    },
    install = {
       lua = {
@@ -56,6 +57,7 @@ build = {
          ["tealdoc.generator.html.builder"] = "src/tealdoc/generator/html/builder.tl",
          ["tealdoc.generator.html.default_css"] = "src/tealdoc/generator/html/default_css.tl",
          ["tealdoc.generator.html.detailed_signature_phase"] = "src/tealdoc/generator/html/detailed_signature_phase.tl",
+         ["tealdoc.generator.html.default_js"] = "src/tealdoc/generator/html/default_js.tl",
       },
       bin = {
          "bin/tealdoc"
