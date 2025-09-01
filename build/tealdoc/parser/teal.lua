@@ -756,7 +756,6 @@ local function type_declaration_visitor(node, state)
    assert(node.kind == "local_type" or node.kind == "global_type")
    assert(node.var.kind == "identifier")
    if node.value then
-      assert(node.value)
       local name = node.var.tk
       local newtype = node.value.newtype
       if newtype then
