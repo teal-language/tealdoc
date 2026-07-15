@@ -73,10 +73,10 @@ function CommentParser.parse_lines(lines: {string}, item: tealdoc.Item, env: tea
             if not item.text then
                 item.text = line
             else
-                item.text = item.text.." "..line
+                item.text = item.text.."\n"..line
             end
         elseif not has_tag and current_context and current_context.description then
-            current_context.description = current_context.description.." "..line
+            current_context.description = current_context.description.."\n"..line
         end
     end
 
