@@ -42,10 +42,24 @@ function DefaultEnv.init(): tealdoc.Env
 
             local param: tealdoc.FunctionItem.Param
             if item.params then
+                -- Named tags may omit implicit parameters such as a method's
+                -- receiver, so prefer an exact name match.
                 for _, p in ipairs(item.params) do
-                    if p.description == nil then
+                    if p.name == ctx.param and p.description == nil then
                         param = p
                         break
+                    end
+                end
+
+                -- Function type declarations may not provide parameter names.
+                -- Fall back to their declaration order in that case, and retain
+                -- the mismatch warning for misspelled named parameters.
+                if not param then
+                    for _, p in ipairs(item.params) do
+                        if p.description == nil then
+                            param = p
+                            break
+                        end
                     end
                 end
             end

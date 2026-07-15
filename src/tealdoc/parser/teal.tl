@@ -116,15 +116,20 @@ local function process_comments(comments: {tl.Comment}, item: tealdoc.Item, env:
         return true
     end
 
+    -- Only the trailing, contiguous documentation block belongs to the item.
+    -- This prevents stale documentation followed by an ordinary comment from
+    -- being attached to the next declaration.
+    local first_line = #comments + 1
+    for i = #comments, 1, -1 do
+        if not comments[i].text:match("^%-%-%-") then
+            break
+        end
+        first_line = i
+    end
+
     local lines: {string} = {}
-    local in_block = false
-    for _, comment in ipairs(comments) do
-        if not in_block and comment.text:match("^%-%-%-") then
-           in_block = true
-        end
-        if in_block then
-            table.insert(lines, strip_short_comment(comment))
-        end
+    for i = first_line, #comments do
+        table.insert(lines, strip_short_comment(comments[i]))
     end
 
     CommentParser.parse_lines(lines, item, env)
@@ -151,10 +156,23 @@ local function is_item_global(item: tealdoc.Item): boolean
 end
 
 local function store_item_at_path(item: tealdoc.Item, path: string, state: VisitState): string
-    -- this code is a mess!
     local old_item = state.env.registry[path]
     if old_item then
-        if is_item_local(item) then
+        -- Function aliases initially look like variables in the Teal AST.
+        if old_item is tealdoc.VariableItem and item is tealdoc.FunctionItem then
+            item.visibility = old_item.visibility
+            if not item.text then
+                item.text = old_item.text
+            end
+        -- Merge a forward declaration with its later implementation.
+        elseif old_item is tealdoc.FunctionItem and item is tealdoc.FunctionItem and old_item.is_declaration and not item.is_declaration then
+            item.visibility = old_item.visibility
+            if old_item.text and item.text then
+                log:warning("Both the function declaration and definition contain tealdoc comments. The comment from the declaration will be discarded.")
+            elseif not item.text and old_item.text then
+                return nil -- retain the documented declaration
+            end
+        elseif is_item_local(item) then
             if old_item.kind == "shadowed" then -- TODO: better name?
                 assert(old_item.children)
                 path = path.."#"..tostring(#old_item.children + 1)
@@ -249,19 +267,26 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         location = location_for_node(node)
     }
 
-    if node.args and #node.args > 0 then
+    if node.is_method or (node.args and #node.args > 0) then
         item.params = {}
-        for i, ar in ipairs(node.args) do
-            if node.is_method and i == 1 then
-                item.params[i] = {
-                    name = "self",
-                    type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner))
-                }
-            else
-                item.params[i] = {
+        local param_index = 1
+        if node.is_method then
+            item.params[param_index] = {
+                name = "self",
+                type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner))
+            }
+            param_index = param_index + 1
+        end
+
+        for _, ar in ipairs(node.args) do
+            -- Older Teal versions included the implicit receiver in args;
+            -- newer versions only report the explicitly written arguments.
+            if not (node.is_method and ar.tk == "self") then
+                item.params[param_index] = {
                     name = ar.tk,
                     type = ar.argtype and type_to_string(state.type_report, ar.argtype)
                 }
+                param_index = param_index + 1
             end
         end
     end
@@ -397,9 +422,17 @@ local function function_visitor(node: tl.Node, state: VisitState)
     if is_record then
         assert(node.fn_owner)
         local typenum = typenum_for_node(state.type_report, node.fn_owner)
-        assert(typenum)
-        local parent_path = state.typenum_to_path[typenum]
-        assert(parent_path)
+        local parent_path = typenum and state.typenum_to_path[typenum]
+        -- Current Teal may assign a new type number to the same owner.
+        if not parent_path and node.fn_owner.kind == "identifier" then
+            local candidate = state.path .. node.fn_owner.tk
+            if state.env.registry[candidate] then
+                parent_path = candidate
+            end
+        end
+        if not parent_path then
+            return -- owner belongs to another module or was not documentable
+        end
         state.path = parent_path.."."
         local parent = state.env.registry[parent_path]
         assert(parent)
@@ -465,42 +498,45 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "local_declaration" or node.kind == "global_declaration")
     for i, name in ipairs(node.vars) do
         assert(name.kind == "identifier")
-        local decltype = node.decltuple.tuple[i]
+        -- Synthetic declarations have no entry in the public type report.
+        if name.f:sub(1, 1) ~= "@" then
+            local decltype = node.decltuple.tuple[i]
 
-        local typenum: integer
-        if node.kind == "local_declaration" then
-            typenum = typenum_for_node(state.type_report, name)
-        elseif node.kind == "global_declaration" then
-            typenum = typenum_for_global(state.type_report, name.tk)
+            local typenum: integer
+            if node.kind == "local_declaration" then
+                typenum = typenum_for_node(state.type_report, name)
+            elseif node.kind == "global_declaration" then
+                typenum = typenum_for_global(state.type_report, name.tk)
+            end
+
+            assert(typenum)
+            local typeinfo = state.type_report.types[typenum]
+            local typename = typeinfo_to_string(typeinfo)
+
+            local item: tealdoc.Item
+            if decltype and type_is_function(decltype) then
+                item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
+                item.is_declaration = true
+            elseif typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
+                item = item_for_function_typeinfo(typeinfo,
+                    node.kind == "local_declaration" and "local" or "global",
+                    state
+                )
+            else
+                local variable_item = {
+                    kind = "variable",
+                    typename = typename,
+                    visibility = node.kind == "local_declaration" and "local" or "global",
+                    location = location_for_node(name)
+                }
+                item = variable_item
+            end
+            item.name = name.tk
+
+            process_comments(node.comments, item, state.env)
+            local path = store_item(item, state)
+            state.typenum_to_path[typenum] = path
         end
-
-        assert(typenum)
-        local typeinfo = state.type_report.types[typenum]
-        local typename = typeinfo_to_string(typeinfo)
-
-        local item: tealdoc.Item
-        if decltype and type_is_function(decltype) then
-            item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
-            item.is_declaration = true
-        elseif typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
-            item = item_for_function_typeinfo(typeinfo,
-                node.kind == "local_declaration" and "local" or "global",
-                state
-            )
-        else
-            local variable_item = {
-                kind = "variable",
-                typename = typename,
-                visibility = node.kind == "local_declaration" and "local" or "global",
-                location = location_for_node(name)
-            }
-            item = variable_item
-        end
-        item.name = name.tk
-
-        process_comments(node.comments, item, state.env)
-        local path = store_item(item, state)
-        state.typenum_to_path[typenum] = path 
     end
 end
 
@@ -725,7 +761,11 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
         local field_type = t.fields[field_name]
         local comments: {{tl.Comment}}
         if t.field_comments then
-            comments = t.field_comments[field_name]
+            -- Current Teal uses an empty array when a field has no comments.
+            local field_comments = t.field_comments[field_name]
+            if field_comments and #field_comments > 0 then
+                comments = field_comments
+            end
         end
 
         field_visitor(field_name, field_type, comments)
@@ -738,7 +778,10 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             local field_type = t.meta_fields[field_name]
             local comments: {{tl.Comment}}
             if t.meta_field_comments then
-                comments = t.meta_field_comments[field_name]
+                local field_comments = t.meta_field_comments[field_name]
+                if field_comments and #field_comments > 0 then
+                    comments = field_comments
+                end
             end
 
             field_visitor(field_name, field_type, comments, true)
@@ -774,7 +817,8 @@ local function assignment_visitor(node: tl.Node, state: VisitState)
             local receiver = var.receiver
             local parent_path: string
 
-            if receiver is tl.NominalType then
+            -- Generic cross-file receivers may have no resolved local type.
+            if receiver is tl.NominalType and receiver.resolved then
                 parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
             elseif receiver and receiver is tl.EmptyTableType then -- support for local x = {} and x.y = function ...
                 parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver)]
@@ -929,16 +973,20 @@ TealParser.file_extensions = {".tl", ".d.tl"}
 
 
 local function get_module_name_from_path(path: string, source_dir: string): string
-    local path_separator = package.config:sub(1, 1)
+    -- Normalize both path styles so documentation generated on one platform can
+    -- consume paths produced on another (and so a leading "./" is not treated
+    -- as an empty module component).
+    path = path:gsub("\\", "/"):gsub("^%./+", "")
+    source_dir = source_dir:gsub("\\", "/"):gsub("^%./+", ""):gsub("/+$", "")
 
     -- Remove source_dir prefix if present
     local relative_path = path
     if source_dir and  source_dir ~= "" then
         local source_dir_pattern = source_dir:gsub("([^%w])", "%%%1")
-        if path:find("^" .. source_dir_pattern) then
+        if path == source_dir or path:find("^" .. source_dir_pattern .. "/") then
             relative_path = path:sub(#source_dir + 1)
             -- Remove leading path separator
-            if relative_path:sub(1, 1) == path_separator then
+            if relative_path:sub(1, 1) == "/" then
                 relative_path = relative_path:sub(2)
             end
         end
@@ -946,8 +994,10 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
 
     -- Split path into components
     local components: {string} = {}
-    for component in relative_path:gmatch("[^" .. path_separator .. "]+") do
-        table.insert(components, component)
+    for component in relative_path:gmatch("[^/]+") do
+        if component ~= "." then
+            table.insert(components, component)
+        end
     end
 
     if #components == 0 then
@@ -956,7 +1006,7 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
 
     -- Remove file extension from last component
     local last = components[#components]
-    components[#components] = last:match("^([^%.]+)") or last
+    components[#components] = last:gsub("%.d%.tl$", ""):gsub("%.tl$", "")
 
     return table.concat(components, ".")
 end

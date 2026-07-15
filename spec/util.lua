@@ -44,10 +44,10 @@ function util.dedent(s)
    return table.concat(lines, "\n")
 end
 
-function util.registry_for_text(text)
+function util.registry_for_text(text, filename)
     local env = DefaultEnv.init()
     log.output = io.open("test.log", "w")
-    tealdoc.process_text(text, "test.tl", env)
+    tealdoc.process_text(text, filename or "test.tl", env)
     return env.registry
 end
 

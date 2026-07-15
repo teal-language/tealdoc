@@ -116,15 +116,20 @@ local function process_comments(comments, item, env)
       return true
    end
 
+
+
+
+   local first_line = #comments + 1
+   for i = #comments, 1, -1 do
+      if not comments[i].text:match("^%-%-%-") then
+         break
+      end
+      first_line = i
+   end
+
    local lines = {}
-   local in_block = false
-   for _, comment in ipairs(comments) do
-      if not in_block and comment.text:match("^%-%-%-") then
-         in_block = true
-      end
-      if in_block then
-         table.insert(lines, strip_short_comment(comment))
-      end
+   for i = first_line, #comments do
+      table.insert(lines, strip_short_comment(comments[i]))
    end
 
    CommentParser.parse_lines(lines, item, env)
@@ -151,10 +156,23 @@ local function is_item_global(item)
 end
 
 local function store_item_at_path(item, path, state)
-
    local old_item = state.env.registry[path]
    if old_item then
-      if is_item_local(item) then
+
+      if old_item.kind == "variable" and item.kind == "function" then
+         item.visibility = old_item.visibility
+         if not item.text then
+            item.text = old_item.text
+         end
+
+      elseif old_item.kind == "function" and item.kind == "function" and old_item.is_declaration and not item.is_declaration then
+         item.visibility = old_item.visibility
+         if old_item.text and item.text then
+            log:warning("Both the function declaration and definition contain tealdoc comments. The comment from the declaration will be discarded.")
+         elseif not item.text and old_item.text then
+            return nil
+         end
+      elseif is_item_local(item) then
          if old_item.kind == "shadowed" then
             assert(old_item.children)
             path = path .. "#" .. tostring(#old_item.children + 1)
@@ -249,19 +267,26 @@ local function function_item_for_node(node, visibility, kind, state)
       location = location_for_node(node),
    }
 
-   if node.args and #node.args > 0 then
+   if node.is_method or (node.args and #node.args > 0) then
       item.params = {}
-      for i, ar in ipairs(node.args) do
-         if node.is_method and i == 1 then
-            item.params[i] = {
-               name = "self",
-               type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner)),
-            }
-         else
-            item.params[i] = {
+      local param_index = 1
+      if node.is_method then
+         item.params[param_index] = {
+            name = "self",
+            type = typeinfo_to_string(typeinfo_for_node(state.type_report, node.fn_owner)),
+         }
+         param_index = param_index + 1
+      end
+
+      for _, ar in ipairs(node.args) do
+
+
+         if not (node.is_method and ar.tk == "self") then
+            item.params[param_index] = {
                name = ar.tk,
                type = ar.argtype and type_to_string(state.type_report, ar.argtype),
             }
+            param_index = param_index + 1
          end
       end
    end
@@ -397,9 +422,17 @@ local function function_visitor(node, state)
    if is_record then
       assert(node.fn_owner)
       local typenum = typenum_for_node(state.type_report, node.fn_owner)
-      assert(typenum)
-      local parent_path = state.typenum_to_path[typenum]
-      assert(parent_path)
+      local parent_path = typenum and state.typenum_to_path[typenum]
+
+      if not parent_path and node.fn_owner.kind == "identifier" then
+         local candidate = state.path .. node.fn_owner.tk
+         if state.env.registry[candidate] then
+            parent_path = candidate
+         end
+      end
+      if not parent_path then
+         return
+      end
       state.path = parent_path .. "."
       local parent = state.env.registry[parent_path]
       assert(parent)
@@ -465,42 +498,45 @@ local function variable_declarations_visitor(node, state)
    assert(node.kind == "local_declaration" or node.kind == "global_declaration")
    for i, name in ipairs(node.vars) do
       assert(name.kind == "identifier")
-      local decltype = node.decltuple.tuple[i]
 
-      local typenum
-      if node.kind == "local_declaration" then
-         typenum = typenum_for_node(state.type_report, name)
-      elseif node.kind == "global_declaration" then
-         typenum = typenum_for_global(state.type_report, name.tk)
+      if name.f:sub(1, 1) ~= "@" then
+         local decltype = node.decltuple.tuple[i]
+
+         local typenum
+         if node.kind == "local_declaration" then
+            typenum = typenum_for_node(state.type_report, name)
+         elseif node.kind == "global_declaration" then
+            typenum = typenum_for_global(state.type_report, name.tk)
+         end
+
+         assert(typenum)
+         local typeinfo = state.type_report.types[typenum]
+         local typename = typeinfo_to_string(typeinfo)
+
+         local item
+         if decltype and type_is_function(decltype) then
+            item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "function", state)
+            item.is_declaration = true
+         elseif typeinfo and typeinfo.t == 0x20 then
+            item = item_for_function_typeinfo(typeinfo,
+            node.kind == "local_declaration" and "local" or "global",
+            state)
+
+         else
+            local variable_item = {
+               kind = "variable",
+               typename = typename,
+               visibility = node.kind == "local_declaration" and "local" or "global",
+               location = location_for_node(name),
+            }
+            item = variable_item
+         end
+         item.name = name.tk
+
+         process_comments(node.comments, item, state.env)
+         local path = store_item(item, state)
+         state.typenum_to_path[typenum] = path
       end
-
-      assert(typenum)
-      local typeinfo = state.type_report.types[typenum]
-      local typename = typeinfo_to_string(typeinfo)
-
-      local item
-      if decltype and type_is_function(decltype) then
-         item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "function", state)
-         item.is_declaration = true
-      elseif typeinfo and typeinfo.t == 0x20 then
-         item = item_for_function_typeinfo(typeinfo,
-         node.kind == "local_declaration" and "local" or "global",
-         state)
-
-      else
-         local variable_item = {
-            kind = "variable",
-            typename = typename,
-            visibility = node.kind == "local_declaration" and "local" or "global",
-            location = location_for_node(name),
-         }
-         item = variable_item
-      end
-      item.name = name.tk
-
-      process_comments(node.comments, item, state.env)
-      local path = store_item(item, state)
-      state.typenum_to_path[typenum] = path
    end
 end
 
@@ -725,7 +761,11 @@ record_like_visitor = function(t, declaration, state)
       local field_type = t.fields[field_name]
       local comments
       if t.field_comments then
-         comments = t.field_comments[field_name]
+
+         local field_comments = t.field_comments[field_name]
+         if field_comments and #field_comments > 0 then
+            comments = field_comments
+         end
       end
 
       field_visitor(field_name, field_type, comments)
@@ -738,7 +778,10 @@ record_like_visitor = function(t, declaration, state)
          local field_type = t.meta_fields[field_name]
          local comments
          if t.meta_field_comments then
-            comments = t.meta_field_comments[field_name]
+            local field_comments = t.meta_field_comments[field_name]
+            if field_comments and #field_comments > 0 then
+               comments = field_comments
+            end
          end
 
          field_visitor(field_name, field_type, comments, true)
@@ -774,7 +817,8 @@ local function assignment_visitor(node, state)
          local receiver = var.receiver
          local parent_path
 
-         if receiver.typename == "nominal" then
+
+         if receiver.typename == "nominal" and receiver.resolved then
             parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver.resolved)]
          elseif receiver and receiver.typename == "emptytable" then
             parent_path = state.typenum_to_path[typenum_for_type(state.type_report, receiver)]
@@ -929,16 +973,20 @@ TealParser.file_extensions = { ".tl", ".d.tl" }
 
 
 local function get_module_name_from_path(path, source_dir)
-   local path_separator = package.config:sub(1, 1)
+
+
+
+   path = path:gsub("\\", "/"):gsub("^%./+", "")
+   source_dir = source_dir:gsub("\\", "/"):gsub("^%./+", ""):gsub("/+$", "")
 
 
    local relative_path = path
    if source_dir and source_dir ~= "" then
       local source_dir_pattern = source_dir:gsub("([^%w])", "%%%1")
-      if path:find("^" .. source_dir_pattern) then
+      if path == source_dir or path:find("^" .. source_dir_pattern .. "/") then
          relative_path = path:sub(#source_dir + 1)
 
-         if relative_path:sub(1, 1) == path_separator then
+         if relative_path:sub(1, 1) == "/" then
             relative_path = relative_path:sub(2)
          end
       end
@@ -946,8 +994,10 @@ local function get_module_name_from_path(path, source_dir)
 
 
    local components = {}
-   for component in relative_path:gmatch("[^" .. path_separator .. "]+") do
-      table.insert(components, component)
+   for component in relative_path:gmatch("[^/]+") do
+      if component ~= "." then
+         table.insert(components, component)
+      end
    end
 
    if #components == 0 then
@@ -956,7 +1006,7 @@ local function get_module_name_from_path(path, source_dir)
 
 
    local last = components[#components]
-   components[#components] = last:match("^([^%.]+)") or last
+   components[#components] = last:gsub("%.d%.tl$", ""):gsub("%.tl$", "")
 
    return table.concat(components, ".")
 end

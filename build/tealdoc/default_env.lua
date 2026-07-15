@@ -42,10 +42,24 @@ function DefaultEnv.init()
 
          local param
          if item.params then
+
+
             for _, p in ipairs(item.params) do
-               if p.description == nil then
+               if p.name == ctx.param and p.description == nil then
                   param = p
                   break
+               end
+            end
+
+
+
+
+            if not param then
+               for _, p in ipairs(item.params) do
+                  if p.description == nil then
+                     param = p
+                     break
+                  end
                end
             end
          end
