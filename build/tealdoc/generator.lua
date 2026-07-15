@@ -109,7 +109,7 @@ end
 function Generator.categories_for_module_record(item, env)
    local categories_order = {}
    local categories = {}
-   local uncategorized
+   local uncategorized = {}
 
    local categorize = function(child)
       if filter(child, env) then
@@ -121,28 +121,27 @@ function Generator.categories_for_module_record(item, env)
             end
             table.insert(categories[category], child)
          else
-            if not uncategorized then
-               uncategorized = {}
-            end
             table.insert(uncategorized, child)
          end
       end
    end
 
-   for _, child_name in ipairs(item.children) do
-      local child_item = env.registry[child_name]
-      assert(child_item)
-      if child_item.kind == "overloaded" or child_item.kind == "metamethods" then
-         local nested = child_item.children
-         if nested then
-            for _, nested_name in ipairs(nested) do
-               local nested_item = env.registry[nested_name]
-               assert(nested_item)
-               categorize(nested_item)
+   if item.children then
+      for _, child_name in ipairs(item.children) do
+         local child_item = env.registry[child_name]
+         assert(child_item)
+         if child_item.kind == "overloaded" or child_item.kind == "metamethods" then
+            local nested = child_item.children
+            if nested then
+               for _, nested_name in ipairs(nested) do
+                  local nested_item = env.registry[nested_name]
+                  assert(nested_item)
+                  categorize(nested_item)
+               end
             end
+         else
+            categorize(child_item)
          end
-      else
-         categorize(child_item)
       end
    end
 
