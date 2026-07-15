@@ -210,6 +210,11 @@ HTMLGenerator.init = function(output: string): Generator.Base
             ctx.builder:text("🔗")
             ctx.builder:rawtext("</a>")
             ctx.builder:rawtext("</h1>")
+            if item.text then
+                ctx.builder:paragraph(function()
+                    ctx.builder:md(item.text)
+                end)
+            end
             return false
         end
         return true
