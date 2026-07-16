@@ -516,6 +516,11 @@ local function variable_declarations_visitor(node, state)
          local item
          if decltype and type_is_function(decltype) then
             item = item_for_function_type(decltype, node.kind == "local_declaration" and "local" or "global", "function", state)
+            if decltype.typename == "generic" then
+               local base = decltype.t
+               assert(base.typename == "function")
+               item.location = location_for_type(base)
+            end
             item.is_declaration = true
          elseif typeinfo and typeinfo.t == 0x20 then
             item = item_for_function_typeinfo(typeinfo,

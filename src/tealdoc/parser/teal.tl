@@ -516,6 +516,11 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
             local item: tealdoc.Item
             if decltype and type_is_function(decltype) then
                 item = item_for_function_type(decltype as tl.FunctionType | tl.GenericType, node.kind == "local_declaration" and "local" or "global", "function", state)
+                if decltype is tl.GenericType then
+                    local base = decltype.t
+                    assert(base is tl.FunctionType)
+                    item.location = location_for_type(base)
+                end
                 item.is_declaration = true
             elseif typeinfo and typeinfo.t == 0x20 then -- 0x20 is for function type
                 item = item_for_function_typeinfo(typeinfo,
