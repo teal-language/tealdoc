@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lua ${{ matrix.lua-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lua-version:
+          - "5.1"
+          - "5.2"
+          - "5.3"
+          - "5.4"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: ${{ matrix.lua-version }}
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v6
+
+      - name: Install dependencies
+        run: |
+          luarocks make --only-deps tealdoc-dev-1.rockspec
+          luarocks install busted
+
+      - name: Build tealdoc
+        run: |
+          while IFS= read -r source; do
+            output="build/${source#src/}"
+            output="${output%.tl}.lua"
+            mkdir -p "$(dirname "$output")"
+            tl -I src -I types gen "$source" -o "$output"
+          done < <(find src -type f -name '*.tl' | sort)
+          luarocks make tealdoc-dev-1.rockspec
+
+      - name: Run tests
+        run: busted
+
+      - name: Generate docs for a LuaRocks package
+        run: |
+          sample=$(lua -e '
+            for template in package.path:gmatch("[^;]+") do
+              local path = template:gsub("?", "tl")
+              local file = io.open(path, "r")
+              if file then
+                file:close()
+                print((path:gsub("%.lua$", ".tl")))
+                return
+              end
+            end
+            os.exit(1)
+          ')
+          tealdoc md --no-warn-missing --output /tmp/tl-docs.md "$sample"
+          test -s /tmp/tl-docs.md
+          grep -q '^# Module:' /tmp/tl-docs.md

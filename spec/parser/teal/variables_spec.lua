@@ -189,8 +189,8 @@ describe("teal support in tealdoc: variables", function()
                 path = "$test~x",
                 location = {
                     filename = "test.tl",
-                    y = 4,
-                    x = 1,
+                    y = 2,
+                    x = 10,
                 },
                 typeargs = { { name = "T" } },
                 params = { { type = "T" } },
@@ -214,8 +214,8 @@ describe("teal support in tealdoc: variables", function()
                 path = "$test~x",
                 location = {
                     filename = "test.tl",
-                    y = 4,
-                    x = 1,
+                    y = 2,
+                    x = 10,
                 },
                 typeargs = { { name = "T", constraint = "tl.Numeric" } },
                 params = { { type = "T" } },
