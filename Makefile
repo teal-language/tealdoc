@@ -5,8 +5,9 @@ LUAROCKS_CMD ?= luarocks
 TL ?= tl
 BUSTED ?= busted
 TEALDOC ?= tealdoc
+HEAD_REF ?= HEAD
 
-.PHONY: all help deps build install test smoke check
+.PHONY: all help deps build install test smoke check check-generated-diff
 
 all: check
 
@@ -21,7 +22,9 @@ help:
 		'  install  Build and install tealdoc with LuaRocks.' \
 		'  test     Install tealdoc and run the Busted specs.' \
 		'  smoke    Generate docs from the LuaRocks Teal package.' \
-		'  check    Run the tests and documentation smoke test.'
+		'  check    Run the tests and documentation smoke test.' \
+		'  check-generated-diff' \
+		'           Require changed src/*.tl files to have build/*.lua changes.'
 
 deps:
 	$(LUAROCKS_CMD) make --only-deps $(ROCKSPEC)
@@ -62,3 +65,21 @@ smoke: install
 	grep -q '^# Module:' "$$output"
 
 check: test smoke
+
+check-generated-diff:
+	@if [[ -z "$(BASE_REF)" ]]; then \
+		echo 'BASE_REF is required.' >&2; \
+		exit 2; \
+	fi; \
+	changed="$$(git diff --name-only --no-renames "$(BASE_REF)" "$(HEAD_REF)")"; \
+	missing=0; \
+	while IFS= read -r source; do \
+		[[ "$$source" == src/*.tl ]] || continue; \
+		mirror="build/$${source#src/}"; \
+		mirror="$${mirror%.tl}.lua"; \
+		if ! grep -Fqx -- "$$mirror" <<< "$$changed"; then \
+			echo "Missing generated change: $$mirror (for $$source)" >&2; \
+			missing=1; \
+		fi; \
+	done <<< "$$changed"; \
+	exit "$$missing"

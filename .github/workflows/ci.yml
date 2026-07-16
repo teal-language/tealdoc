@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Lua
         uses: leafo/gh-actions-lua@v13
@@ -33,6 +35,12 @@ jobs:
 
       - name: Set up LuaRocks
         uses: leafo/gh-actions-luarocks@v6
+
+      - name: Check generated file pairs
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: make check-generated-diff BASE_REF="$BASE_REF" HEAD_REF="$HEAD_REF"
 
       - name: Check
         run: make check
