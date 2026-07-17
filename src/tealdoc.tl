@@ -269,6 +269,8 @@ local record tealdoc
 
         --- The name of the type of the type item.
         typename: string
+        --- Canonical item path for a nominal type alias target, when known.
+        alias_target: string
         --- The type arguments of the type item.
         --- Only used for records and interfaces.
         typeargs: {Typearg}

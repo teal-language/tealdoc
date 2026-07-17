@@ -87,6 +87,23 @@ describe("teal parser integration", function()
         assert.equal("record", registry["$test~T.fun"].visibility)
     end)
 
+    it("records canonical targets for imported type aliases", function()
+        local registry = util.registry_for_text([[
+            local types = require("tecs.types")
+
+            local record example
+                type Options = types.components.Options
+            end
+
+            return example
+        ]])
+
+        assert.equal(
+            "tecs.types.components.Options",
+            registry["test.Options"].alias_target
+        )
+    end)
+
     it("does not attach separated documentation blocks", function()
         local registry = util.registry_for_text([[
             --- Stale function documentation.

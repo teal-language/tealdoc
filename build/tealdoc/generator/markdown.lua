@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local table = _tl_compat and _tl_compat.table or table; local type = type; local tealdoc = require("tealdoc")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
 local log = require("tealdoc.log")
 
@@ -17,6 +17,17 @@ function MarkdownBuilder.init()
 end
 
 
+
+local function escape_html(text)
+   local output = text:gsub("([&<>'\"])", {
+      ["&"] = "&amp;",
+      ["<"] = "&lt;",
+      [">"] = "&gt;",
+      ["'"] = "&#39;",
+      ['"'] = "&quot;",
+   })
+   return output
+end
 
 MarkdownBuilder.h1 = function(self, ...)
    self:rawtext("# ")
@@ -55,21 +66,24 @@ MarkdownBuilder.line = function(self, ...)
 end
 
 MarkdownBuilder.link = function(self, to, ...)
-
+   self:rawtext("<a href=\"#", escape_html(to), "\">")
    self:text(...)
+   self:rawtext("</a>")
    return self
 end
 
-
-local function escape_markdown(text)
-   return text
+MarkdownBuilder.link_url = function(self, url, ...)
+   self:rawtext("<a href=\"", escape_html(url), "\">")
+   self:text(...)
+   self:rawtext("</a>")
+   return self
 end
 
 MarkdownBuilder.text = function(self, ...)
    for i = 1, select("#", ...) do
       local c = select(i, ...)
       if type(c) == "string" then
-         table.insert(self.output, escape_markdown(c))
+         table.insert(self.output, escape_html(c))
       elseif type(c) == "function" then
          c(self)
       end
@@ -104,9 +118,9 @@ MarkdownBuilder.paragraph = function(self, ...)
 end
 
 MarkdownBuilder.code_block = function(self, content)
-   self:rawline("```")
+   self:rawtext("<pre><code>")
    content()
-   self:rawline("```")
+   self:rawline("</code></pre>")
    return self
 end
 MarkdownBuilder.ordered_list = function(self, content)
@@ -173,9 +187,15 @@ MarkdownGenerator.init = function(output)
    local builder = MarkdownBuilder.init()
    local base = Generator.Base.init()
    base.item_phases = MarkdownGenerator.item_phases
-   base.on_context_for_item = function(_, ctx, _, _, _)
+   base.on_item_start = function(_, item, _, _)
+      builder:rawline("<a id=\"", escape_html(item.path), "\"></a>")
+   end
+   base.on_context_for_item = function(_, ctx, _, _, env)
       ctx.builder = builder
       ctx.path_mode = "full"
+      ctx.url_for_path = function(path)
+         return env.registry[path] and "#" .. path or nil
+      end
    end
    base.on_end = function(_, _)
       local file = io.open(output, "w")

@@ -18,7 +18,55 @@ local HTMLGenerator = {}
 
 
 
+
 HTMLGenerator.item_phases = {}
+
+local function parts(path)
+   local output = {}
+   for part in path:gmatch("[^.]+") do
+      table.insert(output, part)
+   end
+   return output
+end
+
+HTMLGenerator.url_for_path = function(path, module_name, env)
+   if not env.registry[path] then
+      return nil
+   end
+
+   local target_module
+   for _, candidate in ipairs(env.modules) do
+      if (path == candidate or path:sub(1, #candidate + 1) == candidate .. ".") and
+         (not target_module or #candidate > #target_module) then
+         target_module = candidate
+      end
+   end
+   if not target_module then
+      return nil
+   elseif target_module == module_name then
+      return "#" .. path
+   end
+
+   local current_parts = parts(module_name)
+   local target_parts = parts(target_module)
+   table.remove(current_parts)
+
+   local common = 0
+   while common < #current_parts and common < #target_parts - 1 and
+      current_parts[common + 1] == target_parts[common + 1] do
+      common = common + 1
+   end
+
+   local relative = {}
+   for _ = common + 1, #current_parts do
+      table.insert(relative, "..")
+   end
+   for i = common + 1, #target_parts do
+      table.insert(relative, target_parts[i])
+   end
+   relative[#relative] = relative[#relative] .. ".html#" .. path
+   return table.concat(relative, "/")
+end
 
 
 
@@ -127,9 +175,12 @@ HTMLGenerator.init = function(output)
 
    local module_name_to_builder = {}
 
-   base.on_context_for_item = function(_, ctx, _, module_name, _)
+   base.on_context_for_item = function(_, ctx, _, module_name, env)
       ctx.builder = module_name_to_builder[module_name]
       ctx.path_mode = "relative"
+      ctx.url_for_path = function(path)
+         return HTMLGenerator.url_for_path(path, module_name, env)
+      end
    end
 
    base.on_category_start = function(_, _, category, ctx, _)
