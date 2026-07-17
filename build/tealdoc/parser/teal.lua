@@ -914,7 +914,33 @@ local TealParser = {}
 
 
 
-local function get_sourcedir_from_config()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local function path_from_config(config_dir, path)
+   if path:match("^[/\\]") or path:match("^%a:[/\\]") then
+      return path
+   end
+   if config_dir == "." then
+      return path
+   end
+   return config_dir .. package.config:sub(1, 1) .. path
+end
+
+local function get_project_config()
    local path_separator = package.config:sub(1, 1)
    local filename = "tlconfig.lua"
    local file = nil
@@ -927,47 +953,125 @@ local function get_sourcedir_from_config()
    end
 
    if not file then
-      log:debug("Could not find tlconfig.tl in the current directory or any parent directory.")
-      return ""
+      log:debug("Could not find tlconfig.lua in the current directory or any parent directory.")
+      return {
+         source_dir = "",
+         module_path = package.path,
+         env_options = {},
+      }
    end
 
+   local config_dir = filename:match("^(.*)[/\\][^/\\]+$") or "."
    local contents = file:read("*a")
+   file:close()
    if contents then
       local load_config, err = load(contents)
       if not load_config then
          log:error("Error loading tlconfig.lua:\n" .. err)
-         return ""
+         return {
+            source_dir = "",
+            module_path = package.path,
+            env_options = {},
+         }
       end
       local ok, config = pcall(load_config)
       if not ok then
          log:error("Error executing tlconfig.lua:\n" .. tostring(config))
-         return ""
+         return {
+            source_dir = "",
+            module_path = package.path,
+            env_options = {},
+         }
       end
 
       if type(config) == "table" then
-         local source_dir = config.source_dir
-         if source_dir and type(source_dir) == "string" then
-            return source_dir
+         local project_config = config
+         local source_dir = ""
+         local configured_source_dir = project_config.source_dir
+         if type(configured_source_dir) == "string" then
+            source_dir = path_from_config(config_dir, configured_source_dir)
          else
             log:debug("tlconfig.lua does not contain 'source_dir' field.")
-            return ""
          end
+
+         local module_paths = {}
+         local include_dirs = project_config.include_dir
+         if include_dirs then
+            for _, include_dir in ipairs(include_dirs) do
+               local path = path_from_config(config_dir, include_dir)
+               table.insert(module_paths, path .. path_separator .. "?.lua")
+               table.insert(module_paths, path .. path_separator .. "?" ..
+               path_separator .. "init.lua")
+            end
+         end
+         table.insert(module_paths, package.path)
+
+         local defaults = {}
+         local feat_arity = project_config.feat_arity
+         if type(feat_arity) == "string" then
+            defaults.feat_arity = feat_arity
+         end
+         local gen_compat = project_config.gen_compat
+         if type(gen_compat) == "string" then
+            defaults.gen_compat = gen_compat
+         end
+         local gen_target = project_config.gen_target
+         if type(gen_target) == "string" then
+            defaults.gen_target = gen_target
+         end
+
+         local predefined_modules
+         local global_env_def = project_config.global_env_def
+         if type(global_env_def) == "string" then
+            predefined_modules = { global_env_def }
+         end
+         local env_options = {
+            defaults = defaults,
+            predefined_modules = predefined_modules,
+         }
+
+         return {
+            source_dir = source_dir,
+            module_path = table.concat(module_paths, ";"),
+            env_options = env_options,
+         }
       else
          log:error("tlconfig.lua did not return a table.")
-         return ""
       end
    end
+
+   return {
+      source_dir = "",
+      module_path = package.path,
+      env_options = {},
+   }
 end
 
 function TealParser.init(source_dir)
-   source_dir = source_dir or get_sourcedir_from_config()
+   local config = get_project_config()
+   source_dir = source_dir or config.source_dir
 
    log:debug("TealParser initialized with source directory: \"" .. tostring(source_dir) .. "\"")
 
+   local old_package_path = package.path
+   local old_tl_path = tl.path
+   package.path = config.module_path
+   tl.path = config.module_path
+   local ok, tl_env, err = pcall(tl.new_env, config.env_options)
+   package.path = old_package_path
+   tl.path = old_tl_path
+   if not ok then
+      error("Could not initialize Teal environment: " .. tostring(tl_env))
+   end
+   if not tl_env then
+      error("Could not initialize Teal environment: " .. tostring(err))
+   end
+
    local parser = {
       source_dir = source_dir,
+      module_path = config.module_path,
       file_extensions = TealParser.file_extensions,
-      tl_env = tl.new_env(),
+      tl_env = tl_env,
       typenum_to_path = {},
    }
    parser.tl_env.report_types = true
@@ -1020,7 +1124,16 @@ end
 
 function TealParser:process(text, path, env)
 
-   local result = tl.check_string(text, self.tl_env, path)
+   local old_package_path = package.path
+   local old_tl_path = tl.path
+   package.path = self.module_path
+   tl.path = self.module_path
+   local ok, result = pcall(tl.check_string, text, self.tl_env, path)
+   package.path = old_package_path
+   tl.path = old_tl_path
+   if not ok then
+      error(result)
+   end
 
    local reporter = result.env.reporter
 
