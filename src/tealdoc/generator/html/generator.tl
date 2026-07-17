@@ -16,9 +16,57 @@ end
 local record HTMLGenerator
     init: function(ouput: string): Generator.Base
     item_phases: {string: {Generator.Phase}}
+    url_for_path: function(path: string, module_name: string, env: tealdoc.Env): string
 end
 
 HTMLGenerator.item_phases = {}
+
+local function parts(path: string): {string}
+    local output: {string} = {}
+    for part in path:gmatch("[^.]+") do
+        table.insert(output, part)
+    end
+    return output
+end
+
+HTMLGenerator.url_for_path = function(path: string, module_name: string, env: tealdoc.Env): string
+    if not env.registry[path] then
+        return nil
+    end
+
+    local target_module: string
+    for _, candidate in ipairs(env.modules) do
+        if (path == candidate or path:sub(1, #candidate + 1) == candidate .. ".")
+            and (not target_module or #candidate > #target_module) then
+            target_module = candidate
+        end
+    end
+    if not target_module then
+        return nil
+    elseif target_module == module_name then
+        return "#" .. path
+    end
+
+    local current_parts = parts(module_name)
+    local target_parts = parts(target_module)
+    table.remove(current_parts)
+
+    local common = 0
+    while common < #current_parts and common < #target_parts - 1
+        and current_parts[common + 1] == target_parts[common + 1] do
+        common = common + 1
+    end
+
+    local relative: {string} = {}
+    for _ = common + 1, #current_parts do
+        table.insert(relative, "..")
+    end
+    for i = common + 1, #target_parts do
+        table.insert(relative, target_parts[i])
+    end
+    relative[#relative] = relative[#relative] .. ".html#" .. path
+    return table.concat(relative, "/")
+end
 
 local record ModuleNode
     name: string -- top level module name, last element of the path
@@ -127,9 +175,12 @@ HTMLGenerator.init = function(output: string): Generator.Base
 
     local module_name_to_builder: {string: HTMLBuilder} = {}
 
-    base.on_context_for_item = function(_, ctx: Generator.Phase.Context, _: tealdoc.Item, module_name: string, _: tealdoc.Env)
+    base.on_context_for_item = function(_, ctx: Generator.Phase.Context, _: tealdoc.Item, module_name: string, env: tealdoc.Env)
         ctx.builder = module_name_to_builder[module_name]
         ctx.path_mode = "relative"
+        ctx.url_for_path = function(path: string): string
+            return HTMLGenerator.url_for_path(path, module_name, env)
+        end
     end
 
     base.on_category_start = function(_, _: tealdoc.Item, category: string, ctx: Generator.Phase.Context, _: tealdoc.Env)

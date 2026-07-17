@@ -8,6 +8,7 @@ local record VisitState
     module_name: string
     type_report: tl.TypeReport
     typenum_to_path: {integer: string}
+    module_aliases: {string: string}
     parent_item: tealdoc.Item
     module_item_typeid: integer
 end
@@ -495,11 +496,22 @@ local function type_is_function(t: tl.Type): boolean
     return t is tl.FunctionType
 end
 
+local function required_module(exp: tl.Node): string
+    if exp and exp.kind == "op" and exp.e1 and exp.e1.tk == "require"
+        and exp.e2 and exp.e2[1] and exp.e2[1].kind == "string" then
+        return exp.e2[1].conststr
+    end
+end
+
 
 local function variable_declarations_visitor(node: tl.Node, state: VisitState)
     assert(node.kind == "local_declaration" or node.kind == "global_declaration")
     for i, name in ipairs(node.vars) do
         assert(name.kind == "identifier")
+        local module_name = required_module(node.exps and node.exps[i])
+        if module_name then
+            state.module_aliases[name.tk] = module_name
+        end
         -- Synthetic declarations have no entry in the public type report.
         if name.f:sub(1, 1) ~= "@" then
             local decltype = node.decltuple.tuple[i]
@@ -549,6 +561,25 @@ end
 
 
 local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitState)
+
+local function alias_target_for_type(t: tl.Type, state: VisitState): string
+    if t is tl.NominalType and t.names and #t.names > 0 then
+        local module_name = state.module_aliases[t.names[1]]
+        if module_name then
+            local target = module_name
+            for i = 2, #t.names do
+                target = target .. "." .. t.names[i]
+            end
+            return target
+        end
+
+        local name = table.concat(t.names, ".")
+        local candidate = state.path .. name
+        if state.env.registry[candidate] then
+            return candidate
+        end
+    end
+end
 
 local function enum_visitor(t: tl.EnumType, _: tealdoc.TypeItem, state: VisitState)
     -- Extract enum values into a sorted array for stable order
@@ -604,6 +635,7 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
         visibility = visibility,
         location = location_for_type(t),
         type_kind = typekind,
+        alias_target = typekind == "type" and alias_target_for_type(def, state) or nil,
     }
     process_comments(comments, item, state.env)
 
@@ -1045,6 +1077,7 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
         module_name = module_name,
         type_report = reporter.tr,
         typenum_to_path = self.typenum_to_path,
+        module_aliases = {},
         parent_item = module_item,
         module_item_typeid = result.type.typeid
     }

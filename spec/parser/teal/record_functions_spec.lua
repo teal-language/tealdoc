@@ -1085,7 +1085,8 @@ describe("teal support in tealdoc: record functions", function()
                         y = 4,
                         x = 20,
                     },
-                    typename = "MyRecord"
+                    typename = "MyRecord",
+                    alias_target = "$test~MyRecord"
                 },
                 ["$test~MyRecord.my_function"] = {
                     name = "my_function",
@@ -1152,7 +1153,8 @@ describe("teal support in tealdoc: record functions", function()
                         y = 4,
                         x = 20,
                     },
-                    typename = "MyRecord"
+                    typename = "MyRecord",
+                    alias_target = "$test~MyRecord"
                 },
                 ["$test~MyRecord.my_method"] = {
                     name = "my_method",
@@ -1221,7 +1223,8 @@ describe("teal support in tealdoc: record functions", function()
                         y = 5,
                         x = 20,
                     },
-                    typename = "MyRecord"
+                    typename = "MyRecord",
+                    alias_target = "$test~MyRecord"
                 },
                 ["$test~MyRecord.my_function"] = {
                     name = "my_function",
@@ -1289,7 +1292,8 @@ describe("teal support in tealdoc: record functions", function()
                         y = 5,
                         x = 20,
                     },
-                    typename = "MyRecord"
+                    typename = "MyRecord",
+                    alias_target = "$test~MyRecord"
                 },
                 ["$test~MyRecord.my_method"] = {
                     name = "my_method",
@@ -1693,7 +1697,8 @@ describe("teal support in tealdoc: record functions", function()
                         y = 4,
                         x = 20,
                     },
-                    typename = "MyRecord"
+                    typename = "MyRecord",
+                    alias_target = "$test~MyRecord"
                 },
                 ["$test~MyRecord.my_function"] = {
                     name = "my_function",

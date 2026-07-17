@@ -56,4 +56,43 @@ describe("HTML generator", function()
         assert.is_truthy(html:find("number, number", 1, true))
         assert.is_truthy(html:find("number, {&lt;any type&gt; : &lt;any type&gt;}", 1, true))
     end)
+
+    it("links type aliases to declarations in other modules", function()
+        local env = DefaultEnv.init()
+        env.modules = {"tecs.init", "tecs.types"}
+        env.registry["tecs.types.components.TagComponentOptions"] = {
+            kind = "type",
+            type_kind = "interface",
+            name = "TagComponentOptions",
+            path = "tecs.types.components.TagComponentOptions",
+            visibility = "record",
+        }
+        local item = {
+            kind = "type",
+            type_kind = "type",
+            name = "TagComponentOptions",
+            path = "tecs.init.TagComponentOptions",
+            visibility = "record",
+            typename = "types.components.TagComponentOptions",
+            alias_target = "tecs.types.components.TagComponentOptions",
+        }
+        local builder = HTMLBuilder.init()
+        local ctx = {
+            builder = builder,
+            module_name = "tecs.init",
+            path_mode = "relative",
+            env = env,
+            url_for_path = function(path)
+                return HTMLGenerator.url_for_path(path, "tecs.init", env)
+            end,
+        }
+
+        detailed_signature_phase.run(ctx, item)
+
+        assert.is_truthy(builder:build():find(
+            'href="types.html#tecs.types.components.TagComponentOptions"',
+            1,
+            true
+        ))
+    end)
 end)

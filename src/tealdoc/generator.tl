@@ -23,6 +23,7 @@ local record Generator
         rawtext: function(self, ...: Content): Builder
         paragraph: function(self, ...: Content): Builder
         link: function(self, to: string, ...: Content): Builder
+        link_url: function(self, url: string, ...: Content): Builder
 
         code_block: function(self, content: Content): Builder
         ordered_list: function(self, content: function(item: function(content: function))): Builder
@@ -51,6 +52,7 @@ local record Generator
             path_mode: PathMode
             env: tealdoc.Env
             filter: function(item: tealdoc.Item, env: tealdoc.Env): boolean
+            url_for_path: function(path: string): string
         end
 
         name: string

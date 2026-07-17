@@ -83,6 +83,13 @@ HTMLBuilder.link = function(self, to, ...)
    return self
 end
 
+HTMLBuilder.link_url = function(self, url, ...)
+   self:rawtext("<a href=\"", url, "\">")
+   self:text(...)
+   self:rawtext("</a>")
+   return self
+end
+
 local function escape_html(text)
    local output = text:gsub("([&<>'\"])", {
       ["&"] = "&amp;",
