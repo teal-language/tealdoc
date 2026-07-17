@@ -93,9 +93,8 @@ signature = function(ctx, item, indent, force_open)
             ctx.builder:line()
             local child_item = ctx.env.registry[child]
             assert(child_item, "Child item not found: " .. child)
-            assert(child_item.kind == "function", "Expected function item, got: " .. child_item.kind)
             if not ctx.filter or ctx.filter(child_item, ctx.env) then
-               signature(ctx, child_item, indent)
+               assert(signature(ctx, child_item, indent), "Expected signature item, got: " .. child_item.kind)
             end
          end
       end
@@ -117,10 +116,11 @@ signature = function(ctx, item, indent, force_open)
       for i, child in ipairs(item.children) do
          local child_item = ctx.env.registry[child]
          assert(child_item, "Child item not found: " .. child)
-         assert(child_item.kind == "function", "Expected function item, got: " .. child_item.kind)
 
          if not ctx.filter or ctx.filter(child_item, ctx.env) then
-            any_has_signature = any_has_signature or signature(ctx, child_item, indent)
+            local child_has_signature = signature(ctx, child_item, indent)
+            assert(child_has_signature, "Expected signature item, got: " .. child_item.kind)
+            any_has_signature = child_has_signature or any_has_signature
          end
          if i ~= #item.children then
             ctx.builder:line()
