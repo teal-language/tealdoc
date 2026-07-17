@@ -423,10 +423,12 @@ local function function_visitor(node: tl.Node, state: VisitState)
         assert(node.fn_owner)
         local typenum = typenum_for_node(state.type_report, node.fn_owner)
         local parent_path = typenum and state.typenum_to_path[typenum]
-        -- Current Teal may assign a new type number to the same owner.
-        if not parent_path and node.fn_owner.kind == "identifier" then
+        -- Current Teal may assign a new type number as fields are added to an
+        -- inferred table. Prefer its existing registry entry when available.
+        if node.fn_owner.kind == "identifier" or node.fn_owner.kind == "type_identifier" then
             local candidate = state.path .. node.fn_owner.tk
-            if state.env.registry[candidate] then
+            local candidate_item = state.env.registry[candidate]
+            if candidate_item and (not parent_path or candidate_item is tealdoc.VariableItem) then
                 parent_path = candidate
             end
         end

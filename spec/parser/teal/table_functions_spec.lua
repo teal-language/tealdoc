@@ -97,6 +97,24 @@ describe("should support functions attached to tables", function()
             }
         })
     end)
+    it("should parse multiple functions attached to an inferred table", function()
+        local registry = util.registry_for_text([[
+            local x = {}
+
+            function x.first()
+            end
+
+            function x.second()
+            end
+        ]])
+
+        util.assert_is_same_array(registry["$test~x"].children, {
+            "$test~x.first",
+            "$test~x.second",
+        })
+        assert.equal("function", registry["$test~x.first"].kind)
+        assert.equal("function", registry["$test~x.second"].kind)
+    end)
     it("should parse a function attached to a table via assignment", function()
        util.check_registry([[
             local x = {}

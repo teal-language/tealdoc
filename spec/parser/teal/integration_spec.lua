@@ -68,6 +68,25 @@ describe("teal parser integration", function()
         assert.equal("record", registry["test.transform"].visibility)
     end)
 
+    it("matches function aliases assigned through record values", function()
+        local registry = util.registry_for_text([[
+            global type Fun = function(): integer
+
+            global record T
+                fun: Fun
+            end
+
+            local t: T
+
+            t.fun = function(): integer
+                return 1
+            end
+        ]])
+
+        assert.equal("function", registry["$test~T.fun"].kind)
+        assert.equal("record", registry["$test~T.fun"].visibility)
+    end)
+
     it("does not attach separated documentation blocks", function()
         local registry = util.registry_for_text([[
             --- Stale function documentation.
