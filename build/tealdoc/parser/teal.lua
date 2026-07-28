@@ -345,9 +345,15 @@ local function item_for_function_type(t, visibility, kind, state, owner)
    if t.args and #t.args.tuple > 0 then
       item.params = {}
       for i, ar in ipairs(t.args.tuple) do
-         if t.is_method and i == 1 and owner then
+         if t.is_method and i == 1 then
+
+
+
             item.params[i] = {
-               type = typeinfo_to_string(typeinfo_for_type(state.type_report, owner)),
+               name = "self",
+               type = owner and
+               typeinfo_to_string(typeinfo_for_type(state.type_report, owner)) or
+               type_to_string(state.type_report, ar),
             }
          else
             item.params[i] = {
