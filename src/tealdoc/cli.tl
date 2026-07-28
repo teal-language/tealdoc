@@ -11,17 +11,15 @@ local record TypeRoute
     url: string
 end
 
-local function type_url_resolver(filename: string): MarkdownGenerator.URLResolver
-    local file = assert(io.open(filename, "r"), "Could not open type-link map: " .. filename)
+local function prefix_url_resolver(config: any): MarkdownGenerator.URLResolver
     local routes: {TypeRoute} = {}
-    for line in file:lines() do
-        if not line:match("^%s*$") and not line:match("^%s*#") then
-            local path, url = line:match("^%s*(%S+)%s+(%S+)%s*$")
-            assert(path and url, "Invalid type-link map line: " .. line)
-            table.insert(routes, {path = path, url = url})
-        end
+    for path, url in pairs(config as {any: any}) do
+        assert(
+            type(path) == "string" and type(url) == "string",
+            "Type-link route keys and values must be strings"
+        )
+        table.insert(routes, {path = path as string, url = url as string})
     end
-    file:close()
     table.sort(routes, function(a: TypeRoute, b: TypeRoute): boolean
         return #a.path > #b.path
     end)
@@ -37,6 +35,34 @@ local function type_url_resolver(filename: string): MarkdownGenerator.URLResolve
         end
         return nil
     end
+end
+
+local function type_url_resolver(filename: string): MarkdownGenerator.URLResolver
+    local chunk, load_error = loadfile(filename)
+    assert(
+        chunk,
+        "Could not load type-link configuration '" ..
+            filename ..
+            "': " ..
+            tostring(load_error)
+    )
+
+    local ok, config = pcall(chunk)
+    assert(
+        ok,
+        "Could not execute type-link configuration '" ..
+            filename ..
+            "': " ..
+            tostring(config)
+    )
+    if type(config) == "function" then
+        return config as MarkdownGenerator.URLResolver
+    end
+    assert(
+        type(config) == "table",
+        "Type-link configuration must return a route table or resolver function"
+    )
+    return prefix_url_resolver(config)
 end
 
 local record CLI
@@ -81,7 +107,7 @@ function CLI:add_default_commands()
             command:flag("--no-warn-missing", "do not warn about missing items")
             command:option(
                 "--type-links",
-                "path to a canonical-type to URL-prefix map"
+                "path to a Lua type-link configuration"
             )
             command:option("-o --output", "output file")
                 :default("doc.md")
