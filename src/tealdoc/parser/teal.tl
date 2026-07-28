@@ -141,7 +141,10 @@ end
 
 -- TODO: temporary for now?
 local function typeinfo_to_string(typeinfo: tl.TypeInfo): string
-    return typeinfo and typeinfo.str
+    if not typeinfo then
+        return nil
+    end
+    return (typeinfo.str:gsub("<any type>", "any"))
 end
 
 local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
@@ -1102,6 +1105,7 @@ local record TealParser is tealdoc.Parser
     module_path: string
     tl_env: tl.Env
     typenum_to_path: {integer: string}
+    validate: function(self, text: string, path: string): {string}
 end
 
 local record ProjectConfig
@@ -1270,6 +1274,44 @@ function TealParser.init(source_dir?: string): TealParser
 end
 
 TealParser.file_extensions = {".tl", ".d.tl"}
+
+function TealParser:validate(text: string, path: string): {string}
+    local old_package_path = package.path
+    local old_tl_path = tl.path
+    package.path = self.module_path
+    tl.path = self.module_path
+    local ok, result = pcall(tl.check_string, text, self.tl_env, path)
+    package.path = old_package_path
+    tl.path = old_tl_path
+    if not ok then
+        return {path .. ": " .. tostring(result)}
+    end
+
+    local messages: {string} = {}
+    for _, error_item in ipairs(result.syntax_errors or {}) do
+        table.insert(
+            messages,
+            ("%s:%d:%d: %s"):format(
+                error_item.filename or path,
+                error_item.y or 0,
+                error_item.x or 0,
+                error_item.msg
+            )
+        )
+    end
+    for _, error_item in ipairs(result.type_errors or {}) do
+        table.insert(
+            messages,
+            ("%s:%d:%d: %s"):format(
+                error_item.filename or path,
+                error_item.y or 0,
+                error_item.x or 0,
+                error_item.msg
+            )
+        )
+    end
+    return messages
+end
 
 
 local function get_module_name_from_path(path: string, source_dir: string): string

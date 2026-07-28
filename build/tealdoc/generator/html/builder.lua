@@ -2,16 +2,35 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 local lunamark = require("lunamark")
 
-local HTMLBuilder = {}
+local HTMLBuilder = { Options = {} }
 
 
 
 
 
-function HTMLBuilder.init()
+
+
+
+
+
+
+
+function HTMLBuilder.init(options)
    local writer = lunamark.writer.html.new()
+   if options and options.blockquote then
+      writer.blockquote = options.blockquote
+   end
+   if options and options.div then
+      writer.div = options.div
+   end
+   if options and options.paragraph then
+      local dynamic_writer = writer
+      dynamic_writer["paragraph"] = options.paragraph
+   end
    local parse = lunamark.reader.markdown.new(writer, {
       fenced_code_blocks = true,
+      fenced_divs = options and options.fenced_divs or false,
+      pipe_tables = true,
    })
 
    local builder = {

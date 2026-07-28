@@ -3,15 +3,34 @@ local Generator = require("tealdoc.generator")
 local lunamark = require("lunamark")
 
 local record HTMLBuilder is Generator.Builder
+    record Options
+        fenced_divs: boolean
+        blockquote: function(any): any
+        div: function(any, {string: string}): any
+        paragraph: function(any): any
+    end
+
     output: {string}
 
     parse_md: function(text: string): string
 end
 
-function HTMLBuilder.init(): HTMLBuilder
+function HTMLBuilder.init(options?: HTMLBuilder.Options): HTMLBuilder
     local writer = lunamark.writer.html.new()
+    if options and options.blockquote then
+        writer.blockquote = options.blockquote
+    end
+    if options and options.div then
+        writer.div = options.div
+    end
+    if options and options.paragraph then
+        local dynamic_writer = writer as {string: any}
+        dynamic_writer["paragraph"] = options.paragraph
+    end
     local parse = lunamark.reader.markdown.new(writer, {
-        fenced_code_blocks = true
+        fenced_code_blocks = true,
+        fenced_divs = options and options.fenced_divs or false,
+        pipe_tables = true,
     })
 
     local builder: HTMLBuilder = {

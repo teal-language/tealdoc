@@ -141,7 +141,10 @@ end
 
 
 local function typeinfo_to_string(typeinfo)
-   return typeinfo and typeinfo.str
+   if not typeinfo then
+      return nil
+   end
+   return (typeinfo.str:gsub("<any type>", "any"))
 end
 
 local function type_to_string(report, typ)
@@ -1119,6 +1122,7 @@ local TealParser = {}
 
 
 
+
 local function path_from_config(config_dir, path)
    if path:match("^[/\\]") or path:match("^%a:[/\\]") then
       return path
@@ -1270,6 +1274,44 @@ function TealParser.init(source_dir)
 end
 
 TealParser.file_extensions = { ".tl", ".d.tl" }
+
+function TealParser:validate(text, path)
+   local old_package_path = package.path
+   local old_tl_path = tl.path
+   package.path = self.module_path
+   tl.path = self.module_path
+   local ok, result = pcall(tl.check_string, text, self.tl_env, path)
+   package.path = old_package_path
+   tl.path = old_tl_path
+   if not ok then
+      return { path .. ": " .. tostring(result) }
+   end
+
+   local messages = {}
+   for _, error_item in ipairs(result.syntax_errors or {}) do
+      table.insert(
+      messages,
+      ("%s:%d:%d: %s"):format(
+      error_item.filename or path,
+      error_item.y or 0,
+      error_item.x or 0,
+      error_item.msg))
+
+
+   end
+   for _, error_item in ipairs(result.type_errors or {}) do
+      table.insert(
+      messages,
+      ("%s:%d:%d: %s"):format(
+      error_item.filename or path,
+      error_item.y or 0,
+      error_item.x or 0,
+      error_item.msg))
+
+
+   end
+   return messages
+end
 
 
 local function get_module_name_from_path(path, source_dir)

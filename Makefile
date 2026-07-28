@@ -38,7 +38,10 @@ build:
 		output="$${output%.tl}.lua"; \
 		mkdir -p "$$(dirname "$$output")"; \
 		$(TL) -I src -I types gen "$$source" -o "$$output"; \
-	done < <(find src -type f -name '*.tl' | sort)
+	done < <(find src -type f -name '*.tl' | sort); \
+	mkdir -p build/tealdoc/generator/site/assets; \
+	cp src/tealdoc/generator/site/assets/pico.classless-2.1.1.min.css \
+		build/tealdoc/generator/site/assets/
 
 install: deps build
 	$(LUAROCKS_CMD) make $(ROCKSPEC)

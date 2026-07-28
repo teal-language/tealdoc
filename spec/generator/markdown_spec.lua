@@ -3,6 +3,37 @@ local MarkdownGenerator = require("tealdoc.generator.markdown")
 local tealdoc = require("tealdoc")
 
 describe("Markdown generator", function()
+    it("hides single-underscore members unless explicitly public", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Internal storage.
+                _hidden: string
+
+                --- Deliberately exposed storage.
+                --- @public
+                _shown: string
+
+                --- A real metamethod-shaped public member.
+                __call: function()
+            end
+
+            return api
+        ]], "visibility.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        assert.is_falsy(markdown:find("visibility._hidden", 1, true))
+        assert.is_truthy(markdown:find("visibility._shown", 1, true))
+        assert.is_truthy(markdown:find("visibility.__call", 1, true))
+    end)
+
     it("renders signatures as fenced Teal code", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
@@ -54,8 +85,11 @@ describe("Markdown generator", function()
                 --- Copies a payload.
                 copyPayload: function(payload: Payload): Payload
 
-                --- Shows a message in a window.
+                --- Shows a message in a [`Window`](tealdoc:window).
                 messageBox: function(window: Window)
+
+                --- Wraps a generic window.
+                generic: function<T>(window: Window<T>): Window<T>
             end
 
             return api
@@ -80,6 +114,11 @@ describe("Markdown generator", function()
             true
         ))
         local identity_heading = assert(markdown:find("## api.identity", 1, true))
+        assert.is_truthy(markdown:find(
+            '## api.identity <span class="tealdoc-kind-badge tealdoc-kind-function">function</span>',
+            1,
+            true
+        ))
         local identity_text = assert(markdown:find("Returns a value unchanged.", identity_heading, true))
         local identity_signature = assert(markdown:find(
             "```teal\nfunction api.identity<T>(value: T): T\n```",
@@ -93,6 +132,11 @@ describe("Markdown generator", function()
         assert.is_true(identity_signature < identity_arguments)
         assert.is_true(identity_arguments < identity_returns)
         assert.is_truthy(markdown:find("### types.Options.value", 1, true))
+        assert.is_truthy(markdown:find(
+            '<span class="tealdoc-kind-badge tealdoc-kind-field">field</span>',
+            1,
+            true
+        ))
         assert.is_falsy(markdown:find("Synopsis", 1, true))
         assert.is_truthy(markdown:find(
             "### Arguments\n\nNone.\n\n### Returns\n\nNone.",
@@ -103,6 +147,12 @@ describe("Markdown generator", function()
         assert.is_falsy(markdown:find('<a href="#types.Options">', 1, true))
         assert.is_falsy(markdown:find("[`types.Options`](", 1, true))
         assert.is_falsy(markdown:find("&lt;T&gt;", 1, true))
+        assert.is_truthy(markdown:find(
+            "Shows a message in a [`Window`](#window).",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find("tealdoc:", 1, true))
 
         local linked_output = os.tmpname()
         MarkdownGenerator.init(linked_output, function(path)
@@ -135,7 +185,7 @@ describe("Markdown generator", function()
             true
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
-            "```teal\nrecord api.Payload\n```",
+            "```teal\nrecord api.Payload\n    value: string\nend\n```",
             1,
             true
         ), linked_markdown)
@@ -151,5 +201,16 @@ describe("Markdown generator", function()
             assert(linked_markdown:find("## api.messageBox", 1, true)),
             true
         ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "Shows a message in a [`Window`](/modules/window#window).",
+            1,
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "([`Window`](/modules/window#window)`<T>`)",
+            assert(linked_markdown:find("## api.generic", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_falsy(linked_markdown:find("``T``", 1, true))
     end)
 end)

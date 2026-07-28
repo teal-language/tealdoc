@@ -3,6 +3,7 @@ local Config = require("tealdoc.config")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local HTMLGenerator = require("tealdoc.generator.html.generator")
+local SiteGenerator = require("tealdoc.generator.site")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
@@ -143,9 +144,53 @@ function CLI:add_default_commands()
             --HTMLGenerator:run(args["output"] as string, self._env)
         end
     }
+    local site_command: CLI.Command = {
+        name = "site",
+        setup = function(command: argparse.Command)
+            command:argument("files", "Teal input files"):args("*")
+            command:flag("--no-warn-missing", "do not warn about missing items")
+            command:option("-o --output", "output directory")
+                :default("site")
+        end,
+        handler = function(args: argparse.Args)
+            if args["no_warn_missing"] then
+                self._env.no_warnings_on_missing = true
+            end
+            local loaded = Config.load()
+            local values = loaded.values as {string: any}
+            local tealdoc_config = values["tealdoc"] as {string: any}
+            local site_config = tealdoc_config
+                and tealdoc_config["site"] as SiteGenerator.Settings
+            assert(site_config, "tlconfig.lua does not contain tealdoc.site")
+
+            local files = SiteGenerator.source_files(
+                site_config,
+                loaded.directory
+            )
+            local seen: {string: boolean} = {}
+            for _, file in ipairs(files) do
+                seen[file] = true
+                tealdoc.process_file(file, self._env)
+            end
+            for _, file in ipairs(args.files as {string} or {}) do
+                if not seen[file] then
+                    seen[file] = true
+                    tealdoc.process_file(file, self._env)
+                end
+            end
+
+            SiteGenerator.build(
+                args["output"] as string,
+                self._env,
+                site_config,
+                loaded.directory
+            )
+        end,
+    }
     self:add_command(dump_command)
     self:add_command(md_command)
     self:add_command(html_command)
+    self:add_command(site_command)
 end
 
 function CLI:init(env: tealdoc.Env, skip_default_commands?: boolean)

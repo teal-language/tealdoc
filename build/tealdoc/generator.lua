@@ -1,7 +1,9 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local table = _tl_compat and _tl_compat.table or table; local type = type; local tealdoc = require("tealdoc")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 
 local Generator = { Attribute = {}, Base = {} }
+
+
 
 
 
@@ -97,8 +99,17 @@ end
 local function filter(item, env)
    local is_module_record = env.registry["$" .. item.path] ~= nil
 
-   if not env.include_all and is_local(item) and not is_module_record then
-      return false
+   if not env.include_all then
+      if is_local(item) and not is_module_record then
+         return false
+      end
+      local private_by_name = item.name and
+      item.name:match("^_[^_]")
+      local explicitly_public = item.attributes and
+      item.attributes["public"]
+      if private_by_name and not explicitly_public then
+         return false
+      end
    end
 
 
@@ -107,6 +118,42 @@ local function filter(item, env)
    end
 
    return true
+end
+
+Generator.filter = filter
+
+function Generator.item_kind(
+   item,
+   env)
+
+   if item.kind == "function" then
+      if item.function_kind == "metamethod" then
+         return "metamethod"
+      elseif item.function_kind == "macroexp" then
+         return "macro"
+      elseif item.params and
+         item.params[1] and
+         item.params[1].name == "self" then
+
+         return "method"
+      end
+      return "function"
+   elseif item.kind == "variable" then
+      local parent = item.parent and env.registry[item.parent]
+      if parent and parent.kind == "type" then
+         return "field"
+      end
+      return "variable"
+   elseif item.kind == "type" then
+      return item.type_kind
+   elseif item.kind == "enumvalue" then
+      return "value"
+   elseif item.kind == "overloaded" then
+      return "function"
+   elseif item.kind == "metamethods" then
+      return "metamethod"
+   end
+   return item.kind
 end
 
 function Generator.categories_for_module_record(item, env)
