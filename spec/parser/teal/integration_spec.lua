@@ -136,6 +136,24 @@ describe("teal parser integration", function()
         assert.equal("The value to use", params[2].description)
     end)
 
+    it("documents unnamed parameters in function-typed fields by tag order", function()
+        local registry = util.registry_for_text([[
+            global record script
+                --- Registers a function to run during mod initialization.
+                --- @param handler The event handler. Passing nil unregisters it.
+                on_init: function(function())
+            end
+        ]])
+
+        local params = registry["$test~script.on_init"].params
+        assert.equal("handler", params[1].name)
+        assert.equal("function()", params[1].type)
+        assert.equal(
+            "The event handler. Passing nil unregisters it.",
+            params[1].description
+        )
+    end)
+
     it("normalizes relative and Windows module paths", function()
         local text = [[
             local record example

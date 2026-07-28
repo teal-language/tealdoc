@@ -88,6 +88,22 @@ function test.foo(a: integer, b: integer): integer
 end
 ```
 
+Function types used in declarations and record fields may not provide
+parameter names to Tealdoc. Put `@param` tags on the declaration instead of
+placing documentation comments inside the function type:
+
+```
+global record script
+    --- Registers a function to run during mod initialization.
+    --- @param handler The event handler. Passing nil unregisters it.
+    on_init: function(function())
+end
+```
+
+Tealdoc matches tags for unnamed parameters by declaration order and uses each
+tag's parameter name in the generated documentation. When a function type has
+multiple unnamed parameters, write its `@param` tags in the same order.
+
 You can use multiple `@return` tags to document functions with multiple return values:
 
 ```
