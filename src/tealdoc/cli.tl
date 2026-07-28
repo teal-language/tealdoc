@@ -1,4 +1,5 @@
 local argparse = require("argparse")
+local Config = require("tealdoc.config")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local HTMLGenerator = require("tealdoc.generator.html.generator")
@@ -37,24 +38,7 @@ local function prefix_url_resolver(config: any): MarkdownGenerator.URLResolver
     end
 end
 
-local function type_url_resolver(filename: string): MarkdownGenerator.URLResolver
-    local chunk, load_error = loadfile(filename)
-    assert(
-        chunk,
-        "Could not load type-link configuration '" ..
-            filename ..
-            "': " ..
-            tostring(load_error)
-    )
-
-    local ok, config = pcall(chunk)
-    assert(
-        ok,
-        "Could not execute type-link configuration '" ..
-            filename ..
-            "': " ..
-            tostring(config)
-    )
+local function type_url_resolver(config: any): MarkdownGenerator.URLResolver
     if type(config) == "function" then
         return config as MarkdownGenerator.URLResolver
     end
@@ -105,10 +89,6 @@ function CLI:add_default_commands()
             command:argument("files", "input files"):args("+")
             command:flag("-a --all", "include all items in the documentation")
             command:flag("--no-warn-missing", "do not warn about missing items")
-            command:option(
-                "--type-links",
-                "path to a Lua type-link configuration"
-            )
             command:option("-o --output", "output file")
                 :default("doc.md")
         end,
@@ -125,9 +105,14 @@ function CLI:add_default_commands()
             end
             
             local resolver: MarkdownGenerator.URLResolver
-            local type_links = args["type_links"] or args["type-links"]
+            local settings = Config.load().values as {string: any}
+            local tealdoc_config = settings["tealdoc"] as {string: any}
+            local markdown_config = tealdoc_config
+                and tealdoc_config["markdown"] as {string: any}
+            local type_links = markdown_config
+                and markdown_config["type_links"]
             if type_links then
-                resolver = type_url_resolver(type_links as string)
+                resolver = type_url_resolver(type_links)
             end
             local generator = MarkdownGenerator.init(args["output"] as string, resolver)
             generator:run(self._env)

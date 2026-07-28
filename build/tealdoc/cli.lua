@@ -1,4 +1,5 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local loadfile = _tl_compat and _tl_compat.loadfile or loadfile; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
+local Config = require("tealdoc.config")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local HTMLGenerator = require("tealdoc.generator.html.generator")
@@ -37,24 +38,7 @@ local function prefix_url_resolver(config)
    end
 end
 
-local function type_url_resolver(filename)
-   local chunk, load_error = loadfile(filename)
-   assert(
-   chunk,
-   "Could not load type-link configuration '" ..
-   filename ..
-   "': " ..
-   tostring(load_error))
-
-
-   local ok, config = pcall(chunk)
-   assert(
-   ok,
-   "Could not execute type-link configuration '" ..
-   filename ..
-   "': " ..
-   tostring(config))
-
+local function type_url_resolver(config)
    if type(config) == "function" then
       return config
    end
@@ -105,10 +89,6 @@ function CLI:add_default_commands()
          command:argument("files", "input files"):args("+")
          command:flag("-a --all", "include all items in the documentation")
          command:flag("--no-warn-missing", "do not warn about missing items")
-         command:option(
-         "--type-links",
-         "path to a Lua type-link configuration")
-
          command:option("-o --output", "output file"):
          default("doc.md")
       end,
@@ -125,7 +105,12 @@ function CLI:add_default_commands()
          end
 
          local resolver
-         local type_links = args["type_links"] or args["type-links"]
+         local settings = Config.load().values
+         local tealdoc_config = settings["tealdoc"]
+         local markdown_config = tealdoc_config and
+         tealdoc_config["markdown"]
+         local type_links = markdown_config and
+         markdown_config["type_links"]
          if type_links then
             resolver = type_url_resolver(type_links)
          end
