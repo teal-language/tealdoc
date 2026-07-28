@@ -52,8 +52,20 @@ function DefaultEnv.init(): tealdoc.Env
                 end
 
                 -- Function type declarations may not provide parameter names.
-                -- Fall back to their declaration order in that case, and retain
-                -- the mismatch warning for misspelled named parameters.
+                -- Fall back to their declaration order in that case, and only
+                -- over the parameters that still need a name.
+                if not param then
+                    for _, p in ipairs(item.params) do
+                        if p.name == nil and p.description == nil then
+                            param = p
+                            break
+                        end
+                    end
+                end
+
+                -- Every parameter is named, so the tag names one of them
+                -- wrongly. Take the next undocumented parameter to report it
+                -- against, which keeps the mismatch warning below.
                 if not param then
                     for _, p in ipairs(item.params) do
                         if p.description == nil then

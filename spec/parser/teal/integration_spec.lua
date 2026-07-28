@@ -154,6 +154,38 @@ describe("teal parser integration", function()
         )
     end)
 
+    it("documents a method declared as a record field like its definition", function()
+        local declared = util.registry_for_text([[
+            local record example
+                --- Writes a matrix.
+                --- @param width Viewport width.
+                --- @param height Viewport height.
+                matrix: function(self, width: number, height: number): number
+            end
+        ]])
+
+        local defined = util.registry_for_text([[
+            local record example
+            end
+
+            --- Writes a matrix.
+            --- @param width Viewport width.
+            --- @param height Viewport height.
+            function example:matrix(width: number, height: number): number
+                return width
+            end
+        ]])
+
+        local expected = {
+            { name = "self", type = "example" },
+            { name = "width", type = "number", description = "Viewport width." },
+            { name = "height", type = "number", description = "Viewport height." },
+        }
+
+        assert.is_same(expected, declared["$test~example.matrix"].params)
+        assert.is_same(expected, defined["$test~example.matrix"].params)
+    end)
+
     it("normalizes relative and Windows module paths", function()
         local text = [[
             local record example
