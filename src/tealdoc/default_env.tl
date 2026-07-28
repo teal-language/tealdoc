@@ -196,6 +196,17 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local public_tag_handler: tealdoc.Tag = {
+        name = "public",
+        handle = function(ctx: tealdoc.Tag.Context)
+            local item = ctx.item
+            if not item.attributes then
+                item.attributes = {}
+            end
+            item.attributes["public"] = true
+        end
+    }
+
     local category_tag_handler: tealdoc.Tag = {
         name = "category",
         has_param = true,
@@ -212,6 +223,7 @@ function DefaultEnv.init(): tealdoc.Env
     env:add_tag(param_tag_handler)
     env:add_tag(typearg_tag_handler)
     env:add_tag(local_tag_handler)
+    env:add_tag(public_tag_handler)
     env:add_tag(category_tag_handler)
 
     -- TODO: better place for this
@@ -283,18 +295,30 @@ function DefaultEnv.init(): tealdoc.Env
         ctx: Generator.Phase.Context,
         level: integer,
         attribute: Generator.Attribute,
-        title: string
+        title: string,
+        kind?: string
     )
+        local function badge(builder: Generator.Builder)
+            if kind then
+                builder:rawtext(
+                    ' <span class="tealdoc-kind-badge tealdoc-kind-' ..
+                        kind ..
+                        '">',
+                    kind,
+                    "</span>"
+                )
+            end
+        end
         if level == 2 then
-            ctx.builder:h2(attribute, title)
+            ctx.builder:h2(attribute, title, badge)
         elseif level == 3 then
-            ctx.builder:h3(attribute, title)
+            ctx.builder:h3(attribute, title, badge)
         elseif level == 4 then
-            ctx.builder:h4(attribute, title)
+            ctx.builder:h4(attribute, title, badge)
         elseif level == 5 then
-            ctx.builder:h5(attribute, title)
+            ctx.builder:h5(attribute, title, badge)
         else
-            ctx.builder:h6(attribute, title)
+            ctx.builder:h6(attribute, title, badge)
         end
     end
 
@@ -308,21 +332,24 @@ function DefaultEnv.init(): tealdoc.Env
                         ctx,
                         markdown_item_level(ctx, parent),
                         attr("path"),
-                        display_path(ctx, parent)
+                        display_path(ctx, parent),
+                        "function"
                     )
                 end
                 markdown_heading(
                     ctx,
                     markdown_item_level(ctx, item),
                     attr("header"),
-                    "Function"
+                    "Function",
+                    "overload"
                 )
             else
                 markdown_heading(
                     ctx,
                     markdown_item_level(ctx, item),
                     attr("path"),
-                    display_path(ctx, item)
+                    display_path(ctx, item),
+                    Generator.item_kind(item, ctx.env)
                 )
             end
         end
@@ -360,27 +387,98 @@ function DefaultEnv.init(): tealdoc.Env
         end
 
         local position = 1
+        local plain: {string} = {}
+        local function flush_plain()
+            if #plain > 0 then
+                ctx.builder:code(table.concat(plain))
+                plain = {}
+            end
+        end
         while position <= #typename do
             local first, last = typename:find("[%a_][%w_%.]*", position)
             if not first then
-                ctx.builder:code(typename:sub(position))
+                table.insert(plain, typename:sub(position))
                 break
             end
             if first > position then
-                ctx.builder:code(typename:sub(position, first - 1))
+                table.insert(plain, typename:sub(position, first - 1))
             end
 
             local name = typename:sub(first, last)
             local url = urls[name]
             if url then
+                flush_plain()
                 ctx.builder:link_url(url, function()
                     ctx.builder:code(name)
                 end)
             else
-                ctx.builder:code(name)
+                table.insert(plain, name)
             end
             position = last + 1
         end
+        flush_plain()
+    end
+
+    local function markdown_type_path(
+        ctx: Generator.Phase.Context,
+        target: string
+    ): string
+        local direct = ctx.env.registry[target]
+        if direct and direct is tealdoc.TypeItem then
+            return target
+        end
+
+        local found: string
+        for path, item in pairs(ctx.env.registry) do
+            if item is tealdoc.TypeItem
+                and item.name == target
+                and Generator.filter(item, ctx.env)
+            then
+                if found and found ~= path then
+                    return nil
+                end
+                found = path
+            end
+        end
+        return found
+    end
+
+    local function markdown_with_type_links(
+        ctx: Generator.Phase.Context,
+        text: string
+    ): string
+        return (text:gsub(
+            "%]%(%s*tealdoc:([^%)%s]+)%s*%)",
+            function(target: string): string
+                local path = markdown_type_path(ctx, target)
+                if not path then
+                    log:warning(
+                        "Could not resolve Tealdoc Markdown type link: " ..
+                            target
+                    )
+                    return "](tealdoc:" .. target .. ")"
+                end
+
+                local url: string
+                if ctx.url_for_type then
+                    url = ctx.url_for_type(path)
+                end
+                if not url then
+                    local item = ctx.env.registry[path]
+                    if item and Generator.filter(item, ctx.env) then
+                        url = ctx.url_for_path(path)
+                    end
+                end
+                if not url then
+                    log:warning(
+                        "Type is not public in Tealdoc Markdown link: " ..
+                            target
+                    )
+                    return "](tealdoc:" .. target .. ")"
+                end
+                return "](" .. url .. ")"
+            end
+        ))
     end
 
     local text_phase: Generator.Phase = {
@@ -388,7 +486,7 @@ function DefaultEnv.init(): tealdoc.Env
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
             if item.text then
                 ctx.builder:paragraph(attr("text"), function()
-                    ctx.builder:md(item.text)
+                    ctx.builder:md(markdown_with_type_links(ctx, item.text))
                 end)
             end
         end
@@ -417,13 +515,87 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local structure_signature: function(
+        Generator.Phase.Context,
+        tealdoc.Item,
+        string,
+        boolean
+    ): boolean
+
+    structure_signature = function(
+        ctx: Generator.Phase.Context,
+        item: tealdoc.Item,
+        indent: string,
+        record_field: boolean
+    ): boolean
+        if item is tealdoc.VariableItem then
+            ctx.builder:rawtext(indent)
+            signatures.for_variable(ctx, item)
+            return true
+        elseif item is tealdoc.FunctionItem then
+            ctx.builder:rawtext(indent)
+            signatures.for_function(ctx, item, record_field)
+            return true
+        elseif item is tealdoc.TypeItem then
+            ctx.builder:rawtext(indent)
+            signatures.for_type(ctx, item)
+            if item.type_kind ~= "record"
+                and item.type_kind ~= "interface"
+                and item.type_kind ~= "enum"
+            then
+                return true
+            end
+
+            local old_path_mode = ctx.path_mode
+            ctx.path_mode = "none"
+            for _, child_path in ipairs(item.children or {}) do
+                local child = assert(
+                    ctx.env.registry[child_path],
+                    "Child item not found: " .. child_path
+                )
+                if not ctx.filter or ctx.filter(child, ctx.env) then
+                    ctx.builder:line()
+                    structure_signature(ctx, child, indent .. "    ", true)
+                end
+            end
+            ctx.path_mode = old_path_mode
+            ctx.builder:line()
+            ctx.builder:rawtext(indent, "end")
+            return true
+        elseif item.kind == "enumvalue" then
+            ctx.builder:rawtext(indent, item.name)
+            return true
+        elseif item.children then
+            local wrote = false
+            for _, child_path in ipairs(item.children) do
+                local child = assert(
+                    ctx.env.registry[child_path],
+                    "Child item not found: " .. child_path
+                )
+                if not ctx.filter or ctx.filter(child, ctx.env) then
+                    if wrote then
+                        ctx.builder:line()
+                    end
+                    wrote = structure_signature(
+                        ctx,
+                        child,
+                        indent,
+                        record_field
+                    ) or wrote
+                end
+            end
+            return wrote
+        end
+        return false
+    end
+
     local type_signature_phase: Generator.Phase = {
         name = "type_signature",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
             assert(item is tealdoc.TypeItem)
 
             ctx.builder:code_block(function()
-                signatures.for_type(ctx, item)
+                structure_signature(ctx, item, "", false)
                 ctx.builder:line()
             end)
         end
@@ -451,7 +623,12 @@ function DefaultEnv.init(): tealdoc.Env
                         end
 
                         if typearg.description then
-                            ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(typearg.description) end)
+                            ctx.builder:text(attr("description"), " — ", function()
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    typearg.description
+                                ))
+                            end)
                         end
                     end)
                 end
@@ -484,7 +661,10 @@ function DefaultEnv.init(): tealdoc.Env
 
                         if typearg.description then
                             ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(typearg.description)
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    typearg.description
+                                ))
                             end)
                         end
                     end)
@@ -514,7 +694,10 @@ function DefaultEnv.init(): tealdoc.Env
                         ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
                         if param.description then
                             ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(param.description)
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    param.description
+                                ))
                             end)
                         end
                     end)
@@ -547,7 +730,10 @@ function DefaultEnv.init(): tealdoc.Env
                         end, ")")
                         if param.description then
                             ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(param.description)
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    param.description
+                                ))
                             end)
                         end
                     end)
@@ -572,7 +758,12 @@ function DefaultEnv.init(): tealdoc.Env
                     list_item(function()
                         ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
                         if ret.description then
-                            ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(ret.description) end)
+                            ctx.builder:text(attr("description"), " — ", function()
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    ret.description
+                                ))
+                            end)
                         end
                     end)
                 end
@@ -598,7 +789,12 @@ function DefaultEnv.init(): tealdoc.Env
                             markdown_type(ctx, ret.type or "?", ret.type_references)
                         end, ")")
                         if ret.description then
-                            ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(ret.description) end)
+                            ctx.builder:text(attr("description"), " — ", function()
+                                ctx.builder:md(markdown_with_type_links(
+                                    ctx,
+                                    ret.description
+                                ))
+                            end)
                         end
                     end)
                 end

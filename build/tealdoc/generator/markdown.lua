@@ -201,7 +201,39 @@ local MarkdownGenerator = {}
 
 
 
+
+
+
+
+
 MarkdownGenerator.item_phases = {}
+
+function MarkdownGenerator.resolve_type_url(
+   env,
+   path,
+   type_url_for_path)
+
+   local seen = {}
+   while path and not seen[path] do
+      seen[path] = true
+      local item = env.registry[path]
+      if not item then
+         return type_url_for_path(path)
+      end
+      if Generator.filter(item, env) then
+         return type_url_for_path(path) or "#" .. path
+      end
+      if item.kind == "type" and
+         item.type_kind == "type" and
+         item.alias_target then
+
+         path = item.alias_target
+      else
+         return nil
+      end
+   end
+   return nil
+end
 
 MarkdownGenerator.init = function(output, type_url_for_path)
    local builder = MarkdownBuilder.init()
@@ -218,26 +250,11 @@ MarkdownGenerator.init = function(output, type_url_for_path)
       end
       if type_url_for_path then
          ctx.url_for_type = function(path)
-            local seen = {}
-            while path and not seen[path] do
-               seen[path] = true
-               local item = env.registry[path]
-               if not item then
-                  return type_url_for_path(path)
-               end
-               if ctx.filter(item, env) then
-                  return type_url_for_path(path) or "#" .. path
-               end
-               if item.kind == "type" and
-                  item.type_kind == "type" and
-                  item.alias_target then
+            return MarkdownGenerator.resolve_type_url(
+            env,
+            path,
+            type_url_for_path)
 
-                  path = item.alias_target
-               else
-                  return nil
-               end
-            end
-            return nil
          end
       end
    end

@@ -54,7 +54,7 @@ describe("HTML generator", function()
 
         local html = builder:build()
         assert.is_truthy(html:find("number, number", 1, true))
-        assert.is_truthy(html:find("number, {&lt;any type&gt; : &lt;any type&gt;}", 1, true))
+        assert.is_truthy(html:find("number, {any : any}", 1, true))
     end)
 
     it("links type aliases to declarations in other modules", function()
