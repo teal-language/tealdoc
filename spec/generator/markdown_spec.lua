@@ -16,7 +16,14 @@ describe("Markdown generator", function()
             return types
         ]], "types.tl", env)
         tealdoc.process_text([[
+            local record Window
+            end
+
+            return Window
+        ]], "window.tl", env)
+        tealdoc.process_text([[
             local types = require("types")
+            local type Window = require("window")
             local type PrivateOptions = types.Options
             local record Payload
                 value: string
@@ -46,6 +53,9 @@ describe("Markdown generator", function()
 
                 --- Copies a payload.
                 copyPayload: function(payload: Payload): Payload
+
+                --- Shows a message in a window.
+                messageBox: function(window: Window)
             end
 
             return api
@@ -99,6 +109,9 @@ describe("Markdown generator", function()
             if path == "types.Options" then
                 return "/modules/types#types.Options"
             end
+            if path == "window" then
+                return "/modules/window#window"
+            end
             return nil
         end):run(env)
         local linked_file = assert(io.open(linked_output, "r"))
@@ -131,6 +144,11 @@ describe("Markdown generator", function()
         assert.is_truthy(linked_markdown:find(
             "([`Payload`](#api.Payload))",
             assert(linked_markdown:find("## api.copyPayload", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "([`Window`](/modules/window#window))",
+            assert(linked_markdown:find("## api.messageBox", 1, true)),
             true
         ), linked_markdown)
     end)

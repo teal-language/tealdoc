@@ -991,8 +991,13 @@ local function type_declaration_visitor(node: tl.Node, state: VisitState)
     assert(node.var.kind == "identifier")
     if node.value then
         local name = node.var.tk
+        local module_name = required_module(node.value)
+        if module_name then
+            state.module_aliases[name] = module_name
+            return
+        end
         local newtype = node.value.newtype
-        if newtype then -- only "local type ... = require(...)" do not contain newtype, should we handle it?
+        if newtype then
             typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
         end
     end
