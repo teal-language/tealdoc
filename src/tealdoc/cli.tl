@@ -6,6 +6,39 @@ local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
 
+local record TypeRoute
+    path: string
+    url: string
+end
+
+local function type_url_resolver(filename: string): MarkdownGenerator.URLResolver
+    local file = assert(io.open(filename, "r"), "Could not open type-link map: " .. filename)
+    local routes: {TypeRoute} = {}
+    for line in file:lines() do
+        if not line:match("^%s*$") and not line:match("^%s*#") then
+            local path, url = line:match("^%s*(%S+)%s+(%S+)%s*$")
+            assert(path and url, "Invalid type-link map line: " .. line)
+            table.insert(routes, {path = path, url = url})
+        end
+    end
+    file:close()
+    table.sort(routes, function(a: TypeRoute, b: TypeRoute): boolean
+        return #a.path > #b.path
+    end)
+
+    return function(path: string): string
+        for _, route in ipairs(routes) do
+            if path == route.path then
+                return route.url:match("^[^#]*")
+            end
+            if path:sub(1, #route.path + 1) == route.path .. "." then
+                return route.url .. path:sub(#route.path + 1)
+            end
+        end
+        return nil
+    end
+end
+
 local record CLI
     record Command -- TODO: description, alias?
         type Handler = function(args: argparse.Args)
@@ -46,6 +79,10 @@ function CLI:add_default_commands()
             command:argument("files", "input files"):args("+")
             command:flag("-a --all", "include all items in the documentation")
             command:flag("--no-warn-missing", "do not warn about missing items")
+            command:option(
+                "--type-links",
+                "path to a canonical-type to URL-prefix map"
+            )
             command:option("-o --output", "output file")
                 :default("doc.md")
         end,
@@ -61,7 +98,11 @@ function CLI:add_default_commands()
                 tealdoc.process_file(file, self._env)
             end
             
-            local generator = MarkdownGenerator.init(args["output"] as string)
+            local resolver: MarkdownGenerator.URLResolver
+            if args["type_links"] then
+                resolver = type_url_resolver(args["type_links"] as string)
+            end
+            local generator = MarkdownGenerator.init(args["output"] as string, resolver)
             generator:run(self._env)
         end
     }

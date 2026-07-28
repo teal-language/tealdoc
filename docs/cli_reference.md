@@ -22,3 +22,16 @@ tealdoc --help
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
 *   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
+*   `--type-links <file>`: For Markdown output, links named types with routes from a map file.
+
+A type-link map contains a canonical Tealdoc path and URL prefix on each line:
+
+```
+my.http /modules/http#my.http
+my.Future /modules/future#my.future.Future
+```
+
+The exact path links to the page before `#`. A descendant appends its suffix
+to the complete URL prefix, so `my.http.Response` above links to
+`/modules/http#my.http.Response`. Blank lines and lines starting with `#` are
+ignored. Types with no route remain plain code.

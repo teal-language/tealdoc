@@ -1,10 +1,43 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local type = type; local argparse = require("argparse")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local HTMLGenerator = require("tealdoc.generator.html.generator")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
+
+
+
+
+
+
+local function type_url_resolver(filename)
+   local file = assert(io.open(filename, "r"), "Could not open type-link map: " .. filename)
+   local routes = {}
+   for line in file:lines() do
+      if not line:match("^%s*$") and not line:match("^%s*#") then
+         local path, url = line:match("^%s*(%S+)%s+(%S+)%s*$")
+         assert(path and url, "Invalid type-link map line: " .. line)
+         table.insert(routes, { path = path, url = url })
+      end
+   end
+   file:close()
+   table.sort(routes, function(a, b)
+      return #a.path > #b.path
+   end)
+
+   return function(path)
+      for _, route in ipairs(routes) do
+         if path == route.path then
+            return route.url:match("^[^#]*")
+         end
+         if path:sub(1, #route.path + 1) == route.path .. "." then
+            return route.url .. path:sub(#route.path + 1)
+         end
+      end
+      return nil
+   end
+end
 
 local CLI = { Command = {} }
 
@@ -46,6 +79,10 @@ function CLI:add_default_commands()
          command:argument("files", "input files"):args("+")
          command:flag("-a --all", "include all items in the documentation")
          command:flag("--no-warn-missing", "do not warn about missing items")
+         command:option(
+         "--type-links",
+         "path to a canonical-type to URL-prefix map")
+
          command:option("-o --output", "output file"):
          default("doc.md")
       end,
@@ -61,7 +98,11 @@ function CLI:add_default_commands()
             tealdoc.process_file(file, self._env)
          end
 
-         local generator = MarkdownGenerator.init(args["output"])
+         local resolver
+         if args["type_links"] then
+            resolver = type_url_resolver(args["type_links"])
+         end
+         local generator = MarkdownGenerator.init(args["output"], resolver)
          generator:run(self._env)
       end,
    }

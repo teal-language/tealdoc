@@ -53,6 +53,7 @@ local record Generator
             env: tealdoc.Env
             filter: function(item: tealdoc.Item, env: tealdoc.Env): boolean
             url_for_path: function(path: string): string
+            url_for_type: function(path: string): string
         end
 
         name: string

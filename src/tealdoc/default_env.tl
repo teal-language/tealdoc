@@ -288,6 +288,52 @@ function DefaultEnv.init(): tealdoc.Env
         end
     end
 
+    local function markdown_type(
+        ctx: Generator.Phase.Context,
+        typename: string,
+        references?: {tealdoc.TypeReference}
+    )
+        if not ctx.url_for_type or not references or #references == 0 then
+            ctx.builder:code(typename)
+            return
+        end
+
+        local urls: {string: string} = {}
+        for _, reference in ipairs(references) do
+            local url = ctx.url_for_type(reference.path)
+            if url then
+                urls[reference.name] = url
+            end
+        end
+        if next(urls) == nil then
+            ctx.builder:code(typename)
+            return
+        end
+
+        local position = 1
+        while position <= #typename do
+            local first, last = typename:find("[%a_][%w_%.]*", position)
+            if not first then
+                ctx.builder:code(typename:sub(position))
+                break
+            end
+            if first > position then
+                ctx.builder:code(typename:sub(position, first - 1))
+            end
+
+            local name = typename:sub(first, last)
+            local url = urls[name]
+            if url then
+                ctx.builder:link_url(url, function()
+                    ctx.builder:code(name)
+                end)
+            else
+                ctx.builder:code(name)
+            end
+            position = last + 1
+        end
+    end
+
     local text_phase: Generator.Phase = {
         name = "text",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -438,7 +484,9 @@ function DefaultEnv.init(): tealdoc.Env
                                 ctx.builder:code(attr("name"), param.name)
                             end)
                         end
-                        ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
+                        ctx.builder:text(attr("type"), " (", function()
+                            markdown_type(ctx, param.type or "?", param.type_references)
+                        end, ")")
                         if param.description then
                             ctx.builder:text(attr("description"), " — ", function()
                                 ctx.builder:md(param.description)
@@ -488,7 +536,9 @@ function DefaultEnv.init(): tealdoc.Env
             ctx.builder:ordered_list(function(list_item: function(content: function))
                 for _, ret in ipairs(item.returns) do
                     list_item(function()
-                        ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
+                        ctx.builder:text(attr("type"), "(", function()
+                            markdown_type(ctx, ret.type or "?", ret.type_references)
+                        end, ")")
                         if ret.description then
                             ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(ret.description) end)
                         end
