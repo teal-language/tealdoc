@@ -6,9 +6,11 @@ local MarkdownBuilder = {}
 
 
 
+
 function MarkdownBuilder.init()
    local builder = {
       output = {},
+      in_code_block = false,
    }
 
    local self = setmetatable(builder, { __index = MarkdownBuilder })
@@ -66,6 +68,10 @@ MarkdownBuilder.line = function(self, ...)
 end
 
 MarkdownBuilder.link = function(self, to, ...)
+   if self.in_code_block then
+      self:text(...)
+      return self
+   end
    self:rawtext("<a href=\"#", escape_html(to), "\">")
    self:text(...)
    self:rawtext("</a>")
@@ -73,6 +79,10 @@ MarkdownBuilder.link = function(self, to, ...)
 end
 
 MarkdownBuilder.link_url = function(self, url, ...)
+   if self.in_code_block then
+      self:text(...)
+      return self
+   end
    self:rawtext("<a href=\"", escape_html(url), "\">")
    self:text(...)
    self:rawtext("</a>")
@@ -83,7 +93,7 @@ MarkdownBuilder.text = function(self, ...)
    for i = 1, select("#", ...) do
       local c = select(i, ...)
       if type(c) == "string" then
-         table.insert(self.output, escape_html(c))
+         table.insert(self.output, self.in_code_block and c or escape_html(c))
       elseif type(c) == "function" then
          c(self)
       end
@@ -118,9 +128,11 @@ MarkdownBuilder.paragraph = function(self, ...)
 end
 
 MarkdownBuilder.code_block = function(self, content)
-   self:rawtext("<pre><code>")
+   self:rawline("```teal")
+   self.in_code_block = true
    content()
-   self:rawline("</code></pre>")
+   self.in_code_block = false
+   self:rawline("```")
    return self
 end
 MarkdownBuilder.ordered_list = function(self, content)
