@@ -3,7 +3,7 @@ local MarkdownGenerator = require("tealdoc.generator.markdown")
 local tealdoc = require("tealdoc")
 
 describe("Markdown generator", function()
-    it("links type aliases to declarations", function()
+    it("renders signatures as fenced Teal code", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
         tealdoc.process_text([[
@@ -19,6 +19,7 @@ describe("Markdown generator", function()
 
             local record api
                 type Options = types.Options
+                identity: function<T>(T): T
             end
 
             return api
@@ -33,9 +34,17 @@ describe("Markdown generator", function()
 
         assert.is_truthy(markdown:find('<a id="types.Options"></a>', 1, true))
         assert.is_truthy(markdown:find(
-            '<a href="#types.Options">types.Options</a>',
+            "```teal\ntype api.Options = types.Options\n```",
             1,
             true
         ))
+        assert.is_truthy(markdown:find(
+            "```teal\nfunction api.identity<T>(T): T\n```",
+            1,
+            true
+        ))
+        assert.is_falsy(markdown:find("<pre><code>", 1, true))
+        assert.is_falsy(markdown:find('<a href="#types.Options">', 1, true))
+        assert.is_falsy(markdown:find("&lt;T&gt;", 1, true))
     end)
 end)

@@ -4,11 +4,13 @@ local log = require("tealdoc.log")
 
 local record MarkdownBuilder is Generator.Builder
     output: {string}
+    in_code_block: boolean
 end
 
 function MarkdownBuilder.init(): MarkdownBuilder
     local builder: MarkdownBuilder = {
-        output = {}
+        output = {},
+        in_code_block = false
     }
 
     local self = setmetatable(builder, {__index = MarkdownBuilder})
@@ -66,6 +68,10 @@ MarkdownBuilder.line = function(self, ...: Content): MarkdownBuilder
 end
 
 MarkdownBuilder.link = function(self, to: string, ...: Content): MarkdownBuilder
+    if self.in_code_block then
+        self:text(...)
+        return self
+    end
     self:rawtext("<a href=\"#", escape_html(to), "\">")
     self:text(...)
     self:rawtext("</a>")
@@ -73,6 +79,10 @@ MarkdownBuilder.link = function(self, to: string, ...: Content): MarkdownBuilder
 end
 
 MarkdownBuilder.link_url = function(self, url: string, ...: Content): MarkdownBuilder
+    if self.in_code_block then
+        self:text(...)
+        return self
+    end
     self:rawtext("<a href=\"", escape_html(url), "\">")
     self:text(...)
     self:rawtext("</a>")
@@ -83,7 +93,7 @@ MarkdownBuilder.text = function(self, ...: Content): MarkdownBuilder
     for i = 1, select("#", ...) do
         local c = select(i, ...)
         if c is string then
-            table.insert(self.output, escape_html(c))
+            table.insert(self.output, self.in_code_block and c or escape_html(c))
         elseif c is function then
             c(self)
         end
@@ -118,9 +128,11 @@ MarkdownBuilder.paragraph = function(self, ...: Content): MarkdownBuilder
 end
 
 MarkdownBuilder.code_block = function(self, content: function): MarkdownBuilder
-    self:rawtext("<pre><code>")
+    self:rawline("```teal")
+    self.in_code_block = true
     content()
-    self:rawline("</code></pre>")
+    self.in_code_block = false
+    self:rawline("```")
     return self
 end
 MarkdownBuilder.ordered_list = function(self, content: function(item: function(content: function))): MarkdownBuilder
