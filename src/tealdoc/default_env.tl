@@ -246,6 +246,48 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local function display_path(ctx: Generator.Phase.Context, item: tealdoc.Item): string
+        if ctx.path_mode == "full" then
+            local path = item.path:gsub("%$[^%.]*%.", "")
+            return path
+        end
+        return strip_module_prefix(item.path, ctx.module_name)
+    end
+
+    local function overload_parent(ctx: Generator.Phase.Context, item: tealdoc.Item): tealdoc.Item
+        if not item.parent then
+            return nil
+        end
+        local parent = ctx.env.registry[item.parent]
+        if parent and (parent.kind == "overload" or parent.kind == "overloaded") then
+            return parent
+        end
+        return nil
+    end
+
+    local markdown_header_phase: Generator.Phase = {
+        name = "markdown_header",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            local parent = overload_parent(ctx, item)
+            if parent then
+                if parent.children and parent.children[1] == item.path then
+                    ctx.builder:h2(attr("path"), display_path(ctx, parent))
+                end
+                ctx.builder:h3(attr("header"), "Function")
+            else
+                ctx.builder:h2(attr("path"), display_path(ctx, item))
+            end
+        end
+    }
+
+    local function markdown_section(ctx: Generator.Phase.Context, item: tealdoc.Item, title: string)
+        if overload_parent(ctx, item) then
+            ctx.builder:h4(attr("header"), title)
+        else
+            ctx.builder:h3(attr("header"), title)
+        end
+    end
+
     local text_phase: Generator.Phase = {
         name = "text",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -268,6 +310,15 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local markdown_function_signature_phase: Generator.Phase = {
+        name = "markdown_function_signature",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+            markdown_section(ctx, item, "Synopsis")
+            function_signature_phase.run(ctx, item)
+        end
+    }
+
     local variable_signature_phase: Generator.Phase = {
         name = "variable_signature",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -280,6 +331,14 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local markdown_variable_signature_phase: Generator.Phase = {
+        name = "markdown_variable_signature",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            markdown_section(ctx, item, "Synopsis")
+            variable_signature_phase.run(ctx, item)
+        end
+    }
+
     local type_signature_phase: Generator.Phase = {
         name = "type_signature",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -289,6 +348,14 @@ function DefaultEnv.init(): tealdoc.Env
                 signatures.for_type(ctx, item)
                 ctx.builder:line()
             end)
+        end
+    }
+
+    local markdown_type_signature_phase: Generator.Phase = {
+        name = "markdown_type_signature",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            markdown_section(ctx, item, "Synopsis")
+            type_signature_phase.run(ctx, item)
         end
     }
 
@@ -352,6 +419,37 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local markdown_function_params_phase: Generator.Phase = {
+        name = "markdown_function_params",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+            markdown_section(ctx, item, "Arguments")
+
+            if not item.params or #item.params == 0 then
+                ctx.builder:paragraph("None.")
+                return
+            end
+
+            ctx.builder:unordered_list(function(list_item: function(content: function))
+                for _, param in ipairs(item.params) do
+                    list_item(function()
+                        if param.name then
+                            ctx.builder:b(function()
+                                ctx.builder:code(attr("name"), param.name)
+                            end)
+                        end
+                        ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
+                        if param.description then
+                            ctx.builder:text(attr("description"), " — ", function()
+                                ctx.builder:md(param.description)
+                            end)
+                        end
+                    end)
+                end
+            end)
+        end
+    }
+
     local function_returns_phase: Generator.Phase = {
         name = "function_returns",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -376,10 +474,50 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local markdown_function_returns_phase: Generator.Phase = {
+        name = "markdown_function_returns",
+        run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
+            assert(item is tealdoc.FunctionItem)
+            markdown_section(ctx, item, "Returns")
+
+            if not item.returns or #item.returns == 0 then
+                ctx.builder:paragraph("None.")
+                return
+            end
+
+            ctx.builder:ordered_list(function(list_item: function(content: function))
+                for _, ret in ipairs(item.returns) do
+                    list_item(function()
+                        ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
+                        if ret.description then
+                            ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(ret.description) end)
+                        end
+                    end)
+                end
+            end)
+        end
+    }
+
     MarkdownGenerator.item_phases["module"] = {module_header_phase}
-    MarkdownGenerator.item_phases["function"] = {header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase}
-    MarkdownGenerator.item_phases["variable"] = {header_phase, variable_signature_phase, text_phase}
-    MarkdownGenerator.item_phases["type"] = {header_phase, type_signature_phase, text_phase, type_params_phase}
+    MarkdownGenerator.item_phases["function"] = {
+        markdown_header_phase,
+        text_phase,
+        markdown_function_signature_phase,
+        type_params_phase,
+        markdown_function_params_phase,
+        markdown_function_returns_phase
+    }
+    MarkdownGenerator.item_phases["variable"] = {
+        markdown_header_phase,
+        text_phase,
+        markdown_variable_signature_phase
+    }
+    MarkdownGenerator.item_phases["type"] = {
+        markdown_header_phase,
+        text_phase,
+        markdown_type_signature_phase,
+        type_params_phase
+    }
     MarkdownGenerator.item_phases["enumvalue"] = {header_phase, text_phase}
     MarkdownGenerator.item_phases["markdown"] = {text_phase}
 
