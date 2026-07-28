@@ -84,6 +84,7 @@ end
 
 local visit_node: function(node: tl.Node, state: VisitState)
 local visit_type: function(t: tl.Type, item: tealdoc.TypeItem, state: VisitState)
+local alias_target_for_type: function(t: tl.Type, state: VisitState): string
 
 local function children_visitor(node: tl.Node, state: VisitState)
     for _, child in ipairs(node) do
@@ -145,6 +146,78 @@ end
 
 local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
     return typeinfo_to_string(typeinfo_for_type(report, typ))
+end
+
+local function type_references_for_type(typ: tl.Type, state: VisitState): {tealdoc.TypeReference}
+    local references: {tealdoc.TypeReference} = {}
+    local seen: {integer: boolean} = {}
+    local added: {string: boolean} = {}
+
+    local visit: function(t: tl.Type)
+    visit = function(t: tl.Type)
+        if not t or (t.typeid and seen[t.typeid]) then
+            return
+        end
+        if t.typeid then
+            seen[t.typeid] = true
+        end
+
+        if t is tl.NominalType then
+            local path = alias_target_for_type(t, state)
+            local name = t.names and table.concat(t.names, ".")
+            if path and name and not added[name .. "\0" .. path] then
+                table.insert(references, {name = name, path = path})
+                added[name .. "\0" .. path] = true
+            end
+            if t.typevals then
+                for _, typeval in ipairs(t.typevals) do
+                    visit(typeval)
+                end
+            end
+        elseif t is tl.GenericType then
+            visit(t.t)
+            if t.typeargs then
+                for _, typearg in ipairs(t.typeargs) do
+                    if typearg.constraint then
+                        visit(typearg.constraint)
+                    end
+                end
+            end
+        elseif t is tl.TypeDeclType then
+            visit(t.def)
+        elseif t is tl.ArrayType then
+            visit(t.elements)
+        elseif t is tl.MapType then
+            visit(t.keys)
+            visit(t.values)
+        elseif t is tl.TupleType then
+            for _, tuple_type in ipairs(t.tuple) do
+                visit(tuple_type)
+            end
+        elseif t is tl.FunctionType then
+            visit(t.args)
+            visit(t.rets)
+        elseif t is tl.UnionType then
+            for _, union_type in ipairs(t.types) do
+                visit(union_type)
+            end
+        elseif t is tl.TupleTableType then
+            for _, tuple_table_type in ipairs(t.types) do
+                visit(tuple_table_type)
+            end
+        elseif t is tl.PolyType then
+            for _, poly_type in ipairs(t.types) do
+                visit(poly_type)
+            end
+        elseif t is tl.TypeArgType or t is tl.TypeVarType then
+            if t.constraint then
+                visit(t.constraint)
+            end
+        end
+    end
+
+    visit(typ)
+    return #references > 0 and references or nil
 end
 
 
@@ -285,7 +358,8 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
             if not (node.is_method and ar.tk == "self") then
                 item.params[param_index] = {
                     name = ar.tk,
-                    type = ar.argtype and type_to_string(state.type_report, ar.argtype)
+                    type = ar.argtype and type_to_string(state.type_report, ar.argtype),
+                    type_references = ar.argtype and type_references_for_type(ar.argtype, state)
                 }
                 param_index = param_index + 1
             end
@@ -297,7 +371,8 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         item.returns = {}
         for i, ret in ipairs(node.rets.tuple) do
             item.returns[i] = {
-                type = type_to_string(state.type_report, ret)
+                type = type_to_string(state.type_report, ret),
+                type_references = type_references_for_type(ret, state)
             }
         end
     end
@@ -353,11 +428,13 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
                     name = "self",
                     type = owner
                         and typeinfo_to_string(typeinfo_for_type(state.type_report, owner))
-                        or type_to_string(state.type_report, ar)
+                        or type_to_string(state.type_report, ar),
+                    type_references = type_references_for_type(owner or ar, state)
                 }
             else
                 item.params[i] = {
-                    type = type_to_string(state.type_report, ar)
+                    type = type_to_string(state.type_report, ar),
+                    type_references = type_references_for_type(ar, state)
                 }
             end
         end
@@ -368,7 +445,8 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
         item.returns = {}
         for i, ret in ipairs(t.rets.tuple) do
             item.returns[i] = {
-                type = type_to_string(state.type_report, ret)
+                type = type_to_string(state.type_report, ret),
+                type_references = type_references_for_type(ret, state)
             }
         end
     end
@@ -568,7 +646,7 @@ end
 
 local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitState)
 
-local function alias_target_for_type(t: tl.Type, state: VisitState): string
+alias_target_for_type = function(t: tl.Type, state: VisitState): string
     if t is tl.NominalType and t.names and #t.names > 0 then
         local module_name = state.module_aliases[t.names[1]]
         if module_name then
@@ -583,6 +661,17 @@ local function alias_target_for_type(t: tl.Type, state: VisitState): string
         local candidate = state.path .. name
         if state.env.registry[candidate] then
             return candidate
+        end
+        if t.found then
+            local typenum = typenum_for_type(state.type_report, t.found)
+            local declaration_path = typenum and state.typenum_to_path[typenum]
+            if declaration_path then
+                return declaration_path
+            end
+        end
+        local local_candidate = "$" .. state.module_name .. "~" .. name
+        if state.env.registry[local_candidate] then
+            return local_candidate
         end
     end
 end
@@ -746,6 +835,63 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             return
         end
 
+        -- A module commonly exports a local record through a same-named field:
+        --
+        --     local record Options end
+        --     local record module
+        --         Options: Options
+        --     end
+        --
+        -- That field is the public view of the type, not an ordinary value
+        -- whose useful documentation is "module.Options: Options". Clone the
+        -- private structure under its public path so generators can document
+        -- and link its fields.
+        if field_type is tl.NominalType and field_type.names
+            and #field_type.names == 1 and field_type.names[1] == name then
+            local target_path = alias_target_for_type(field_type, state)
+            local target = target_path and state.env.registry[target_path]
+            if target and target is tealdoc.TypeItem then
+                local function clone_item(source: tealdoc.Item, path: string, parent: string): tealdoc.Item
+                    local values = {} as {string: any}
+                    for key, value in pairs(source as {string: any}) do
+                        values[key] = value
+                    end
+                    local copy = values as tealdoc.Item
+                    copy.path = path
+                    copy.parent = parent
+                    if source is tealdoc.DeclarationItem then
+                        (copy as tealdoc.DeclarationItem).visibility = "record"
+                    end
+                    state.env.registry[path] = copy
+
+                    if source.children then
+                        copy.children = {}
+                        for _, child_path in ipairs(source.children) do
+                            local child = state.env.registry[child_path]
+                            assert(child)
+                            local suffix = child_path:sub(#source.path + 1)
+                            local public_child_path = path .. suffix
+                            clone_item(child, public_child_path, path)
+                            table.insert(copy.children, public_child_path)
+                        end
+                    end
+                    return copy
+                end
+
+                local public_path = state.path .. name
+                local exported = clone_item(target, public_path, state.parent_item.path)
+                exported.name = name
+                if comments and comments[1] then
+                    process_comments(comments[1], exported, state.env)
+                end
+                if not state.parent_item.children then
+                    state.parent_item.children = {}
+                end
+                table.insert(state.parent_item.children, public_path)
+                return
+            end
+        end
+
         -- polymorphic functions
         if field_type is tl.PolyType then
              local overload_item: tealdoc.Item = {
@@ -845,8 +991,13 @@ local function type_declaration_visitor(node: tl.Node, state: VisitState)
     assert(node.var.kind == "identifier")
     if node.value then
         local name = node.var.tk
+        local module_name = required_module(node.value)
+        if module_name then
+            state.module_aliases[name] = module_name
+            return
+        end
         local newtype = node.value.newtype
-        if newtype then -- only "local type ... = require(...)" do not contain newtype, should we handle it?
+        if newtype then
             typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)
         end
     end
