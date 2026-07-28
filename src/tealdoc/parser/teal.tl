@@ -648,14 +648,6 @@ local record_like_visitor: function(tl.RecordLikeType, tealdoc.TypeItem, VisitSt
 
 alias_target_for_type = function(t: tl.Type, state: VisitState): string
     if t is tl.NominalType and t.names and #t.names > 0 then
-        if t.found then
-            local typenum = typenum_for_type(state.type_report, t.found)
-            local declaration_path = typenum and state.typenum_to_path[typenum]
-            if declaration_path then
-                return declaration_path
-            end
-        end
-
         local module_name = state.module_aliases[t.names[1]]
         if module_name then
             local target = module_name
@@ -666,13 +658,20 @@ alias_target_for_type = function(t: tl.Type, state: VisitState): string
         end
 
         local name = table.concat(t.names, ".")
-        local local_candidate = "$" .. state.module_name .. "~" .. name
-        if state.env.registry[local_candidate] then
-            return local_candidate
-        end
         local candidate = state.path .. name
         if state.env.registry[candidate] then
             return candidate
+        end
+        if t.found then
+            local typenum = typenum_for_type(state.type_report, t.found)
+            local declaration_path = typenum and state.typenum_to_path[typenum]
+            if declaration_path then
+                return declaration_path
+            end
+        end
+        local local_candidate = "$" .. state.module_name .. "~" .. name
+        if state.env.registry[local_candidate] then
+            return local_candidate
         end
     end
 end

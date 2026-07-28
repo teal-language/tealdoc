@@ -99,8 +99,9 @@ function CLI:add_default_commands()
          end
 
          local resolver
-         if args["type_links"] then
-            resolver = type_url_resolver(args["type_links"])
+         local type_links = args["type_links"] or args["type-links"]
+         if type_links then
+            resolver = type_url_resolver(type_links)
          end
          local generator = MarkdownGenerator.init(args["output"], resolver)
          generator:run(self._env)
