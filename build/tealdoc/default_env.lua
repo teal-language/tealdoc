@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local log = require("tealdoc.log")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local log = require("tealdoc.log")
 local tealdoc = require("tealdoc")
 local TealParser = require("tealdoc.parser.teal")
 local MarkdownInput = require("tealdoc.parser.markdown")
@@ -265,27 +265,76 @@ function DefaultEnv.init()
       return nil
    end
 
+   local function markdown_item_level(ctx, item)
+      local level = 2
+      local current = item
+      while current.parent do
+         local parent = ctx.env.registry[current.parent]
+         if not parent or parent.kind == "module" or parent.path == ctx.module_name then
+            break
+         end
+         level = math.min(level + 1, 5)
+         current = parent
+      end
+      return level
+   end
+
+   local function markdown_heading(
+      ctx,
+      level,
+      attribute,
+      title)
+
+      if level == 2 then
+         ctx.builder:h2(attribute, title)
+      elseif level == 3 then
+         ctx.builder:h3(attribute, title)
+      elseif level == 4 then
+         ctx.builder:h4(attribute, title)
+      elseif level == 5 then
+         ctx.builder:h5(attribute, title)
+      else
+         ctx.builder:h6(attribute, title)
+      end
+   end
+
    local markdown_header_phase = {
       name = "markdown_header",
       run = function(ctx, item)
          local parent = overload_parent(ctx, item)
          if parent then
             if parent.children and parent.children[1] == item.path then
-               ctx.builder:h2(attr("path"), display_path(ctx, parent))
+               markdown_heading(
+               ctx,
+               markdown_item_level(ctx, parent),
+               attr("path"),
+               display_path(ctx, parent))
+
             end
-            ctx.builder:h3(attr("header"), "Function")
+            markdown_heading(
+            ctx,
+            markdown_item_level(ctx, item),
+            attr("header"),
+            "Function")
+
          else
-            ctx.builder:h2(attr("path"), display_path(ctx, item))
+            markdown_heading(
+            ctx,
+            markdown_item_level(ctx, item),
+            attr("path"),
+            display_path(ctx, item))
+
          end
       end,
    }
 
    local function markdown_section(ctx, item, title)
-      if overload_parent(ctx, item) then
-         ctx.builder:h4(attr("header"), title)
-      else
-         ctx.builder:h3(attr("header"), title)
-      end
+      markdown_heading(
+      ctx,
+      markdown_item_level(ctx, item) + 1,
+      attr("header"),
+      title)
+
    end
 
    local function markdown_type(
@@ -356,15 +405,6 @@ function DefaultEnv.init()
       end,
    }
 
-   local markdown_function_signature_phase = {
-      name = "markdown_function_signature",
-      run = function(ctx, item)
-         assert(item.kind == "function")
-         markdown_section(ctx, item, "Synopsis")
-         function_signature_phase.run(ctx, item)
-      end,
-   }
-
    local variable_signature_phase = {
       name = "variable_signature",
       run = function(ctx, item)
@@ -377,14 +417,6 @@ function DefaultEnv.init()
       end,
    }
 
-   local markdown_variable_signature_phase = {
-      name = "markdown_variable_signature",
-      run = function(ctx, item)
-         markdown_section(ctx, item, "Synopsis")
-         variable_signature_phase.run(ctx, item)
-      end,
-   }
-
    local type_signature_phase = {
       name = "type_signature",
       run = function(ctx, item)
@@ -394,14 +426,6 @@ function DefaultEnv.init()
             signatures.for_type(ctx, item)
             ctx.builder:line()
          end)
-      end,
-   }
-
-   local markdown_type_signature_phase = {
-      name = "markdown_type_signature",
-      run = function(ctx, item)
-         markdown_section(ctx, item, "Synopsis")
-         type_signature_phase.run(ctx, item)
       end,
    }
 
@@ -428,6 +452,40 @@ function DefaultEnv.init()
 
                   if typearg.description then
                      ctx.builder:text(attr("description"), " — ", function() ctx.builder:md(typearg.description) end)
+                  end
+               end)
+            end
+         end)
+      end,
+   }
+
+   local markdown_type_params_phase = {
+      name = "markdown_type_params",
+      run = function(ctx, item)
+         assert(item.kind == "type" or item.kind == "function")
+
+         if not item.typeargs or #item.typeargs == 0 then
+            return
+         end
+
+         markdown_section(ctx, item, "Type Parameters")
+         ctx.builder:unordered_list(function(list_item)
+            for _, typearg in ipairs(item.typeargs) do
+               list_item(function()
+                  ctx.builder:b(function()
+                     ctx.builder:code(attr("name"), typearg.name or "?")
+                  end)
+
+                  if typearg.constraint then
+                     ctx.builder:text(attr("constraint"), " ( is ", function()
+                        ctx.builder:code(typearg.constraint)
+                     end, ")")
+                  end
+
+                  if typearg.description then
+                     ctx.builder:text(attr("description"), " — ", function()
+                        ctx.builder:md(typearg.description)
+                     end)
                   end
                end)
             end
@@ -552,23 +610,23 @@ function DefaultEnv.init()
    MarkdownGenerator.item_phases["function"] = {
       markdown_header_phase,
       text_phase,
-      markdown_function_signature_phase,
-      type_params_phase,
+      function_signature_phase,
+      markdown_type_params_phase,
       markdown_function_params_phase,
       markdown_function_returns_phase,
    }
    MarkdownGenerator.item_phases["variable"] = {
       markdown_header_phase,
       text_phase,
-      markdown_variable_signature_phase,
+      variable_signature_phase,
    }
    MarkdownGenerator.item_phases["type"] = {
       markdown_header_phase,
       text_phase,
-      markdown_type_signature_phase,
-      type_params_phase,
+      type_signature_phase,
+      markdown_type_params_phase,
    }
-   MarkdownGenerator.item_phases["enumvalue"] = { header_phase, text_phase }
+   MarkdownGenerator.item_phases["enumvalue"] = { markdown_header_phase, text_phase }
    MarkdownGenerator.item_phases["markdown"] = { text_phase }
 
    HTMLGenerator.item_phases["module"] = { module_header_phase, detailed_signature_phase }
