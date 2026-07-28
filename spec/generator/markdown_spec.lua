@@ -9,6 +9,7 @@ describe("Markdown generator", function()
         tealdoc.process_text([[
             local record types
                 interface Options
+                    value: string
                 end
             end
 
@@ -52,13 +53,19 @@ describe("Markdown generator", function()
         ))
         local identity_heading = assert(markdown:find("## api.identity", 1, true))
         local identity_text = assert(markdown:find("Returns a value unchanged.", identity_heading, true))
-        local identity_synopsis = assert(markdown:find("### Synopsis", identity_text, true))
-        local identity_arguments = assert(markdown:find("### Arguments", identity_synopsis, true))
+        local identity_signature = assert(markdown:find(
+            "```teal\nfunction api.identity<T>(value: T): T\n```",
+            identity_text,
+            true
+        ))
+        local identity_arguments = assert(markdown:find("### Arguments", identity_signature, true))
         local identity_returns = assert(markdown:find("### Returns", identity_arguments, true))
         assert.is_true(identity_heading < identity_text)
-        assert.is_true(identity_text < identity_synopsis)
-        assert.is_true(identity_synopsis < identity_arguments)
+        assert.is_true(identity_text < identity_signature)
+        assert.is_true(identity_signature < identity_arguments)
         assert.is_true(identity_arguments < identity_returns)
+        assert.is_truthy(markdown:find("### types.Options.value", 1, true))
+        assert.is_falsy(markdown:find("Synopsis", 1, true))
         assert.is_truthy(markdown:find(
             "### Arguments\n\nNone.\n\n### Returns\n\nNone.",
             assert(markdown:find("## api.update", 1, true)),
