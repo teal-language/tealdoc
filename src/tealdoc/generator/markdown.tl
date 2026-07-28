@@ -4,13 +4,13 @@ local log = require("tealdoc.log")
 
 local record MarkdownBuilder is Generator.Builder
     output: {string}
-    in_code_block: boolean
+    in_code: boolean
 end
 
 function MarkdownBuilder.init(): MarkdownBuilder
     local builder: MarkdownBuilder = {
         output = {},
-        in_code_block = false
+        in_code = false
     }
 
     local self = setmetatable(builder, {__index = MarkdownBuilder})
@@ -68,7 +68,7 @@ MarkdownBuilder.line = function(self, ...: Content): MarkdownBuilder
 end
 
 MarkdownBuilder.link = function(self, to: string, ...: Content): MarkdownBuilder
-    if self.in_code_block then
+    if self.in_code then
         self:text(...)
         return self
     end
@@ -79,7 +79,7 @@ MarkdownBuilder.link = function(self, to: string, ...: Content): MarkdownBuilder
 end
 
 MarkdownBuilder.link_url = function(self, url: string, ...: Content): MarkdownBuilder
-    if self.in_code_block then
+    if self.in_code then
         self:text(...)
         return self
     end
@@ -93,7 +93,7 @@ MarkdownBuilder.text = function(self, ...: Content): MarkdownBuilder
     for i = 1, select("#", ...) do
         local c = select(i, ...)
         if c is string then
-            table.insert(self.output, self.in_code_block and c or escape_html(c))
+            table.insert(self.output, self.in_code and c or escape_html(c))
         elseif c is function then
             c(self)
         end
@@ -124,15 +124,18 @@ MarkdownBuilder.paragraph = function(self, ...: Content): MarkdownBuilder
     self:line()
     self:text(...)
     self:line()
+    self:line()
     return self
 end
 
 MarkdownBuilder.code_block = function(self, content: function): MarkdownBuilder
+    self:line()
     self:rawline("```teal")
-    self.in_code_block = true
+    self.in_code = true
     content()
-    self.in_code_block = false
+    self.in_code = false
     self:rawline("```")
+    self:line()
     return self
 end
 MarkdownBuilder.ordered_list = function(self, content: function(item: function(content: function))): MarkdownBuilder
@@ -176,7 +179,10 @@ MarkdownBuilder.i = function(self, ...: Content): MarkdownBuilder
 end
 MarkdownBuilder.code = function(self, ...: Content): MarkdownBuilder
     self:rawtext("`")
+    local was_in_code = self.in_code
+    self.in_code = true
     self:text(...)
+    self.in_code = was_in_code
     self:rawtext("`")
     return self
 end
