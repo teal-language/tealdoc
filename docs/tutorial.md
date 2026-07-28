@@ -161,6 +161,9 @@ local type Numeric = number | integer
 By default, Tealdoc includes all of the module's contents and all global functions in the generated documentation.
 
 *   To **exclude** an item, add the `@local` tag to its documentation comment.
+*   A member whose name starts with one underscore, such as `_cache`, is
+    private by convention and excluded. Add `@public` to opt that member into
+    the documentation. Double-underscore names such as `__call` are not hidden.
 *   To **include** local items that would normally be excluded, use the `--all` command-line flag or set `env.include_all = true` when using the API.
 
 If there are multiple conflicting declarations (e.g., two global functions with the same name), the last one processed is chosen, and a warning is emitted if a Tealdoc comment from a previous declaration is ignored as a result.
