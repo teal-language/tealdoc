@@ -836,6 +836,63 @@ record_like_visitor = function(t, declaration, state)
       end
 
 
+
+
+
+
+
+
+
+
+
+
+      if field_type.typename == "nominal" and field_type.names and
+         #field_type.names == 1 and field_type.names[1] == name then
+         local target_path = alias_target_for_type(field_type, state)
+         local target = target_path and state.env.registry[target_path]
+         if target and target.kind == "type" then
+            local function clone_item(source, path, parent)
+               local values = {}
+               for key, value in pairs(source) do
+                  values[key] = value
+               end
+               local copy = values
+               copy.path = path
+               copy.parent = parent
+               if type(source) == "table" then
+                  (copy).visibility = "record"
+               end
+               state.env.registry[path] = copy
+
+               if source.children then
+                  copy.children = {}
+                  for _, child_path in ipairs(source.children) do
+                     local child = state.env.registry[child_path]
+                     assert(child)
+                     local suffix = child_path:sub(#source.path + 1)
+                     local public_child_path = path .. suffix
+                     clone_item(child, public_child_path, path)
+                     table.insert(copy.children, public_child_path)
+                  end
+               end
+               return copy
+            end
+
+            local public_path = state.path .. name
+            local exported = clone_item(target, public_path, state.parent_item.path)
+            exported.name = name
+            if comments and comments[1] then
+               process_comments(comments[1], exported, state.env)
+            end
+            if not state.parent_item.children then
+               state.parent_item.children = {}
+            end
+            table.insert(state.parent_item.children, public_path)
+            return
+         end
+      end
+
+
       if field_type.typename == "poly" then
          local overload_item = {
             kind = "overload",

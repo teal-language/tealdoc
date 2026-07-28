@@ -835,6 +835,63 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             return
         end
 
+        -- A module commonly exports a local record through a same-named field:
+        --
+        --     local record Options end
+        --     local record module
+        --         Options: Options
+        --     end
+        --
+        -- That field is the public view of the type, not an ordinary value
+        -- whose useful documentation is "module.Options: Options". Clone the
+        -- private structure under its public path so generators can document
+        -- and link its fields.
+        if field_type is tl.NominalType and field_type.names
+            and #field_type.names == 1 and field_type.names[1] == name then
+            local target_path = alias_target_for_type(field_type, state)
+            local target = target_path and state.env.registry[target_path]
+            if target and target is tealdoc.TypeItem then
+                local function clone_item(source: tealdoc.Item, path: string, parent: string): tealdoc.Item
+                    local values = {} as {string: any}
+                    for key, value in pairs(source as {string: any}) do
+                        values[key] = value
+                    end
+                    local copy = values as tealdoc.Item
+                    copy.path = path
+                    copy.parent = parent
+                    if source is tealdoc.DeclarationItem then
+                        (copy as tealdoc.DeclarationItem).visibility = "record"
+                    end
+                    state.env.registry[path] = copy
+
+                    if source.children then
+                        copy.children = {}
+                        for _, child_path in ipairs(source.children) do
+                            local child = state.env.registry[child_path]
+                            assert(child)
+                            local suffix = child_path:sub(#source.path + 1)
+                            local public_child_path = path .. suffix
+                            clone_item(child, public_child_path, path)
+                            table.insert(copy.children, public_child_path)
+                        end
+                    end
+                    return copy
+                end
+
+                local public_path = state.path .. name
+                local exported = clone_item(target, public_path, state.parent_item.path)
+                exported.name = name
+                if comments and comments[1] then
+                    process_comments(comments[1], exported, state.env)
+                end
+                if not state.parent_item.children then
+                    state.parent_item.children = {}
+                end
+                table.insert(state.parent_item.children, public_path)
+                return
+            end
+        end
+
         -- polymorphic functions
         if field_type is tl.PolyType then
              local overload_item: tealdoc.Item = {

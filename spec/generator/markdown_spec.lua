@@ -17,10 +17,14 @@ describe("Markdown generator", function()
         tealdoc.process_text([[
             local types = require("types")
             local type PrivateOptions = types.Options
+            local record Payload
+                value: string
+            end
 
             local record api
                 type Options = types.Options
                 type PublicOptions = types.Options
+                Payload: Payload
 
                 --- Returns a value unchanged.
                 --- @param value The value to return.
@@ -38,6 +42,9 @@ describe("Markdown generator", function()
 
                 --- Copies through a private alias.
                 copyPrivate: function(options: PrivateOptions): PrivateOptions
+
+                --- Copies a payload.
+                copyPayload: function(payload: Payload): Payload
             end
 
             return api
@@ -105,6 +112,18 @@ describe("Markdown generator", function()
         assert.is_truthy(linked_markdown:find(
             "([`PrivateOptions`](/modules/types#types.Options))",
             assert(linked_markdown:find("## api.copyPrivate", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "```teal\nrecord api.Payload\n```",
+            1,
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find("## api.Payload.value", 1, true))
+        assert.is_falsy(linked_markdown:find("api.Payload: Payload", 1, true))
+        assert.is_truthy(linked_markdown:find(
+            "([`Payload`](#api.Payload))",
+            assert(linked_markdown:find("## api.copyPayload", 1, true)),
             true
         ), linked_markdown)
     end)
