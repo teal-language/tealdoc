@@ -84,6 +84,7 @@ end
 
 local visit_node
 local visit_type
+local alias_target_for_type
 
 local function children_visitor(node, state)
    for _, child in ipairs(node) do
@@ -145,6 +146,78 @@ end
 
 local function type_to_string(report, typ)
    return typeinfo_to_string(typeinfo_for_type(report, typ))
+end
+
+local function type_references_for_type(typ, state)
+   local references = {}
+   local seen = {}
+   local added = {}
+
+   local visit
+   visit = function(t)
+      if not t or (t.typeid and seen[t.typeid]) then
+         return
+      end
+      if t.typeid then
+         seen[t.typeid] = true
+      end
+
+      if t.typename == "nominal" then
+         local path = alias_target_for_type(t, state)
+         local name = t.names and table.concat(t.names, ".")
+         if path and name and not added[name .. "\0" .. path] then
+            table.insert(references, { name = name, path = path })
+            added[name .. "\0" .. path] = true
+         end
+         if t.typevals then
+            for _, typeval in ipairs(t.typevals) do
+               visit(typeval)
+            end
+         end
+      elseif t.typename == "generic" then
+         visit(t.t)
+         if t.typeargs then
+            for _, typearg in ipairs(t.typeargs) do
+               if typearg.constraint then
+                  visit(typearg.constraint)
+               end
+            end
+         end
+      elseif t.typename == "typedecl" then
+         visit(t.def)
+      elseif t.typename == "array" then
+         visit(t.elements)
+      elseif t.typename == "map" then
+         visit(t.keys)
+         visit(t.values)
+      elseif t.typename == "tuple" then
+         for _, tuple_type in ipairs(t.tuple) do
+            visit(tuple_type)
+         end
+      elseif t.typename == "function" then
+         visit(t.args)
+         visit(t.rets)
+      elseif t.typename == "union" then
+         for _, union_type in ipairs(t.types) do
+            visit(union_type)
+         end
+      elseif t.typename == "tupletable" then
+         for _, tuple_table_type in ipairs(t.types) do
+            visit(tuple_table_type)
+         end
+      elseif t.typename == "poly" then
+         for _, poly_type in ipairs(t.types) do
+            visit(poly_type)
+         end
+      elseif t.typename == "typearg" or t.typename == "typevar" then
+         if t.constraint then
+            visit(t.constraint)
+         end
+      end
+   end
+
+   visit(typ)
+   return #references > 0 and references or nil
 end
 
 
@@ -286,6 +359,7 @@ local function function_item_for_node(node, visibility, kind, state)
             item.params[param_index] = {
                name = ar.tk,
                type = ar.argtype and type_to_string(state.type_report, ar.argtype),
+               type_references = ar.argtype and type_references_for_type(ar.argtype, state),
             }
             param_index = param_index + 1
          end
@@ -298,6 +372,7 @@ local function function_item_for_node(node, visibility, kind, state)
       for i, ret in ipairs(node.rets.tuple) do
          item.returns[i] = {
             type = type_to_string(state.type_report, ret),
+            type_references = type_references_for_type(ret, state),
          }
       end
    end
@@ -354,10 +429,12 @@ local function item_for_function_type(t, visibility, kind, state, owner)
                type = owner and
                typeinfo_to_string(typeinfo_for_type(state.type_report, owner)) or
                type_to_string(state.type_report, ar),
+               type_references = type_references_for_type(owner or ar, state),
             }
          else
             item.params[i] = {
                type = type_to_string(state.type_report, ar),
+               type_references = type_references_for_type(ar, state),
             }
          end
       end
@@ -369,6 +446,7 @@ local function item_for_function_type(t, visibility, kind, state, owner)
       for i, ret in ipairs(t.rets.tuple) do
          item.returns[i] = {
             type = type_to_string(state.type_report, ret),
+            type_references = type_references_for_type(ret, state),
          }
       end
    end
@@ -568,7 +646,7 @@ end
 
 local record_like_visitor
 
-local function alias_target_for_type(t, state)
+alias_target_for_type = function(t, state)
    if t.typename == "nominal" and t.names and #t.names > 0 then
       local module_name = state.module_aliases[t.names[1]]
       if module_name then
@@ -583,6 +661,17 @@ local function alias_target_for_type(t, state)
       local candidate = state.path .. name
       if state.env.registry[candidate] then
          return candidate
+      end
+      if t.found then
+         local typenum = typenum_for_type(state.type_report, t.found)
+         local declaration_path = typenum and state.typenum_to_path[typenum]
+         if declaration_path then
+            return declaration_path
+         end
+      end
+      local local_candidate = "$" .. state.module_name .. "~" .. name
+      if state.env.registry[local_candidate] then
+         return local_candidate
       end
    end
 end
@@ -747,6 +836,63 @@ record_like_visitor = function(t, declaration, state)
       end
 
 
+
+
+
+
+
+
+
+
+
+
+      if field_type.typename == "nominal" and field_type.names and
+         #field_type.names == 1 and field_type.names[1] == name then
+         local target_path = alias_target_for_type(field_type, state)
+         local target = target_path and state.env.registry[target_path]
+         if target and target.kind == "type" then
+            local function clone_item(source, path, parent)
+               local values = {}
+               for key, value in pairs(source) do
+                  values[key] = value
+               end
+               local copy = values
+               copy.path = path
+               copy.parent = parent
+               if type(source) == "table" then
+                  (copy).visibility = "record"
+               end
+               state.env.registry[path] = copy
+
+               if source.children then
+                  copy.children = {}
+                  for _, child_path in ipairs(source.children) do
+                     local child = state.env.registry[child_path]
+                     assert(child)
+                     local suffix = child_path:sub(#source.path + 1)
+                     local public_child_path = path .. suffix
+                     clone_item(child, public_child_path, path)
+                     table.insert(copy.children, public_child_path)
+                  end
+               end
+               return copy
+            end
+
+            local public_path = state.path .. name
+            local exported = clone_item(target, public_path, state.parent_item.path)
+            exported.name = name
+            if comments and comments[1] then
+               process_comments(comments[1], exported, state.env)
+            end
+            if not state.parent_item.children then
+               state.parent_item.children = {}
+            end
+            table.insert(state.parent_item.children, public_path)
+            return
+         end
+      end
+
+
       if field_type.typename == "poly" then
          local overload_item = {
             kind = "overload",
@@ -845,6 +991,11 @@ local function type_declaration_visitor(node, state)
    assert(node.var.kind == "identifier")
    if node.value then
       local name = node.var.tk
+      local module_name = required_module(node.value)
+      if module_name then
+         state.module_aliases[name] = module_name
+         return
+      end
       local newtype = node.value.newtype
       if newtype then
          typedecl_visitor(name, node.comments, newtype, node.kind == "local_type" and "local" or "global", state)

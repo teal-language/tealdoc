@@ -22,3 +22,56 @@ tealdoc --help
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
 *   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
+
+### Project Configuration
+
+Tealdoc reads its project settings from the `tealdoc` table in the nearest
+`tlconfig.lua`, using the same current-directory and parent-directory search as
+Teal. The namespace lets Tealdoc add settings without colliding with compiler
+or other tool settings.
+
+For Markdown output, `markdown.type_links` can map canonical Tealdoc path
+prefixes to URL prefixes:
+
+```lua
+local base = os.getenv("DOCS_BASE") or ""
+
+return {
+    source_dir = "src",
+    tealdoc = {
+        markdown = {
+            type_links = {
+                ["my.http"] = base .. "/modules/http#my.http",
+                ["my.Future"] = base .. "/modules/future#my.future.Future",
+            },
+        },
+    },
+}
+```
+
+The exact path links to the page before `#`. A descendant appends its suffix
+to the complete URL prefix, so `my.http.Response` above links to
+`/modules/http#my.http.Response`. Types with no route remain plain code.
+
+For complete control, the configuration can instead return a resolver
+function. It receives a canonical type path and returns its URL, or `nil` when
+the type should remain unlinked:
+
+```lua
+return {
+    tealdoc = {
+        markdown = {
+            type_links = function(path)
+                if path == "external.Widget" then
+                    return "https://example.com/widget"
+                end
+            end,
+        },
+    },
+}
+```
+
+`tlconfig.lua` is loaded and executed as trusted Lua code. Markdown cannot
+contain links inside fenced code blocks, so Tealdoc keeps signatures as valid,
+syntax-highlighted Teal and applies type links in the structured Arguments and
+Returns sections.

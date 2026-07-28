@@ -177,6 +177,14 @@ local record tealdoc
         description: string
     end
 
+    --- A named type referenced inside a rendered type expression.
+    record TypeReference
+        --- The spelling used in the source type expression.
+        name: string
+        --- The canonical Tealdoc item path for the referenced type.
+        path: string
+    end
+
 
 
     --- This interface represents a declaration item in Tealdoc.
@@ -206,6 +214,8 @@ local record tealdoc
             name: string
             --- The type of the parameter.
             type: string
+            --- Named types contained in the parameter type.
+            type_references: {TypeReference}
             --- The description of the parameter.
             description: string
         end
@@ -214,6 +224,8 @@ local record tealdoc
         record Return
             --- The type of the return value.
             type: string
+            --- Named types contained in the return type.
+            type_references: {TypeReference}
             --- The description of the return value.
             description: string
         end

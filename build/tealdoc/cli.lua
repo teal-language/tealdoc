@@ -1,10 +1,53 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local type = type; local argparse = require("argparse")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
+local Config = require("tealdoc.config")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local HTMLGenerator = require("tealdoc.generator.html.generator")
 local tealdoc = require("tealdoc")
 local log = require("tealdoc.log")
 local tl = require("tl")
+
+
+
+
+
+
+local function prefix_url_resolver(config)
+   local routes = {}
+   for path, url in pairs(config) do
+      assert(
+      type(path) == "string" and type(url) == "string",
+      "Type-link route keys and values must be strings")
+
+      table.insert(routes, { path = path, url = url })
+   end
+   table.sort(routes, function(a, b)
+      return #a.path > #b.path
+   end)
+
+   return function(path)
+      for _, route in ipairs(routes) do
+         if path == route.path then
+            return route.url:match("^[^#]*")
+         end
+         if path:sub(1, #route.path + 1) == route.path .. "." then
+            return route.url .. path:sub(#route.path + 1)
+         end
+      end
+      return nil
+   end
+end
+
+local function type_url_resolver(config)
+   if type(config) == "function" then
+      return config
+   end
+   assert(
+   type(config) == "table",
+   "Type-link configuration must return a route table or resolver function")
+
+   return prefix_url_resolver(config)
+end
 
 local CLI = { Command = {} }
 
@@ -61,7 +104,17 @@ function CLI:add_default_commands()
             tealdoc.process_file(file, self._env)
          end
 
-         local generator = MarkdownGenerator.init(args["output"])
+         local resolver
+         local settings = Config.load().values
+         local tealdoc_config = settings["tealdoc"]
+         local markdown_config = tealdoc_config and
+         tealdoc_config["markdown"]
+         local type_links = markdown_config and
+         markdown_config["type_links"]
+         if type_links then
+            resolver = type_url_resolver(type_links)
+         end
+         local generator = MarkdownGenerator.init(args["output"], resolver)
          generator:run(self._env)
       end,
    }

@@ -83,9 +83,9 @@ MarkdownBuilder.link_url = function(self, url: string, ...: Content): MarkdownBu
         self:text(...)
         return self
     end
-    self:rawtext("<a href=\"", escape_html(url), "\">")
+    self:rawtext("[")
     self:text(...)
-    self:rawtext("</a>")
+    self:rawtext("](", url:gsub("([%s%)])", "\\%1"), ")")
     return self
 end
 
@@ -195,13 +195,15 @@ MarkdownBuilder.build = function(self): string
 end
 
 local record MarkdownGenerator 
-    init: function(output: string): Generator.Base
+    type URLResolver = function(path: string): string
+
+    init: function(output: string, type_url_for_path?: URLResolver): Generator.Base
     item_phases: {string: {Generator.Phase}}
 end
 
 MarkdownGenerator.item_phases = {}
 
-MarkdownGenerator.init = function(output: string): Generator.Base
+MarkdownGenerator.init = function(output: string, type_url_for_path?: MarkdownGenerator.URLResolver): Generator.Base
     local builder = MarkdownBuilder.init()
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
@@ -213,6 +215,30 @@ MarkdownGenerator.init = function(output: string): Generator.Base
         ctx.path_mode = "full"
         ctx.url_for_path = function(path: string): string
             return env.registry[path] and "#" .. path or nil
+        end
+        if type_url_for_path then
+            ctx.url_for_type = function(path: string): string
+                local seen: {string: boolean} = {}
+                while path and not seen[path] do
+                    seen[path] = true
+                    local item = env.registry[path]
+                    if not item then
+                        return type_url_for_path(path)
+                    end
+                    if ctx.filter(item, env) then
+                        return type_url_for_path(path) or "#" .. path
+                    end
+                    if item is tealdoc.TypeItem
+                        and item.type_kind == "type"
+                        and item.alias_target
+                    then
+                        path = item.alias_target
+                    else
+                        return nil
+                    end
+                end
+                return nil
+            end
         end
     end
     base.on_end = function(_, _: tealdoc.Env)

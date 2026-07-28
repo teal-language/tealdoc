@@ -9,16 +9,30 @@ describe("Markdown generator", function()
         tealdoc.process_text([[
             local record types
                 interface Options
+                    value: string
                 end
             end
 
             return types
         ]], "types.tl", env)
         tealdoc.process_text([[
+            local record Window
+            end
+
+            return Window
+        ]], "window.tl", env)
+        tealdoc.process_text([[
             local types = require("types")
+            local type Window = require("window")
+            local type PrivateOptions = types.Options
+            local record Payload
+                value: string
+            end
 
             local record api
                 type Options = types.Options
+                type PublicOptions = types.Options
+                Payload: Payload
 
                 --- Returns a value unchanged.
                 --- @param value The value to return.
@@ -27,6 +41,21 @@ describe("Markdown generator", function()
 
                 --- Performs one update.
                 update: function()
+
+                --- Copies options.
+                copy: function(options: types.Options): types.Options
+
+                --- Copies a public alias.
+                copyPublic: function(options: PublicOptions): PublicOptions
+
+                --- Copies through a private alias.
+                copyPrivate: function(options: PrivateOptions): PrivateOptions
+
+                --- Copies a payload.
+                copyPayload: function(payload: Payload): Payload
+
+                --- Shows a message in a window.
+                messageBox: function(window: Window)
             end
 
             return api
@@ -52,13 +81,19 @@ describe("Markdown generator", function()
         ))
         local identity_heading = assert(markdown:find("## api.identity", 1, true))
         local identity_text = assert(markdown:find("Returns a value unchanged.", identity_heading, true))
-        local identity_synopsis = assert(markdown:find("### Synopsis", identity_text, true))
-        local identity_arguments = assert(markdown:find("### Arguments", identity_synopsis, true))
+        local identity_signature = assert(markdown:find(
+            "```teal\nfunction api.identity<T>(value: T): T\n```",
+            identity_text,
+            true
+        ))
+        local identity_arguments = assert(markdown:find("### Arguments", identity_signature, true))
         local identity_returns = assert(markdown:find("### Returns", identity_arguments, true))
         assert.is_true(identity_heading < identity_text)
-        assert.is_true(identity_text < identity_synopsis)
-        assert.is_true(identity_synopsis < identity_arguments)
+        assert.is_true(identity_text < identity_signature)
+        assert.is_true(identity_signature < identity_arguments)
         assert.is_true(identity_arguments < identity_returns)
+        assert.is_truthy(markdown:find("### types.Options.value", 1, true))
+        assert.is_falsy(markdown:find("Synopsis", 1, true))
         assert.is_truthy(markdown:find(
             "### Arguments\n\nNone.\n\n### Returns\n\nNone.",
             assert(markdown:find("## api.update", 1, true)),
@@ -66,6 +101,55 @@ describe("Markdown generator", function()
         ), markdown)
         assert.is_falsy(markdown:find("<pre><code>", 1, true))
         assert.is_falsy(markdown:find('<a href="#types.Options">', 1, true))
+        assert.is_falsy(markdown:find("[`types.Options`](", 1, true))
         assert.is_falsy(markdown:find("&lt;T&gt;", 1, true))
+
+        local linked_output = os.tmpname()
+        MarkdownGenerator.init(linked_output, function(path)
+            if path == "types.Options" then
+                return "/modules/types#types.Options"
+            end
+            if path == "window" then
+                return "/modules/window#window"
+            end
+            return nil
+        end):run(env)
+        local linked_file = assert(io.open(linked_output, "r"))
+        local linked_markdown = linked_file:read("*a")
+        linked_file:close()
+        os.remove(linked_output)
+
+        assert.is_truthy(linked_markdown:find(
+            "([`types.Options`](/modules/types#types.Options))",
+            assert(linked_markdown:find("## api.copy", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "([`PublicOptions`](#api.PublicOptions))",
+            assert(linked_markdown:find("## api.copyPublic", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "([`PrivateOptions`](/modules/types#types.Options))",
+            assert(linked_markdown:find("## api.copyPrivate", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "```teal\nrecord api.Payload\n```",
+            1,
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find("## api.Payload.value", 1, true))
+        assert.is_falsy(linked_markdown:find("api.Payload: Payload", 1, true))
+        assert.is_truthy(linked_markdown:find(
+            "([`Payload`](#api.Payload))",
+            assert(linked_markdown:find("## api.copyPayload", 1, true)),
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "([`Window`](/modules/window#window))",
+            assert(linked_markdown:find("## api.messageBox", 1, true)),
+            true
+        ), linked_markdown)
     end)
 end)
