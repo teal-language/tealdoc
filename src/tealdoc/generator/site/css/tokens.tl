@@ -90,7 +90,7 @@ return [[
     );
     --tealdoc-header-height: var(--vp-nav-height, 64px);
     --tealdoc-layout-max-width: var(--vp-layout-max-width, 1480px);
-    --tealdoc-content-width: var(--vp-content-width, 1000px);
+    --tealdoc-content-width: var(--vp-content-width, 688px);
     --tealdoc-sidebar-width: var(--vp-sidebar-width, 272px);
     --tealdoc-outline-width: var(--vp-aside-width, 256px);
     --tealdoc-sidebar-font-size: 0.64rem;
