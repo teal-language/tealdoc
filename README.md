@@ -23,6 +23,24 @@ Its primary function is to generate documentation for programs written in Teal, 
 - [CLI Reference](#cli-reference)
     - [Commands](#commands)
     - [Options](#options)
+    - [Project Configuration](#project-configuration)
+    - [Static Site Output](#static-site-output)
+        - [Quick start](#quick-start)
+        - [Complete configuration example](#complete-configuration-example)
+        - [Content sources](#content-sources)
+        - [Configuration reference](#configuration-reference)
+        - [Pages and routes](#pages-and-routes)
+        - [Navigation, search, and validation](#navigation-search-and-validation)
+        - [Output and hosting](#output-and-hosting)
+        - [Templates](#templates)
+        - [Home pages](#home-pages)
+        - [Checked examples and source regions](#checked-examples-and-source-regions)
+        - [Markdown content](#markdown-content)
+        - [Generated API references](#generated-api-references)
+        - [Syntax highlighting and theming](#syntax-highlighting-and-theming)
+        - [Redirects](#redirects)
+        - [Admonitions](#admonitions)
+        - [Build hooks](#build-hooks)
 - [Architecture](#architecture)
     - [Using Tealdoc Programmatically](#using-tealdoc-programmatically)
     - [Adding Custom Tags](#adding-custom-tags)
@@ -315,6 +333,61 @@ Returns sections.
 a responsive static site. It does not replace `tealdoc md`; site generation is
 an explicit command with its own `tealdoc.site` configuration:
 
+#### Quick start
+
+A site needs a title and at least one page or example. API sources are
+optional, so the smallest useful site can be entirely handwritten:
+
+```lua
+return {
+    tealdoc = {
+        site = {
+            title = "My project",
+            pages = {
+                {
+                    path = "",
+                    title = "Home",
+                    source = "docs/index.md",
+                },
+            },
+        },
+    },
+}
+```
+
+Build it with:
+
+```sh
+tealdoc site --output site
+```
+
+Add `sources` and an `api` page when the site should include generated Teal
+reference documentation:
+
+```lua
+site = {
+    title = "My project",
+    sources = { "src/my/api.tl" },
+    pages = {
+        {
+            path = "api",
+            title = "API",
+            source = "docs/api.md",
+            api = "my.api",
+        },
+    },
+}
+```
+
+#### Complete configuration example
+
+The following example shows content, navigation, hosting, theming, and
+extension settings together. The sections after it document each concern
+independently.
+
+<details>
+<summary>Show the complete configuration</summary>
+
 ```lua
 return {
     tealdoc = {
@@ -422,6 +495,24 @@ return {
 }
 ```
 
+</details>
+
+#### Content sources
+
+A site can combine four kinds of content:
+
+- Teal modules discovered through `sources`;
+- handwritten Markdown selected by page `source` fields;
+- generated API references selected by page `api` fields; and
+- checked Teal or Lua `examples`, either as pages or attached to API items.
+
+Each page can use one or both of `source` and `api`. Tealdoc renders the
+handwritten material first, then the generated reference. A module page can
+therefore explain concepts, examples, and caveats without manually maintaining
+an exhaustive API list.
+
+##### Teal API sources
+
 `sources` accepts Teal files and directories. Directories are searched
 recursively for `.tl` files in deterministic order. Command-line files are
 added to the configured sources, so a project can keep its normal inputs in
@@ -437,7 +528,7 @@ includes `sources`, page and example `source` values, `custom_css`, and
 `templates`, plus `public` and the custom 404 `source`. The `--output` path
 and command-line Teal files remain relative to the invoking directory.
 
-#### Site settings
+#### Configuration reference
 
 Tealdoc rejects unknown setting names. Site settings and defaults are:
 
@@ -479,6 +570,10 @@ Tealdoc rejects unknown setting names. Site settings and defaults are:
 At least one page or example is required, but Teal sources are not. A
 Markdown-only site is a supported zero-Teal build.
 
+#### Pages and routes
+
+##### Page content
+
 Page settings are `path`, required `title`, `description`, `source`, `api`,
 `public`, `layout`, `hero_title`, `hero_text`, `hero_image`,
 `hero_image_alt`, `hero_actions`, `features`, `canonical`, `image`, and
@@ -486,11 +581,15 @@ Page settings are `path`, required `title`, `description`, `source`, `api`,
 optional `theme`. A feature has required `title` and optional `details`,
 `icon`, and `image`.
 
+##### Example settings
+
 Every example requires `source` and exactly one of `path` or `attach_to`.
 Page examples also require `title`; attached examples default it to
 `"Example"`. Optional settings are `description`, `region`, `language`, and
 `check`. `language` defaults from the source extension and `check` defaults
 to `true`.
+
+##### Route rules
 
 Page and example paths are clean URL routes rather than filesystem paths.
 Leading and trailing slashes and repeated separators normalize away. A route
@@ -498,6 +597,8 @@ cannot contain `.`, `..`, a query, or a fragment. Page, example, and redirect
 sources must remain unique after normalization. Tealdoc rejects a conflict
 before writing page output. Relative redirect destinations use `base`;
 absolute paths and HTTP(S) destinations are preserved.
+
+#### Navigation, search, and validation
 
 The default layout provides desktop navigation, a left page sidebar, a right
 page outline, breadcrumbs, previous and next links, heading permalinks, and
@@ -511,6 +612,22 @@ and links it from the footer. A page at `modules/window` therefore writes
 `modules/window/llms.txt`; the home page writes the root `llms.txt`. Every
 page head links its composed Markdown with `rel="alternate"` and
 `type="text/markdown"`.
+
+Internal link validation runs after pages and the `after_build` hook are
+written. It checks generated links and fragments, understands the configured
+`base`, skips external URL schemes, and fails the build with every missing
+target it finds. Set `validate_links = false` only when another build step
+owns the site's internal links.
+
+Search and current-section outline highlighting use a small dependency-free
+script. Tealdoc writes a static search index and loads it only when search is
+first opened. A query returns at most 50 ranked results. Home-page hero,
+action, feature, and Markdown content are part of the page entry. Navigation,
+theme switching, syntax highlighting, and disclosure controls work without
+JavaScript, and the page outline remains a usable list of links when scripting
+is unavailable.
+
+#### Output and hosting
 
 The site identity and output settings are:
 
@@ -565,6 +682,8 @@ compatibility. `footer_links` defaults to an empty list and adds structured
 Relative paths use `base`; HTTP, HTTPS, `mailto:`, and fragment destinations
 are used as written.
 
+#### Templates
+
 Tealdoc renders the document shell with the dependency-free
 `lua-resty-template` package. Set `templates` to an optional directory
 containing any of these narrowly supported overrides:
@@ -584,12 +703,16 @@ HTML, `{(header.html)}` includes a fixed template, and
 site still uses four-space-indented HTML, and fenced code contents are not
 re-indented.
 
+#### Home pages
+
 Home-page structure stays in `tlconfig.lua` rather than YAML frontmatter, so
 the handwritten source remains ordinary portable Markdown. A `layout = "home"`
 page renders its title, text and actions on the left. `hero_image` opts into a
 right-hand image over a theme-colored starburst; when it is absent, the right
 column is not emitted. `features` renders the compact feature badges below the
 hero. Feature `details` accepts Markdown.
+
+#### Checked examples and source regions
 
 `examples` accepts exact source files in two forms. `path` creates an ordinary
 site page. `attach_to` places the example under that canonical public API item
@@ -612,25 +735,17 @@ code Tealdoc checked. Set `check = false` only for an intentionally incomplete
 example. Examples are listed explicitly rather than discovered with globs, so
 the site configuration is also the list of examples the site publishes.
 
+#### Markdown content
+
+##### Code groups and details
+
 Handwritten pages accept VitePress's `::: code-group` container, labeled
 fences such as `` ```teal [Components] ``, and
 `::: details Optional title`. Code groups remain a JavaScript-free stack of
 labeled blocks, while details use the browser's native disclosure element.
 The same Teal and Lua syntax highlighting applies to labeled fences.
 
-Internal link validation runs after pages and the `after_build` hook are
-written. It checks generated links and fragments, understands the configured
-`base`, skips external URL schemes, and fails the build with every missing
-target it finds. Set `validate_links = false` only when another build step
-owns the site's internal links.
-
-Search and current-section outline highlighting use a small dependency-free
-script. Tealdoc writes a static search index and loads it only when search is
-first opened. A query returns at most 50 ranked results. Home-page hero,
-action, feature, and Markdown content are part of the page entry. Navigation,
-theme switching, syntax highlighting, and disclosure controls work without
-JavaScript, and the page outline remains a usable list of links when scripting
-is unavailable.
+#### Generated API references
 
 Generated reference headings keep canonical item names unchanged and add a
 compact semantic badge such as `method`, `function`, `field`, `record`, or
@@ -642,6 +757,8 @@ The section heading includes the public module name, such as
 `tecs.window.Window Reference`. A generic “Public APIs in …” introduction is
 only added when the configured module page has no handwritten documentation.
 
+##### Cross-links in documentation comments
+
 Documentation comments can cross-link public types with ordinary Markdown by
 using a `tealdoc:` destination:
 
@@ -652,6 +769,8 @@ See [`Window`](tealdoc:tecs.platform.Window).
 The destination may be a canonical type path or an unambiguous type name.
 Tealdoc resolves it through the same public-alias rules as signature links and
 writes the real site URL into both HTML and downloadable Markdown.
+
+#### Syntax highlighting and theming
 
 Tealdoc uses Teal's compiler lexer at build time to syntax-highlight fenced
 `teal` and `lua` blocks. Teal is a Lua superset, so the same lexer handles Lua
@@ -707,12 +826,16 @@ The stable selector surface for narrow structural overrides is
 Other selectors are implementation details. Prefer custom properties over
 selector overrides whenever a token exists.
 
+#### Redirects
+
 `redirects` maps an old site route to a new route. Relative destinations are
 resolved against `base`; absolute paths and `http://` or `https://` URLs are
 used as written. Tealdoc emits a JavaScript-free redirect page with a canonical
 link, immediate meta refresh, and visible fallback link. A redirect source may
 not collide with a configured page. Sources ending in `.html` are emitted as
 files; other sources are emitted as clean routes with an `index.html`.
+
+#### Admonitions
 
 The site reader enables Lunamark's native fenced-Div extension for
 admonitions. The body is ordinary Markdown, and text after the kind is an
@@ -734,6 +857,8 @@ GitHub-style alerts use the same component:
 
 The supported GitHub markers are `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and
 `CAUTION`.
+
+#### Build hooks
 
 The two hooks are ordinary trusted Lua functions. Tealdoc validates settings,
 resolves config-relative paths, validates examples, assembles example pages,
