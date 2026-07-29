@@ -165,12 +165,15 @@ return [[
     }
 
     .tealdoc-hero-main {
-        min-height: 0;
         gap: 2rem;
     }
 
     .tealdoc-hero-copy h1 {
         font-size: var(--tealdoc-hero-name-size-narrow);
+    }
+
+    .tealdoc-hero-text {
+        font-size: var(--tealdoc-hero-text-size-narrow);
     }
 
     .tealdoc-hero-image {
