@@ -289,10 +289,12 @@ nav = {
 
 Tealdoc emits the composed Markdown beside every HTML page and always links it
 from the header.
-Every page also emits the same composed Markdown as a page-local `llms.txt`
-and links it from the footer. A page at `modules/window` therefore writes
-`modules/window/llms.txt`; the home page writes the root `llms.txt`. Every
-page head links its composed Markdown with `rel="alternate"` and
+Every non-home page also emits the same composed Markdown as a page-local
+`llms.txt` and links it from the footer. A page at `modules/window` therefore
+writes `modules/window/llms.txt`. The home page uses and links `index.md`
+instead. The root `llms.txt` is a site index linking those documents, and
+`llms-full.txt` aggregates every ordinary page's composed Markdown. Every page
+head links its composed Markdown with `rel="alternate"` and
 `type="text/markdown"`.
 
 The site identity and output settings are:
@@ -311,8 +313,9 @@ The site identity and output settings are:
   relative paths are resolved under `base`.
 - `public` has no default. When set, Tealdoc recursively copies the contents
   of that directory to the output root before writing generated files.
-  Symbolic links and non-file, non-directory entries are rejected. Generated
-  files win if a public asset uses a reserved generated path.
+  Symbolic links and non-file, non-directory entries are rejected. A public
+  asset that conflicts with a generated output is rejected before either file
+  is written.
 - `cname` has no default. It must be a bare DNS name and writes a root `CNAME`
   file for hosts such as GitHub Pages.
 - `author`, `social_image`, and `twitter_site` have no defaults. `author`
@@ -326,6 +329,14 @@ The site identity and output settings are:
   `source`, and the ordinary visual page fields, and writes `404.html`,
   `404.md`, and `404/llms.txt`. The page is marked `noindex` and omitted from
   the sitemap.
+
+Tealdoc records owned output files as safe relative paths in
+`.tealdoc-manifest`. Before a later build it removes files present in the old
+manifest but absent from the new output plan, then removes only directories
+left empty by those deletions. Files not listed in the previous manifest are
+never pruned, and an unowned file at a planned output path is an error rather
+than an overwrite. The replacement manifest is written only after link
+validation succeeds.
 
 Each ordinary page may set `canonical` to replace its derived canonical URL,
 `image` to replace `social_image`, and `noindex = true` to emit robots
@@ -344,7 +355,8 @@ handlers, raw HTML, control characters, and `javascript:` URLs are rejected.
 
 `copyright` and `license` remain optional escaped plain text for backward
 compatibility. `footer_links` defaults to an empty list and adds structured
-`{ text, path }` links before the page-local `llms.txt` and Tealdoc credit.
+`{ text, path }` links before the page-local `llms.txt` (or home `index.md`)
+and Tealdoc credit.
 Relative paths use `base`; HTTP, HTTPS, `mailto:`, and fragment destinations
 are used as written.
 
@@ -532,7 +544,8 @@ metadata or add pages; routes are normalized and validated again after it
 returns. Tealdoc then renders pages, redirects, assets, and the search index,
 adding every generated path to `files`. `after_build` runs last with that
 completed context and may write additional artifacts. Files it writes are not
-added automatically.
+added automatically; append each path to `context.files` to include it in link
+validation and Tealdoc's ownership manifest.
 
 #### Compatibility policy
 
