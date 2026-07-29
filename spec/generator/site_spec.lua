@@ -3,6 +3,7 @@ local DefaultEnv = require("tealdoc.default_env")
 local SiteGenerator = require("tealdoc.generator.site")
 local Highlighter = require("tealdoc.generator.site.highlighter")
 local PageTemplate = require("tealdoc.generator.site.page_template")
+local SiteMarkdown = require("tealdoc.generator.site.markdown")
 local tealdoc = require("tealdoc")
 
 local function read_file(path)
@@ -212,6 +213,34 @@ describe("Site generator", function()
         )
         assert.is_falsy(declaration:find("tealdoc-code-link", 1, true))
     end)
+
+    it("labels a fenced block and highlights it through its attributes",
+        function()
+            local html = SiteMarkdown.render(
+                "```teal{2}\nlocal a = 1\nlocal b = 2\n```\n",
+                {}
+            )
+            -- The attributes are cut before the language is looked up, so the
+            -- block highlights, and the label reads the language rather than
+            -- the whole info string.
+            assert.is_truthy(html:find(
+                '<div class="tealdoc-code-block" data-lang="teal">',
+                1,
+                true
+            ), html)
+            assert.is_truthy(html:find("tealdoc-token-keyword", 1, true), html)
+            -- What was written stays on the class, so a site can style it.
+            assert.is_truthy(html:find('class="language-teal{2}"', 1, true), html)
+
+            -- A language with no tokenizer is labelled and left alone.
+            local shell = SiteMarkdown.render("```bash\nls -l\n```\n", {})
+            assert.is_truthy(shell:find(
+                '<div class="tealdoc-code-block" data-lang="bash">',
+                1,
+                true
+            ), shell)
+            assert.is_falsy(shell:find("tealdoc-token-", 1, true))
+        end)
 
     it("assembles one public API page from several source modules", function()
         local env = DefaultEnv.init()
@@ -1637,6 +1666,14 @@ print(value)
         assert.is_falsy(redirect:find("<script", 1, true))
         assert.is_truthy(example_html:find(
             'keyword-local tealdoc-token-keyword">local</span>',
+            1,
+            true
+        ), example_html)
+        -- Every block is wrapped, and the wrapper carries the language on its
+        -- own so the corner label has something to draw and does not sit on
+        -- the element that scrolls.
+        assert.is_truthy(example_html:find(
+            '<div class="tealdoc-code-block" data-lang="teal"><pre',
             1,
             true
         ), example_html)

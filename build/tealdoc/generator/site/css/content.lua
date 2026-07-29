@@ -161,6 +161,36 @@ return [[
     opacity: 1;
 }
 
+/* The wrapper exists to hold the language label still. The `pre` inside it is
+ * the horizontal scroll container, and anything positioned against a scroll
+ * container travels with its content. */
+.tealdoc-content .tealdoc-code-block {
+    position: relative;
+}
+
+/* The label is a pseudo-element's content rather than an element of its own,
+ * so it is neither in the text a reader copies out of the block nor in what
+ * the search index reads. */
+.tealdoc-content .tealdoc-code-block[data-lang]::before {
+    position: absolute;
+    z-index: 1;
+    top: var(--tealdoc-code-lang-top);
+    right: var(--tealdoc-code-lang-right);
+    color: var(--tealdoc-code-lang-color);
+    content: attr(data-lang);
+    font-family: var(--tealdoc-font-mono);
+    font-size: var(--tealdoc-code-lang-font-size);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* A labelled block keeps the label's own room above the first line, so the
+ * two never sit on top of one another. */
+.tealdoc-content .tealdoc-code-block[data-lang] > pre {
+    padding-top: var(--tealdoc-code-lang-clearance);
+}
+
 .tealdoc-content pre {
     overflow: auto;
     padding: var(--tealdoc-code-block-padding);

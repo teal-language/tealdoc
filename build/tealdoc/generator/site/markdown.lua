@@ -285,30 +285,50 @@ function SiteMarkdown.render(
 
 
    html = html:gsub("\n+(</code></pre>)", "%1")
-   local function highlight_code(
-      language,
-      links)
 
-      html = html:gsub(
-      '<pre><code class="language%-' .. language .. '">(.-)</code></pre>',
-      function(code)
-         code = code:gsub("&lt;", "<"):
-         gsub("&gt;", ">"):
-         gsub("&quot;", '"'):
-         gsub("&#39;", "'"):
-         gsub("&amp;", "&")
-         return '<pre class="language-' ..
-         language ..
-         '"><code class="language-' ..
-         language ..
-         '">' ..
-         Highlighter.highlight(code, links) ..
-         "</code></pre>"
-      end)
 
-   end
-   highlight_code("teal", type_links)
-   highlight_code("lua")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   local links_for = {
+      teal = type_links or {},
+      lua = {},
+   }
+   html = html:gsub(
+   '<pre><code class="language%-([^"]+)">(.-)</code></pre>',
+   function(info, code)
+      local language = info:match("^([%w_#+-]+)") or info
+      code = code:gsub("&lt;", "<"):
+      gsub("&gt;", ">"):
+      gsub("&quot;", '"'):
+      gsub("&#39;", "'"):
+      gsub("&amp;", "&")
+      local links = links_for[language]
+      local body = links and
+      Highlighter.highlight(code, links) or
+      escape_html(code)
+      return '<div class="tealdoc-code-block" data-lang="' ..
+      escape_html(language) ..
+      '"><pre class="language-' ..
+      escape_html(info) ..
+      '"><code class="language-' ..
+      escape_html(info) ..
+      '">' ..
+      body ..
+      "</code></pre></div>"
+   end)
+
    return html
 end
 
