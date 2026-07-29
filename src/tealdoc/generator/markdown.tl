@@ -155,6 +155,59 @@ MarkdownBuilder.unordered_list = function(self, content: function(item: function
     return self
 end
 
+-- A pipe table rather than a raw `<table>` element, because Markdown renders
+-- the contents of a cell and passes the contents of a raw HTML block through
+-- untouched, and a description is Markdown.
+MarkdownBuilder.table = function(self, headers: {string}, content: function(row: function(...: function))): MarkdownBuilder
+    -- Each cell is written into a buffer of its own so the row separator can be
+    -- taken out of it. A union type is spelled with `|`, and a literal one
+    -- would end the cell in the middle of the type. The entity is what survives
+    -- the readers that consume this, which take a backslash before a pipe as an
+    -- ordinary backslash and end the cell anyway. A code span carrying one has
+    -- to become a `code` element for the same reason: a span renders what is
+    -- inside it literally, entity and all.
+    local function cell(write: function): string
+        local outer = self.output
+        self.output = {}
+        write()
+        local written = table.concat(self.output, "")
+        self.output = outer
+
+        written = written:gsub("`([^`]*)`", function(inner: string): string
+            if not inner:find("|", 1, true) then
+                return "`" .. inner .. "`"
+            end
+            return "<code>" ..
+                (Text.escape_html(inner):gsub("|", "&#124;")) ..
+                "</code>"
+        end)
+
+        -- A row is one line, so a description written over several is folded
+        -- onto one here.
+        return (written:gsub("|", "&#124;"):gsub("%s*\n%s*", " "))
+    end
+
+    local row = function(...: function)
+        local cells: {string} = {}
+        for i = 1, select("#", ...) do
+            table.insert(cells, cell((select(i, ...)) as function))
+        end
+        self:rawline("| ", table.concat(cells, " | "), " |")
+    end
+
+    local rule: {string} = {}
+    for _ = 1, #headers do
+        table.insert(rule, "---")
+    end
+
+    self:line()
+    self:rawline("| ", table.concat(headers, " | "), " |")
+    self:rawline("| ", table.concat(rule, " | "), " |")
+    content(row)
+    self:line()
+    return self
+end
+
 MarkdownBuilder.b = function(self, ...: Content): MarkdownBuilder
     self:rawtext("**")
     self:text(...)

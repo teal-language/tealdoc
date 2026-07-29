@@ -165,17 +165,17 @@ describe("Markdown generator", function()
         os.remove(linked_output)
 
         assert.is_truthy(linked_markdown:find(
-            "([`types.Options`](/modules/types#types.Options))",
+            "| [`types.Options`](/modules/types#types.Options) |",
             assert(linked_markdown:find("## api.copy", 1, true)),
             true
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
-            "([`PublicOptions`](#api.PublicOptions))",
+            "| [`PublicOptions`](#api.PublicOptions) |",
             assert(linked_markdown:find("## api.copyPublic", 1, true)),
             true
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
-            "([`PrivateOptions`](/modules/types#types.Options))",
+            "| [`PrivateOptions`](/modules/types#types.Options) |",
             assert(linked_markdown:find("## api.copyPrivate", 1, true)),
             true
         ), linked_markdown)
@@ -187,12 +187,12 @@ describe("Markdown generator", function()
         assert.is_truthy(linked_markdown:find("## api.Payload.value", 1, true))
         assert.is_falsy(linked_markdown:find("api.Payload: Payload", 1, true))
         assert.is_truthy(linked_markdown:find(
-            "([`Payload`](#api.Payload))",
+            "| [`Payload`](#api.Payload) |",
             assert(linked_markdown:find("## api.copyPayload", 1, true)),
             true
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
-            "([`Window`](/modules/window#window))",
+            "| [`Window`](/modules/window#window) |",
             assert(linked_markdown:find("## api.messageBox", 1, true)),
             true
         ), linked_markdown)
@@ -202,10 +202,148 @@ describe("Markdown generator", function()
             true
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
-            "([`Window`](/modules/window#window)`<T>`)",
+            "| [`Window`](/modules/window#window)`<T>` |",
             assert(linked_markdown:find("## api.generic", 1, true)),
             true
         ), linked_markdown)
         assert.is_falsy(linked_markdown:find("``T``", 1, true))
+    end)
+
+    it("tabulates parameters, returns and type parameters", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Handle
+                end
+            end
+
+            --- Open a handle.
+            --- @param name What to open.
+            --- @param mode How to open it.
+            --- @return The handle.
+            function api.open(name: string, mode: integer): api.Handle
+                return nil
+            end
+
+            --- Returns a value unchanged.
+            --- @param value The value to return.
+            --- @return The same value.
+            function api.identity<T>(value: T): T
+                return value
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        assert.is_truthy(markdown:find([[
+| Name | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | What to open. |
+| `mode` | `integer` | How to open it. |
+]], 1, true), markdown)
+
+        assert.is_truthy(markdown:find([[
+| Type | Description |
+| --- | --- |
+| `api.Handle` | The handle. |
+]], 1, true), markdown)
+
+        assert.is_truthy(markdown:find([[
+| Name | Constraint | Description |
+| --- | --- | --- |
+| `T` |  |  |
+]], 1, true), markdown)
+    end)
+
+    it("keeps a union type inside its own cell", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                find: function(string): string | nil
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        -- A literal pipe would end the cell in the middle of the type.
+        assert.is_truthy(markdown:find(
+            "| <code>string &#124; nil</code> |",
+            1,
+            true
+        ), markdown)
+    end)
+
+    it("keeps angle brackets readable in a cell that carries a union", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Handle<T>
+                end
+
+                find: function(string): Handle<string> | nil
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        -- The code element is HTML, so its contents are escaped the way a code
+        -- span would have had them escaped on the reader's behalf.
+        assert.is_truthy(markdown:find(
+            "| <code>Handle&lt;string&gt; &#124; nil</code> |",
+            1,
+            true
+        ), markdown)
+    end)
+
+    it("folds a description written over several lines onto its row", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Open a handle.
+                --- @param name What to open. The name is looked up in the
+                ---     registry first.
+                open: function(name: string)
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        assert.is_truthy(markdown:find(
+            "| What to open. The name is looked up in the registry first. |",
+            1,
+            true
+        ), markdown)
     end)
 end)

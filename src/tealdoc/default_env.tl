@@ -586,6 +586,16 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    -- Parameters, returns and type parameters are tabulated rather than listed,
+    -- so that a reader comparing several of them reads down a column instead of
+    -- across a sentence each. The first column is whatever names the row, and
+    -- the description is last so it takes the width the other columns leave. A
+    -- return has no name in Teal, so its table starts at the type and lets row
+    -- order say the position a number would have.
+    local type_param_columns: {string} = {"Name", "Constraint", "Description"}
+    local param_columns: {string} = {"Name", "Type", "Description"}
+    local return_columns: {string} = {"Type", "Description"}
+
     local type_params_phase: Generator.Phase = {
         name = "type_params",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -596,26 +606,31 @@ function DefaultEnv.init(): tealdoc.Env
             end
 
             ctx.builder:h4(attr("header"), "Type Parameters")
-            ctx.builder:unordered_list(function(list_item: function(content: function))
+            ctx.builder:table(type_param_columns, function(row: function(...: function))
                 for _, typearg in ipairs(item.typeargs) do
-                    list_item(function()
-                        ctx.builder:b(function()
+                    row(
+                        function()
                             ctx.builder:code(attr("name"), typearg.name or "?")
-                        end)
-
-                        if typearg.constraint then
-                            ctx.builder:text(attr("constraint"), " ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
+                        end,
+                        function()
+                            if typearg.constraint then
+                                ctx.builder:code(
+                                    attr("constraint"),
+                                    typearg.constraint
+                                )
+                            end
+                        end,
+                        function()
+                            if typearg.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        typearg.description
+                                    ))
+                                end)
+                            end
                         end
-
-                        if typearg.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
-                                    ctx,
-                                    typearg.description
-                                ))
-                            end)
-                        end
-                    end)
+                    )
                 end
             end)
         end
@@ -631,28 +646,31 @@ function DefaultEnv.init(): tealdoc.Env
             end
 
             markdown_section(ctx, item, "Type Parameters")
-            ctx.builder:unordered_list(function(list_item: function(content: function))
+            ctx.builder:table(type_param_columns, function(row: function(...: function))
                 for _, typearg in ipairs(item.typeargs) do
-                    list_item(function()
-                        ctx.builder:b(function()
+                    row(
+                        function()
                             ctx.builder:code(attr("name"), typearg.name or "?")
-                        end)
-
-                        if typearg.constraint then
-                            ctx.builder:text(attr("constraint"), " ( is ", function()
-                                ctx.builder:code(typearg.constraint)
-                            end, ")")
+                        end,
+                        function()
+                            if typearg.constraint then
+                                ctx.builder:code(
+                                    attr("constraint"),
+                                    typearg.constraint
+                                )
+                            end
+                        end,
+                        function()
+                            if typearg.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        typearg.description
+                                    ))
+                                end)
+                            end
                         end
-
-                        if typearg.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
-                                    ctx,
-                                    typearg.description
-                                ))
-                            end)
-                        end
-                    end)
+                    )
                 end
             end)
         end
@@ -668,24 +686,28 @@ function DefaultEnv.init(): tealdoc.Env
             end
 
             ctx.builder:h4(attr("name"), "Parameters")
-            ctx.builder:unordered_list(function(list_item: function(content: function)) -- TODO!
+            ctx.builder:table(param_columns, function(row: function(...: function))
                 for _, param in ipairs(item.params) do
-                    list_item(function()
-                        if param.name then
-                            ctx.builder:b(function()
+                    row(
+                        function()
+                            if param.name then
                                 ctx.builder:code(attr("name"), param.name)
-                            end)
+                            end
+                        end,
+                        function()
+                            ctx.builder:code(attr("type"), param.type or "?")
+                        end,
+                        function()
+                            if param.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        param.description
+                                    ))
+                                end)
+                            end
                         end
-                        ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
-                        if param.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
-                                    ctx,
-                                    param.description
-                                ))
-                            end)
-                        end
-                    end)
+                    )
                 end
             end)
         end
@@ -702,26 +724,34 @@ function DefaultEnv.init(): tealdoc.Env
                 return
             end
 
-            ctx.builder:unordered_list(function(list_item: function(content: function))
+            ctx.builder:table(param_columns, function(row: function(...: function))
                 for _, param in ipairs(item.params) do
-                    list_item(function()
-                        if param.name then
-                            ctx.builder:b(function()
+                    row(
+                        function()
+                            if param.name then
                                 ctx.builder:code(attr("name"), param.name)
-                            end)
-                        end
-                        ctx.builder:text(attr("type"), " (", function()
-                            markdown_type(ctx, param.type or "?", param.type_references)
-                        end, ")")
-                        if param.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
+                            end
+                        end,
+                        function()
+                            ctx.builder:text(attr("type"), function()
+                                markdown_type(
                                     ctx,
-                                    param.description
-                                ))
+                                    param.type or "?",
+                                    param.type_references
+                                )
                             end)
+                        end,
+                        function()
+                            if param.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        param.description
+                                    ))
+                                end)
+                            end
                         end
-                    end)
+                    )
                 end
             end)
         end
@@ -738,19 +768,23 @@ function DefaultEnv.init(): tealdoc.Env
 
             ctx.builder:h4(attr("header"), "Returns")
 
-            ctx.builder:ordered_list(function(list_item: function(content: function))
+            ctx.builder:table(return_columns, function(row: function(...: function))
                 for _, ret in ipairs(item.returns) do
-                    list_item(function()
-                        ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
-                        if ret.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
-                                    ctx,
-                                    ret.description
-                                ))
-                            end)
+                    row(
+                        function()
+                            ctx.builder:code(attr("type"), ret.type or "?")
+                        end,
+                        function()
+                            if ret.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        ret.description
+                                    ))
+                                end)
+                            end
                         end
-                    end)
+                    )
                 end
             end)
         end
@@ -767,21 +801,29 @@ function DefaultEnv.init(): tealdoc.Env
                 return
             end
 
-            ctx.builder:ordered_list(function(list_item: function(content: function))
+            ctx.builder:table(return_columns, function(row: function(...: function))
                 for _, ret in ipairs(item.returns) do
-                    list_item(function()
-                        ctx.builder:text(attr("type"), "(", function()
-                            markdown_type(ctx, ret.type or "?", ret.type_references)
-                        end, ")")
-                        if ret.description then
-                            ctx.builder:text(attr("description"), " — ", function()
-                                ctx.builder:md(markdown_with_type_links(
+                    row(
+                        function()
+                            ctx.builder:text(attr("type"), function()
+                                markdown_type(
                                     ctx,
-                                    ret.description
-                                ))
+                                    ret.type or "?",
+                                    ret.type_references
+                                )
                             end)
+                        end,
+                        function()
+                            if ret.description then
+                                ctx.builder:text(attr("description"), function()
+                                    ctx.builder:md(markdown_with_type_links(
+                                        ctx,
+                                        ret.description
+                                    ))
+                                end)
+                            end
                         end
-                    end)
+                    )
                 end
             end)
         end
