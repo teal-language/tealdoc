@@ -373,6 +373,123 @@ describe("Site generator", function()
         remove_tree(output)
     end)
 
+    it("preserves heading identities and file link targets", function()
+        local source = os.tmpname()
+        write_file(source, [[
+# Heading identity
+
+## foo_bar_baz
+
+## foo_bar_baz
+
+## _foo_bar_baz_
+
+## Explicit identity {#custom-id .custom-heading}
+]])
+        local output = os.tmpname()
+        os.remove(output)
+
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Identity test",
+            base = "/docs/",
+            validate_links = false,
+            footer_links = {
+                {
+                    text = "Download archive",
+                    path = "downloads/archive.zip?download=1#release",
+                },
+            },
+            pages = {
+                {
+                    path = "",
+                    title = "Home",
+                    source = source,
+                    layout = "home",
+                    hero_actions = {
+                        {
+                            text = "Download archive",
+                            path = "downloads/archive.zip?download=1#release",
+                        },
+                    },
+                },
+            },
+        })
+
+        local html = read_file(output .. "/index.html")
+        assert.is_truthy(html:find(
+            '<h2 id="foo-bar-baz" tabindex="-1">',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            '<h2 id="foo-bar-baz-2" tabindex="-1">',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            '<h2 id="foo-bar-baz-3" tabindex="-1">',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            '<h2 class="custom-heading" id="custom-id" tabindex="-1">',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find('href="#custom-id"', 1, true), html)
+        assert.is_falsy(html:find("data-tealdoc-heading-slug", 1, true))
+        assert.is_falsy(html:find("{#custom-id", 1, true))
+        assert.is_truthy(html:find(
+            'href="/docs/downloads/archive.zip?download=1#release"',
+            1,
+            true
+        ), html)
+        assert.is_falsy(html:find(
+            'archive.zip?download=1#release/"',
+            1,
+            true
+        ), html)
+
+        remove_tree(output)
+        os.remove(source)
+    end)
+
+    it("rejects duplicate explicit heading IDs", function()
+        local source = os.tmpname()
+        write_file(source, [[
+# Duplicate IDs
+
+## First {#repeated}
+
+## Second {#repeated}
+]])
+        local output = os.tmpname()
+        os.remove(output)
+
+        local ok, message = pcall(function()
+            SiteGenerator.build(output, DefaultEnv.init(), {
+                title = "Duplicate heading test",
+                validate_links = false,
+                pages = {
+                    {
+                        path = "",
+                        title = "Home",
+                        source = source,
+                    },
+                },
+            })
+        end)
+        assert.is_false(ok)
+        assert.is_truthy(tostring(message):find(
+            "duplicate explicit heading id: repeated",
+            1,
+            true
+        ), tostring(message))
+
+        remove_tree(output)
+        os.remove(source)
+    end)
+
     it("composes source and API docs into a responsive static site", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

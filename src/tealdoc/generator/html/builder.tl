@@ -8,6 +8,7 @@ local record HTMLBuilder is Generator.Builder
         fenced_divs: boolean
         blockquote: function(any): any
         div: function(any, {string: string}): any
+        header: function(any, integer, {string: string}): any
         paragraph: function(any): any
     end
 
@@ -18,21 +19,31 @@ end
 
 function HTMLBuilder.init(options?: HTMLBuilder.Options): HTMLBuilder
     local writer = lunamark.writer.html.new()
+    local dynamic_writer = writer as {string: any}
     if options and options.blockquote then
         writer.blockquote = options.blockquote
     end
     if options and options.div then
         writer.div = options.div
     end
+    if options and options.header then
+        dynamic_writer["header"] = options.header
+    end
     if options and options.paragraph then
-        local dynamic_writer = writer as {string: any}
         dynamic_writer["paragraph"] = options.paragraph
     end
-    local parse = lunamark.reader.markdown.new(writer, {
+    local reader_options: {string: any} = {
         fenced_code_blocks = true,
         fenced_divs = options and options.fenced_divs or false,
+        header_attributes = true,
         pipe_tables = true,
-    })
+    }
+    local markdown_reader = lunamark.reader.markdown as {string: any}
+    local create_reader = markdown_reader["new"] as function(
+        any,
+        any
+    ): function(string): string
+    local parse = create_reader(writer, reader_options)
 
     local builder: HTMLBuilder = {
         output = {},
