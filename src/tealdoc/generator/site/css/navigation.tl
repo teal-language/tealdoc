@@ -95,12 +95,21 @@ return [[
     position: relative;
     margin: 0;
     padding: 0.22rem 1.2rem 0 0.55rem;
-    color: var(--tealdoc-sidebar-heading-color);
     cursor: pointer;
     font-family: var(--tealdoc-sidebar-font-family);
     font-size: var(--tealdoc-sidebar-heading-font-size);
     font-weight: var(--tealdoc-sidebar-heading-font-weight);
     list-style: none;
+}
+
+/* Pico colors an accordion summary through
+ * `details[open] > summary:not([role]):not(:focus)`, and a class and an
+ * element name do not outweigh that, so the theme's own color has to be
+ * claimed at the same specificity or the heading is Pico's slate on every
+ * site. Both states, because the closed one is out-specified too. */
+.tealdoc-sidebar-section details > summary:not([role]),
+.tealdoc-sidebar-section details[open] > summary:not([role]) {
+    color: var(--tealdoc-sidebar-heading-color);
 }
 
 .tealdoc-sidebar-section details[open] > summary {
