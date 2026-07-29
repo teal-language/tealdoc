@@ -1453,7 +1453,11 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            ".tealdoc-sidebar-section summary {\n    position: relative;\n    margin: 0;\n    padding: 0.22rem 1.2rem 0 0.55rem;",
+            ".tealdoc-sidebar-section summary {\n" ..
+                "    position: relative;\n" ..
+                "    margin: 0;\n" ..
+                "    padding: var(--tealdoc-sidebar-item-padding);\n" ..
+                "    padding-right: 1.2rem;",
             1,
             true
         ))
