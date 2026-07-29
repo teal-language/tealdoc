@@ -1551,6 +1551,63 @@ local function home_hero(
    return table.concat(output)
 end
 
+
+
+
+
+
+
+
+
+
+local function submodule_summary(
+   page,
+   context,
+   base)
+
+   local route = (page.path or ""):gsub("/+$", "")
+   if route == "" then
+      return ""
+   end
+   local children = {}
+   for _, other in ipairs(context.pages or {}) do
+      local candidate = (other.path or ""):gsub("/+$", "")
+      local rest = candidate:match("^" .. route:gsub("%p", "%%%0") .. "/(.+)$")
+      if rest and not rest:find("/") then
+         table.insert(children, other)
+      end
+   end
+   if #children == 0 then
+      return ""
+   end
+   table.sort(children, function(
+      left,
+      right)
+
+      return (left.title or "") < (right.title or "")
+   end)
+
+   local output = {
+      "### Submodules\n\n",
+      "| Submodule | Description |\n",
+      "| --- | --- |\n",
+   }
+   for _, child in ipairs(children) do
+      table.insert(
+      output,
+      "| [`" ..
+      escape_html(child.title or child.path) ..
+      "`](" ..
+      escape_html(page_url(base, child.path)) ..
+      ") | " ..
+      escape_html(child.description or "") ..
+      " |\n")
+
+   end
+   table.insert(output, "\n")
+   return table.concat(output)
+end
+
 local function render_page(
    page,
    view,
@@ -1567,10 +1624,8 @@ local function render_page(
    used_examples)
 
    if api ~= "" then
-      local summary = SiteApi.summary(
-      view,
-      resolver)
-
+      local summary = submodule_summary(page, context, context.settings.base) ..
+      SiteApi.summary(view, resolver)
       local introduction = ""
       local public_name = view.public
       if not markdown:match("%S") then

@@ -1551,6 +1551,63 @@ local function home_hero(
     return table.concat(output)
 end
 
+--- The pages routed directly beneath this one, which is what a submodule is
+--- from the site's point of view.
+---
+--- Not read from the type graph, because a namespace and a module do not have
+--- to be the same thing: a page assembled from four modules has no single
+--- record whose fields are its submodules, and a module documented on its own
+--- page is not a field of anything. What does hold is the routing. A page at
+--- `modules/gfx/layers` is inside the one at `modules/gfx`, and that is true
+--- of any site whose routes nest, without it having to say so twice.
+local function submodule_summary(
+    page: SiteGenerator.Page,
+    context: SiteGenerator.Context,
+    base: string
+): string
+    local route = (page.path or ""):gsub("/+$", "")
+    if route == "" then
+        return ""
+    end
+    local children: {SiteGenerator.Page} = {}
+    for _, other in ipairs(context.pages or {}) do
+        local candidate = (other.path or ""):gsub("/+$", "")
+        local rest = candidate:match("^" .. route:gsub("%p", "%%%0") .. "/(.+)$")
+        if rest and not rest:find("/") then
+            table.insert(children, other)
+        end
+    end
+    if #children == 0 then
+        return ""
+    end
+    table.sort(children, function(
+        left: SiteGenerator.Page,
+        right: SiteGenerator.Page
+    ): boolean
+        return (left.title or "") < (right.title or "")
+    end)
+
+    local output: {string} = {
+        "### Submodules\n\n",
+        "| Submodule | Description |\n",
+        "| --- | --- |\n",
+    }
+    for _, child in ipairs(children) do
+        table.insert(
+            output,
+            "| [`" ..
+                escape_html(child.title or child.path) ..
+                "`](" ..
+                escape_html(page_url(base, child.path)) ..
+                ") | " ..
+                escape_html(child.description or "") ..
+                " |\n"
+        )
+    end
+    table.insert(output, "\n")
+    return table.concat(output)
+end
+
 local function render_page(
     page: SiteGenerator.Page,
     view: SiteTypes.ApiView,
@@ -1567,10 +1624,8 @@ local function render_page(
         used_examples
     )
     if api ~= "" then
-        local summary = SiteApi.summary(
-            view,
-            resolver
-        )
+        local summary = submodule_summary(page, context, context.settings.base) ..
+            SiteApi.summary(view, resolver)
         local introduction = ""
         local public_name = view.public
         if not markdown:match("%S") then
