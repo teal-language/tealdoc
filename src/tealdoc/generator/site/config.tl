@@ -102,6 +102,7 @@ local site_keys: {string: boolean} = {
     examples = true,
     validate_links = true,
     pages = true,
+    sidebar = true,
     nav = true,
     sources = true,
     before_build = true,
@@ -156,6 +157,13 @@ local feature_keys: {string: boolean} = {
 local head_entry_keys: {string: boolean} = {
     tag = true,
     attributes = true,
+}
+
+local sidebar_item_keys: {string: boolean} = {
+    text = true,
+    path = true,
+    items = true,
+    collapsed = true,
 }
 
 local function normalize_base(base: any): string
@@ -253,6 +261,7 @@ function SiteConfig.configure(
         "redirects",
         "examples",
         "pages",
+        "sidebar",
         "nav",
         "sources",
         "head",
@@ -330,6 +339,7 @@ function SiteConfig.configure(
         examples = {},
         validate_links = values["validate_links"] ~= false,
         pages = {},
+        sidebar = {},
         nav = {},
         sources = {},
         before_build = values["before_build"] as function(SiteTypes.Context),
@@ -387,7 +397,6 @@ function SiteConfig.configure(
         for _, key in ipairs({
             "description",
             "source",
-            "api",
             "public",
             "layout",
             "hero_title",
@@ -403,6 +412,39 @@ function SiteConfig.configure(
                 page[key] == nil or type(page[key]) == "string",
                 name .. "." .. key .. " must be a string"
             )
+        end
+        assert(
+            page["api"] == nil
+                or type(page["api"]) == "string"
+                or type(page["api"]) == "table",
+            name .. ".api must be a string or list of strings"
+        )
+        if type(page["api"]) == "string" then
+            assert(page["api"] ~= "", name .. ".api must not be empty")
+        elseif type(page["api"]) == "table" then
+            local seen: {string: boolean} = {}
+            local modules = page["api"] as {any}
+            assert(#modules > 0, name .. ".api must not be empty")
+            assert(
+                type(page["public"]) == "string" and page["public"] ~= "",
+                name .. ".public is required when api contains several modules"
+            )
+            for module_index, module_name in ipairs(modules) do
+                assert(
+                    type(module_name) == "string" and module_name ~= "",
+                    name ..
+                        ".api[" ..
+                        tostring(module_index) ..
+                        "] must be a non-empty string"
+                )
+                assert(
+                    not seen[module_name as string],
+                    name ..
+                        ".api contains duplicate module " ..
+                        tostring(module_name)
+                )
+                seen[module_name as string] = true
+            end
         end
         assert(
             page["hero_actions"] == nil
@@ -456,6 +498,77 @@ function SiteConfig.configure(
             )
         end
         table.insert(settings.pages, normalized)
+    end
+    local pages_by_path: {string: SiteTypes.Page} = {}
+    for _, page in ipairs(settings.pages) do
+        pages_by_path[page.path] = page
+    end
+    local normalize_sidebar_item: function(any, string): SiteTypes.SidebarItem
+    normalize_sidebar_item = function(
+        item_value: any,
+        name: string
+    ): SiteTypes.SidebarItem
+        validate_keys(item_value, sidebar_item_keys, name)
+        local item = item_value as {string: any}
+        assert(
+            item["text"] == nil or type(item["text"]) == "string",
+            name .. ".text must be a string"
+        )
+        assert(
+            item["path"] == nil or type(item["path"]) == "string",
+            name .. ".path must be a string"
+        )
+        assert(
+            item["items"] == nil or type(item["items"]) == "table",
+            name .. ".items must be a table"
+        )
+        assert(
+            item["collapsed"] == nil or type(item["collapsed"]) == "boolean",
+            name .. ".collapsed must be a boolean"
+        )
+        assert(
+            item["path"] ~= nil
+                or type(item["text"]) == "string" and item["text"] ~= "",
+            name .. " requires text or path"
+        )
+        local path: string
+        if item["path"] ~= nil then
+            path = normalize_route(item["path"], name .. ".path", true)
+            assert(
+                pages_by_path[path] ~= nil,
+                name .. ".path does not name a configured page: " .. path
+            )
+        end
+        local normalized: SiteTypes.SidebarItem = {
+            text = (item["text"]
+                or path and pages_by_path[path].title) as string,
+            path = path,
+            items = {},
+            collapsed = item["collapsed"] == true,
+        }
+        for child_index, child in ipairs(item["items"] as {any} or {}) do
+            table.insert(
+                normalized.items,
+                normalize_sidebar_item(
+                    child,
+                    name .. ".items[" .. tostring(child_index) .. "]"
+                )
+            )
+        end
+        assert(
+            normalized.path ~= nil or #normalized.items > 0,
+            name .. " without a path requires nested items"
+        )
+        return normalized
+    end
+    for index, item in ipairs(values["sidebar"] as {any} or {}) do
+        table.insert(
+            settings.sidebar,
+            normalize_sidebar_item(
+                item,
+                "tealdoc.site.sidebar[" .. tostring(index) .. "]"
+            )
+        )
     end
     for index, example_value in ipairs(values["examples"] as {any} or {}) do
         local name = "tealdoc.site.examples[" .. tostring(index) .. "]"

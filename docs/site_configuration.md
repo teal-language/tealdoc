@@ -294,7 +294,8 @@ sources = {
 
 Optional ordered array, defaulting to `{}`. Each page requires `title`; `path`
 defaults to the home route. `source` adds handwritten Markdown, while `api`
-selects a processed Teal module whose generated reference is appended.
+selects one processed Teal module or an ordered list of modules whose generated
+reference is appended.
 
 ```lua
 pages = {
@@ -331,6 +332,16 @@ pages = {
         image = "/images/api-card.png",
         noindex = false,
     },
+    {
+        path = "reference/graphics",
+        title = "Graphics",
+        api = {
+            "my.components",
+            "my.camera",
+            "my.renderer",
+        },
+        public = "my.graphics",
+    },
 }
 ```
 
@@ -339,6 +350,48 @@ Page fields are `path`, `title`, `description`, `source`, `api`, `public`,
 `hero_actions`, `features`, `canonical`, `image`, and `noindex`.
 `hero_actions` is an array of `{ text, path, theme? }` links. `features` is an
 array of `{ title, details?, icon?, image? }` tables.
+
+When `api` is a list, `public` is required. Tealdoc projects every contributing
+module's direct public children under that public namespace without changing
+the parsed registry. Two modules that project an item to the same public path
+fail the build. Type and alias links are emitted only for exact items rendered
+by a configured API page.
+
+## sidebar
+
+Optional recursively nested array. When omitted, Tealdoc derives its sidebar
+from page routes. Each explicit item accepts `text`, `path`, nested `items`,
+and `collapsed`. A page item may omit `text`, in which case its configured page
+title is used. A group may omit `path`; a group with a path renders that page
+as its first `Overview` row.
+
+```lua
+sidebar = {
+    {
+        text = "CLI",
+        path = "docs/cli",
+        collapsed = true,
+        items = {
+            { path = "docs/cli/configuration" },
+        },
+    },
+    {
+        text = "my.ecs",
+        path = "docs/ecs",
+        items = {
+            {
+                path = "docs/ecs/components",
+                items = {
+                    { path = "docs/ecs/components/bundles" },
+                },
+            },
+        },
+    },
+}
+```
+
+Every `path` must name a configured page. The group containing the current
+page opens even when `collapsed = true`.
 
 ## examples
 

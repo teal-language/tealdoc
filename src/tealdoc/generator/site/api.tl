@@ -7,20 +7,17 @@ local SiteTypes = require("tealdoc.generator.site.types")
 local record SiteApi
     source_markdown: function(page: SiteTypes.Page): string
     type_links: function(
-        page: SiteTypes.Page,
-        env: tealdoc.Env,
+        view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver
     ): Highlighter.Links
     markdown: function(
-        page: SiteTypes.Page,
-        env: tealdoc.Env,
+        view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver,
         attached_examples: {string: {SiteTypes.PreparedExample}},
         used_examples: {string: boolean}
     ): string
     summary: function(
-        page: SiteTypes.Page,
-        env: tealdoc.Env,
+        view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver
     ): string
 end
@@ -105,47 +102,42 @@ local function add_type_link(
 end
 
 function SiteApi.type_links(
-    page: SiteTypes.Page,
-    env: tealdoc.Env,
+    view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver
 ): Highlighter.Links
     local links: Highlighter.Links = {}
     local ambiguous: {string: boolean} = {}
-    if not page.api then
+    if not view then
         return links
     end
-
-    local function belongs_to_page(path: string): boolean
-        return path == page.api
-            or path:sub(1, #page.api + 1) == page.api .. "."
-    end
+    local env = view.env
 
     local function add_reference(reference: tealdoc.TypeReference)
         local url = MarkdownGenerator.resolve_type_url(
             env,
             reference.path,
-            resolver
+            resolver,
+            false
         )
         add_type_link(links, ambiguous, reference.name, url)
     end
 
-    for path, item in pairs(env.registry) do
-        if belongs_to_page(path) then
-            if item is tealdoc.TypeItem
-                and path ~= page.api
-                and Generator.filter(item, env)
-            then
-                add_type_link(links, ambiguous, item.name, resolver(path))
-            elseif item is tealdoc.FunctionItem then
-                for _, param in ipairs(item.params or {}) do
-                    for _, reference in ipairs(param.type_references or {}) do
-                        add_reference(reference)
-                    end
+    for path in pairs(view.public_paths) do
+        local item = env.registry[path]
+        if item and item is tealdoc.TypeItem
+            and path ~= view.public
+            and Generator.filter(item, env)
+        then
+            add_type_link(links, ambiguous, item.name, resolver(path))
+        elseif item and item is tealdoc.FunctionItem then
+            for _, param in ipairs(item.params or {}) do
+                for _, reference in ipairs(param.type_references or {}) do
+                    add_reference(reference)
                 end
-                for _, result in ipairs(item.returns or {}) do
-                    for _, reference in ipairs(result.type_references or {}) do
-                        add_reference(reference)
-                    end
+            end
+            for _, result in ipairs(item.returns or {}) do
+                for _, reference in ipairs(result.type_references or {}) do
+                    add_reference(reference)
                 end
             end
         end
@@ -182,24 +174,19 @@ local function add_kind_badges(markdown: string, env: tealdoc.Env): string
 end
 
 function SiteApi.markdown(
-    page: SiteTypes.Page,
-    env: tealdoc.Env,
+    view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {SiteTypes.PreparedExample}},
     used_examples: {string: boolean}
 ): string
-    if not page.api then
+    if not view then
         return ""
     end
 
-    local page_env = tealdoc.Env.init()
-    page_env.registry = env.registry
-    page_env.modules = {page.api}
-    page_env.include_all = env.include_all
-    page_env.no_warnings_on_missing = true
+    local page_env = view.env
 
     local output = os.tmpname()
-    MarkdownGenerator.init(output, resolver):run(page_env)
+    MarkdownGenerator.init(output, resolver, false):run(page_env)
     local markdown = read_file(output)
     os.remove(output)
     markdown = add_kind_badges(markdown, page_env)
@@ -237,18 +224,11 @@ function SiteApi.markdown(
         end
     end
 
-    local module_anchor = '<a id="' .. page.api .. '"></a>'
+    local module_anchor = '<a id="' .. view.public .. '"></a>'
     local _, ending = markdown:find(module_anchor, 1, true)
     if ending then
         markdown = markdown:sub(ending + 1)
     end
-    if page.public and page.public ~= page.api then
-        markdown = markdown:gsub(
-            page.api:gsub("([^%w])", "%%%1"),
-            page.public
-        )
-    end
-
     markdown = "\n" .. markdown
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
         return "\n" .. string.rep("#", math.min(#level + 1, 6)) .. " "
@@ -303,14 +283,14 @@ local function item_summary(item: tealdoc.Item, env: tealdoc.Env): string
 end
 
 function SiteApi.summary(
-    page: SiteTypes.Page,
-    env: tealdoc.Env,
+    view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver
 ): string
-    if not page.api then
+    if not view then
         return ""
     end
-    local module = env.registry[page.api]
+    local env = view.env
+    local module = env.registry[view.public]
     if not module or not module.children then
         return ""
     end

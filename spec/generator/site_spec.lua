@@ -196,6 +196,183 @@ describe("Site generator", function()
         assert.is_falsy(declaration:find("tealdoc-code-link", 1, true))
     end)
 
+    it("assembles one public API page from several source modules", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record first
+                --- A projected widget.
+                record Widget
+                    name: string
+                end
+
+                --- A shared alias exported by more than one module.
+                type Shared = Widget
+            end
+
+            return first
+        ]], "first.tl", env)
+        tealdoc.process_text([[
+            local type first = require("first")
+            local record hidden
+                record Secret
+                end
+            end
+
+            return hidden
+        ]], "hidden.tl", env)
+        tealdoc.process_text([[
+            local type first = require("first")
+            local type hidden = require("hidden")
+            local record second
+                --- An alias that remains linked after projection.
+                type WidgetAlias = first.Widget
+
+                --- The same shared alias re-exported here.
+                type Shared = first.Widget
+
+                --- Returns the same widget.
+                copy: function(widget: first.Widget): first.Widget
+
+                --- Mentions an internal type which has no public page.
+                conceal: function(secret: hidden.Secret)
+            end
+
+            return second
+        ]], "second.tl", env)
+        tealdoc.process_text([[
+            local record Camera
+                --- Horizontal position.
+                x: number
+            end
+
+            return Camera
+        ]], "Camera.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Combined API",
+            pages = {
+                {
+                    path = "",
+                    title = "Home",
+                },
+                {
+                    path = "api",
+                    title = "Combined",
+                    api = {"first", "second", "Camera"},
+                    public = "public.api",
+                },
+            },
+        })
+
+        local html = read_file(output .. "/api/index.html")
+        assert.is_truthy(html:find('id="public.api.Widget"', 1, true), html)
+        assert.is_truthy(html:find('id="public.api.WidgetAlias"', 1, true), html)
+        assert.equals(
+            1,
+            select(2, html:gsub('id="public.api.Shared"', ""))
+        )
+        assert.is_truthy(html:find('id="public.api.copy"', 1, true), html)
+        assert.is_truthy(html:find('id="public.api.Camera"', 1, true), html)
+        assert.is_truthy(html:find('id="public.api.Camera.x"', 1, true), html)
+        assert.is_falsy(html:find('id="public.api.x"', 1, true))
+        assert.is_truthy(html:find('href="/api/#public.api.Widget"', 1, true), html)
+        assert.is_falsy(html:find("#public.api.Secret", 1, true))
+        assert.is_falsy(html:find("#hidden.Secret", 1, true))
+
+        remove_tree(output)
+    end)
+
+    it("rejects collisions between projected API modules", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record first
+                --- First value.
+                value: string
+            end
+            return first
+        ]], "first.tl", env)
+        tealdoc.process_text([[
+            local record second
+                --- Second value.
+                value: string
+            end
+            return second
+        ]], "second.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        assert.has_error(function()
+            SiteGenerator.build(output, env, {
+                title = "Collision",
+                pages = {
+                    {
+                        path = "api",
+                        title = "API",
+                        api = {"first", "second"},
+                        public = "public.api",
+                    },
+                },
+            })
+        end, "duplicate public API path public.api.value from first.value and second.value")
+        remove_tree(output)
+    end)
+
+    it("renders an explicitly titled recursively nested sidebar", function()
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Navigation",
+            pages = {
+                {path = "", title = "Home"},
+                {path = "docs/cli", title = "Command line"},
+                {path = "docs/cli/config", title = "Configuration"},
+                {path = "docs/ecs", title = "ECS"},
+                {path = "docs/ecs/components", title = "Components"},
+                {path = "docs/ecs/components/bundles", title = "Bundles"},
+            },
+            sidebar = {
+                {
+                    text = "CLI",
+                    path = "docs/cli",
+                    collapsed = true,
+                    items = {
+                        {path = "docs/cli/config"},
+                    },
+                },
+                {
+                    text = "tecs.ecs",
+                    path = "docs/ecs",
+                    items = {
+                        {
+                            path = "docs/ecs/components",
+                            items = {
+                                {path = "docs/ecs/components/bundles"},
+                            },
+                        },
+                    },
+                },
+            },
+        })
+
+        local html = read_file(output .. "/docs/ecs/components/bundles/index.html")
+        assert.is_truthy(html:find("<summary>CLI</summary>", 1, true), html)
+        assert.is_truthy(html:find("<summary>tecs.ecs</summary>", 1, true), html)
+        assert.is_truthy(html:find("<summary>Components</summary>", 1, true), html)
+        assert.is_truthy(html:find(">Overview</a>", 1, true), html)
+        assert.is_truthy(html:find(
+            'href="/docs/ecs/components/bundles/" aria-current="page">Bundles</a>',
+            1,
+            true
+        ), html)
+        assert.is_falsy(html:find("<summary>Docs</summary>", 1, true))
+
+        remove_tree(output)
+    end)
+
     it("composes source and API docs into a responsive static site", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

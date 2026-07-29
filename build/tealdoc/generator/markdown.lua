@@ -196,12 +196,18 @@ local MarkdownGenerator = {}
 
 
 
+
+
+
+
+
 MarkdownGenerator.item_phases = {}
 
 function MarkdownGenerator.resolve_type_url(
    env,
    path,
-   type_url_for_path)
+   type_url_for_path,
+   allow_local_type_links)
 
    local seen = {}
    while path and not seen[path] do
@@ -211,7 +217,9 @@ function MarkdownGenerator.resolve_type_url(
          return type_url_for_path(path)
       end
       if Generator.filter(item, env) then
-         return type_url_for_path(path) or "#" .. path
+         return type_url_for_path(path) or
+         allow_local_type_links ~= false and "#" .. path or
+         nil
       end
       if item.kind == "type" and
          item.type_kind == "type" and
@@ -225,7 +233,11 @@ function MarkdownGenerator.resolve_type_url(
    return nil
 end
 
-MarkdownGenerator.init = function(output, type_url_for_path)
+MarkdownGenerator.init = function(
+   output,
+   type_url_for_path,
+   allow_local_type_links)
+
    local builder = MarkdownBuilder.init()
    local base = Generator.Base.init()
    base.item_phases = MarkdownGenerator.item_phases
@@ -243,7 +255,8 @@ MarkdownGenerator.init = function(output, type_url_for_path)
             return MarkdownGenerator.resolve_type_url(
             env,
             path,
-            type_url_for_path)
+            type_url_for_path,
+            allow_local_type_links)
 
          end
       end

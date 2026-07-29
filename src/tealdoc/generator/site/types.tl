@@ -24,7 +24,7 @@ local record SiteTypes
         title: string
         description: string
         source: string
-        api: string
+        api: string | {string}
         public: string
         layout: string
         hero_title: string
@@ -39,6 +39,13 @@ local record SiteTypes
         canonical: string
         image: string
         noindex: boolean
+    end
+
+    record SidebarItem
+        text: string
+        path: string
+        items: {SidebarItem}
+        collapsed: boolean
     end
 
     record Example
@@ -80,6 +87,7 @@ local record SiteTypes
         examples: {Example}
         validate_links: boolean
         pages: {Page}
+        sidebar: {SidebarItem}
         nav: {Link}
         sources: {string}
         before_build: function(Context)
@@ -100,6 +108,15 @@ local record SiteTypes
         source: string
         language: string
         code: string
+    end
+
+    record ApiView
+        public: string
+        modules: {string}
+        env: tealdoc.Env
+        source_to_public: {string: string}
+        public_paths: {string: boolean}
+        source_paths: {string}
     end
 end
 

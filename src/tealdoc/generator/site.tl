@@ -12,6 +12,7 @@ local SiteExamples = require("tealdoc.generator.site.examples")
 local SiteMarkdown = require("tealdoc.generator.site.markdown")
 local SiteTypes = require("tealdoc.generator.site.types")
 local SiteValidator = require("tealdoc.generator.site.validator")
+local SiteView = require("tealdoc.generator.site.view")
 local lfs = require("lfs")
 
 local record SiteGenerator
@@ -362,33 +363,46 @@ end
 
 local function routes_for_pages(
     pages: {SiteGenerator.Page},
+    views: {string: SiteTypes.ApiView},
     base: string
 ): MarkdownGenerator.URLResolver
-    local mapped: {string: SiteGenerator.Page} = {}
-    local prefixes: {string} = {}
-    for _, page in ipairs(pages) do
-        if page.api then
-            mapped[page.api] = page
-            table.insert(prefixes, page.api)
+    local routes: {string: string} = {}
+    local owners: {string: string} = {}
+    local function add(path: string, url: string, owner: string)
+        if routes[path] then
+            assert(
+                routes[path] == url,
+                "public API path " ..
+                    path ..
+                    " is rendered by both " ..
+                    owners[path] ..
+                    " and " ..
+                    owner
+            )
+            return
         end
+        routes[path] = url
+        owners[path] = owner
     end
-    table.sort(prefixes, function(a: string, b: string): boolean
-        return #a > #b
-    end)
 
-    return function(path: string): string
-        for _, prefix in ipairs(prefixes) do
-            if path == prefix or path:sub(1, #prefix + 1) == prefix .. "." then
-                local page = mapped[prefix]
-                local url = page_url(base, page.path)
-                if path ~= prefix then
-                    local public = page.public or prefix
-                    url = url .. "#" .. public .. path:sub(#prefix + 1)
+    for _, page in ipairs(pages) do
+        local view = views[page.path]
+        if view then
+            local page_root = page_url(base, page.path)
+            add(view.public, page_root, page.path)
+            for source_path, public_path in pairs(view.source_to_public) do
+                local url = page_root
+                if public_path ~= view.public then
+                    url = url .. "#" .. public_path
                 end
-                return url
+                add(source_path, url, page.path)
+                add(public_path, url, page.path)
             end
         end
-        return nil
+    end
+
+    return function(path: string): string
+        return routes[path]
     end
 end
 
@@ -516,8 +530,72 @@ end
 local function sidebar(
     pages: {SiteGenerator.Page},
     current: string,
-    base: string
+    base: string,
+    configured: {SiteTypes.SidebarItem}
 ): string
+    if configured and #configured > 0 then
+        local contains_current: function(SiteTypes.SidebarItem): boolean
+        contains_current = function(item: SiteTypes.SidebarItem): boolean
+            if item.path == current then
+                return true
+            end
+            for _, child in ipairs(item.items or {}) do
+                if contains_current(child) then
+                    return true
+                end
+            end
+            return false
+        end
+
+        local render_item: function(SiteTypes.SidebarItem): string
+        render_item = function(item: SiteTypes.SidebarItem): string
+            if not item.items or #item.items == 0 then
+                local selected = item.path == current
+                    and ' aria-current="page"'
+                    or ""
+                return '<li><a href="' ..
+                    escape_html(page_url(base, item.path)) ..
+                    '"' ..
+                    selected ..
+                    ">" ..
+                    escape_html(item.text) ..
+                    "</a></li>"
+            end
+
+            local children: {string} = {}
+            if item.path then
+                local selected = item.path == current
+                    and ' aria-current="page"'
+                    or ""
+                table.insert(
+                    children,
+                    '<li><a href="' ..
+                        escape_html(page_url(base, item.path)) ..
+                        '"' ..
+                        selected ..
+                        ">Overview</a></li>"
+                )
+            end
+            for _, child in ipairs(item.items) do
+                table.insert(children, render_item(child))
+            end
+            local open = not item.collapsed or contains_current(item)
+            return '<li class="tealdoc-sidebar-section"><details' ..
+                (open and " open" or "") ..
+                "><summary>" ..
+                escape_html(item.text) ..
+                "</summary><ul>" ..
+                table.concat(children, "\n") ..
+                "</ul></details></li>"
+        end
+
+        local explicit: {string} = {}
+        for _, item in ipairs(configured) do
+            table.insert(explicit, render_item(item))
+        end
+        return table.concat(explicit, "\n")
+    end
+
     local output: {string} = {}
     local groups: {string: {SiteGenerator.Page}} = {}
     local group_order: {string} = {}
@@ -1102,6 +1180,7 @@ end
 
 local function render_page(
     page: SiteGenerator.Page,
+    view: SiteTypes.ApiView,
     context: SiteGenerator.Context,
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {PreparedExample}},
@@ -1109,20 +1188,18 @@ local function render_page(
 ): string, {SearchEntry}, string
     local markdown = SiteApi.source_markdown(page)
     local api = SiteApi.markdown(
-        page,
-        context.env,
+        view,
         resolver,
         attached_examples,
         used_examples
     )
     if api ~= "" then
         local summary = SiteApi.summary(
-            page,
-            context.env,
+            view,
             resolver
         )
         local introduction = ""
-        local public_name = page.public or page.api
+        local public_name = view.public
         if not markdown:match("%S") then
             introduction = "\n\nPublic APIs in `" .. public_name .. "`."
         end
@@ -1137,7 +1214,7 @@ local function render_page(
             api
     end
 
-    local type_links = SiteApi.type_links(page, context.env, resolver)
+    local type_links = SiteApi.type_links(view, resolver)
     local content = SiteMarkdown.render(markdown, type_links)
     local outline: string
     local page_headings: {Heading}
@@ -1167,7 +1244,12 @@ local function render_page(
 
     local assets = page_url(settings.base, "assets")
     local title = page.title .. " | " .. settings.title
-    local sidebar_html = sidebar(context.pages, page.path, settings.base)
+    local sidebar_html = sidebar(
+        context.pages,
+        page.path,
+        settings.base,
+        settings.sidebar
+    )
     local shell_class = "tealdoc-shell"
     local content_class = "tealdoc-content"
     local sidebar_region = '<aside class="tealdoc-sidebar" aria-label="Page navigation"><ul>' ..
@@ -1422,7 +1504,13 @@ function SiteGenerator.build(
     write_file(js_path, default_js)
     table.insert(context.files, js_path)
 
-    local resolver = routes_for_pages(context.pages, settings.base)
+    local views: {string: SiteTypes.ApiView} = {}
+    for _, page in ipairs(context.pages) do
+        if page.api then
+            views[page.path] = SiteView.prepare(page, context.env)
+        end
+    end
+    local resolver = routes_for_pages(context.pages, views, settings.base)
     local search_entries: {SearchEntry} = {}
     for _, page in ipairs(context.pages) do
         local directory = output
@@ -1436,6 +1524,7 @@ function SiteGenerator.build(
         local markdown: string
         html, page_entries, markdown = render_page(
             page,
+            views[page.path],
             context,
             resolver,
             attached_examples,
@@ -1493,6 +1582,7 @@ function SiteGenerator.build(
         local markdown: string
         html, _, markdown = render_page(
             missing,
+            nil,
             context,
             resolver,
             attached_examples,
