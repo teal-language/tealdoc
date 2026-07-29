@@ -9,6 +9,7 @@ local PageTemplate = require("tealdoc.generator.site.page_template")
 local SiteApi = require("tealdoc.generator.site.api")
 local SiteConfig = require("tealdoc.generator.site.config")
 local SiteExamples = require("tealdoc.generator.site.examples")
+local Scintillua = require("tealdoc.generator.site.scintillua")
 local SiteMarkdown = require("tealdoc.generator.site.markdown")
 local SiteTypes = require("tealdoc.generator.site.types")
 local SiteValidator = require("tealdoc.generator.site.validator")
@@ -1884,6 +1885,10 @@ function SiteGenerator.build(
    config_directory)
 
    local settings = SiteConfig.configure(raw_settings, config_directory)
+
+
+
+   Scintillua.configure(settings.lexers)
    local pages
    local attached_examples
    pages, attached_examples = SiteExamples.prepare(settings, env)

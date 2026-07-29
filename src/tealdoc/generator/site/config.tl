@@ -94,6 +94,7 @@ local site_keys: {string: boolean} = {
     robots = true,
     not_found = true,
     custom_css = true,
+    lexers = true,
     templates = true,
     copyright = true,
     license = true,
@@ -251,6 +252,7 @@ function SiteConfig.configure(
         "social_image",
         "twitter_site",
         "custom_css",
+        "lexers",
         "templates",
         "copyright",
         "license",
@@ -325,6 +327,7 @@ function SiteConfig.configure(
                 "tealdoc.site.custom_css"
             )
             or nil,
+        lexers = values["lexers"] as string,
         templates = values["templates"]
             and resolve_file_path(
                 directory,

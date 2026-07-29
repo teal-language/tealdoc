@@ -1,5 +1,6 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local HTMLBuilder = require("tealdoc.generator.html.builder")
 local Highlighter = require("tealdoc.generator.site.highlighter")
+local Scintillua = require("tealdoc.generator.site.scintillua")
 local Text = require("tealdoc.generator.text")
 
 local SiteMarkdown = {}
@@ -314,10 +315,20 @@ function SiteMarkdown.render(
       gsub("&quot;", '"'):
       gsub("&#39;", "'"):
       gsub("&amp;", "&")
+
+
+
+
       local links = links_for[language]
-      local body = links and
-      Highlighter.highlight(code, links) or
-      escape_html(code)
+      local body
+      if links then
+         body = Highlighter.highlight(code, links)
+      else
+         local segments = Scintillua.segments(language, code)
+         body = segments and
+         Highlighter.render(code, segments) or
+         escape_html(code)
+      end
       return '<div class="tealdoc-code-block" data-lang="' ..
       escape_html(language) ..
       '"><pre class="language-' ..
