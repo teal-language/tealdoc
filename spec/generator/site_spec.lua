@@ -1060,8 +1060,15 @@ print(value)
         assert.is_falsy(api:find("Every public item", 1, true))
         assert.is_truthy(api:find("<th>Function</th>", 1, true), api)
         assert.is_truthy(markdown:find("### Functions", 1, true), markdown)
+        -- The functions table carries no kind column, so a row goes straight
+        -- from the name to the description.
         assert.is_truthy(markdown:find(
-            "| [`reset`](/modules/api/#api.reset) | <span class=\"tealdoc-kind-badge tealdoc-kind-method\">method</span> |",
+            "| [`reset`](/modules/api/#api.reset) | ",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "| [`reset`](/modules/api/#api.reset) | <span",
             1,
             true
         ), markdown)

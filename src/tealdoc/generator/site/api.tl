@@ -327,10 +327,15 @@ function SiteApi.summary(
     -- reader arriving at a module wants either the shapes it defines or the
     -- calls it answers, and interleaving them by name means reading the kind
     -- column of every row to find out which of the two a name is.
-    local groups: {{string, string, {tealdoc.Item}}} = {
-        { "Types", "Type", {} },
-        { "Functions", "Function", {} },
-        { "Values", "Value", {} },
+    -- A kind column earns its place where the group holds more than one kind:
+    -- a type is a record or an interface or an enum, a value is a field or a
+    -- variable. Everything under Functions is called the same way whatever
+    -- `item_kind` names it, and the detail below carries the badge anyway, so
+    -- a column there would repeat the heading on every row.
+    local groups: {{string, string, boolean, {tealdoc.Item}}} = {
+        { "Types", "Type", true, {} },
+        { "Functions", "Function", false, {} },
+        { "Values", "Value", true, {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
@@ -340,33 +345,43 @@ function SiteApi.summary(
         elseif item is tealdoc.TypeItem then
             group = 1
         end
-        table.insert(groups[group][3], item)
+        table.insert(groups[group][4], item)
     end
 
     local output: {string} = {}
     for _, group in ipairs(groups) do
-        local heading, column, group_items = group[1], group[2], group[3]
+        local heading, column = group[1], group[2]
+        local show_kind, group_items = group[3], group[4]
         if #group_items > 0 then
             if #output > 0 then
                 table.insert(output, "\n")
             end
             table.insert(output, "### " .. heading .. "\n\n")
-            table.insert(output, "| " .. column .. " | Kind | Description |\n")
-            table.insert(output, "| --- | --- | --- |\n")
-            for _, item in ipairs(group_items) do
-                local url = resolver(item.path) or "#" .. item.path
-                local kind = Generator.item_kind(item, env)
+            if show_kind then
                 table.insert(
                     output,
-                    "| [`" ..
-                        item.name ..
-                        "`](" ..
-                        url ..
-                        ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
+                    "| " .. column .. " | Kind | Description |\n"
+                )
+                table.insert(output, "| --- | --- | --- |\n")
+            else
+                table.insert(output, "| " .. column .. " | Description |\n")
+                table.insert(output, "| --- | --- |\n")
+            end
+            for _, item in ipairs(group_items) do
+                local url = resolver(item.path) or "#" .. item.path
+                local cells = "| [`" .. item.name .. "`](" .. url .. ") | "
+                if show_kind then
+                    local kind = Generator.item_kind(item, env)
+                    cells = cells ..
+                        '<span class="tealdoc-kind-badge tealdoc-kind-' ..
                         kind ..
                         '">' ..
                         kind ..
-                        "</span> | " ..
+                        "</span> | "
+                end
+                table.insert(
+                    output,
+                    cells ..
                         item_summary(item, env) ..
                         " |\n"
                 )
