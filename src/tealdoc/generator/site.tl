@@ -2137,6 +2137,19 @@ function SiteGenerator.build(
     mkdir_p(output)
     mkdir_p(output .. "/assets")
 
+    -- Everything that writes runs inside this, so a build that fails partway
+    -- takes its own output back out with it.
+    --
+    -- The manifest is published only by a build that finished, which is what
+    -- keeps a failure from claiming files it never wrote. Left alone, though,
+    -- that is half a transaction: the record rolls back and the files do not,
+    -- so the next run met output nothing claimed to own and refused to touch
+    -- it, naming a different file each time depending on which the iteration
+    -- reached first. Removing what this build wrote makes the two halves
+    -- agree.
+    local function render_everything()
+    mkdir_p(output .. "/assets")
+
     copy_public_files(output, public_files, context.files)
 
     local css = default_css
@@ -2317,6 +2330,26 @@ function SiteGenerator.build(
         SiteValidator.validate(output, settings.base, validation_files)
     end
     write_manifest(output, owned)
+    end
+
+    local failure: any
+    local ok = xpcall(render_everything, function(message: any): any
+        failure = message
+        return message
+    end)
+    if not ok then
+        for path in pairs(planned) do
+            if path ~= MANIFEST_PATH and not previous[path] then
+                local destination = output .. "/" .. path
+                local attributes = lfs.symlinkattributes(destination)
+                if attributes and attributes.mode == "file" then
+                    os.remove(destination)
+                end
+                remove_empty_parents(output, path)
+            end
+        end
+        error(failure, 0)
+    end
 end
 
 return SiteGenerator
