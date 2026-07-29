@@ -144,26 +144,29 @@ return [[
     margin-bottom: 0;
 }
 
-/* The marker centers against the row rather than sitting a fixed distance
- * from its top, so it stays put whatever the item padding is set to. */
+/* The marker is drawn from two borders rather than set as a glyph, and it
+ * centers against the row rather than sitting a fixed distance from its top.
+ * A glyph carries its own ink offset inside the line box, so rotating one
+ * moves the mark it draws as well as turning it, and the arrow appeared to
+ * drop as the group opened. Two borders on a square rotate about the middle
+ * of the square, which is where the eye reads the arrow as being. */
 .tealdoc-sidebar-section summary::after {
     position: absolute;
     top: 50%;
-    right: 0.35rem;
-    color: var(--tealdoc-text-faint);
-    width: auto;
-    height: auto;
+    right: 0.5rem;
+    width: 0.36rem;
+    height: 0.36rem;
     margin: 0;
+    border-right: 1.5px solid var(--tealdoc-text-faint);
+    border-bottom: 1.5px solid var(--tealdoc-text-faint);
     background-image: none !important;
-    content: "›";
-    font-size: 1rem;
-    line-height: 1;
-    transform: translateY(-50%) rotate(90deg);
+    content: "";
+    transform: translateY(-50%) rotate(45deg);
     transition: transform 120ms ease;
 }
 
 .tealdoc-sidebar-section details:not([open]) summary::after {
-    transform: translateY(-50%) rotate(0);
+    transform: translateY(-50%) rotate(-45deg);
 }
 
 .tealdoc-sidebar-section ul {
