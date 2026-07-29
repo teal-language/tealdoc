@@ -579,11 +579,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyInterface" },
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface"),
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 }
             })
@@ -642,11 +642,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyInterface" },
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface"),
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 },
                 ["$test~MyInterface.__add"] = {
@@ -664,10 +664,10 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 12,
                     },
                     params = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 }
             })
@@ -735,11 +735,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyInterface" },
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface"),
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 },
                 ["$test~MyInterface.$meta.__add(MyInterface, string)"] = {
@@ -757,11 +757,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyInterface" },
+                        util.referenced_type("MyInterface", "$test~MyInterface"),
                         { type = "string" }
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 }
             })
@@ -1228,11 +1228,11 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 23,
                     },
                     params = {
-                        { type = "A" },
-                        { type = "A" }
+                        util.referenced_type("A", "$test~A"),
+                        util.referenced_type("A", "$test~A")
                     },
                     returns = {
-                        { type = "A" }
+                        util.referenced_type("A", "$test~A")
                     }
                 },
                 ["$test~MyInterface"] = {

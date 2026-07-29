@@ -579,11 +579,11 @@ describe("teal support in tealdoc: records", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord"),
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     }
                 }
             })
@@ -642,11 +642,11 @@ describe("teal support in tealdoc: records", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord"),
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     }
                 },
                 ["$test~MyRecord.__add"] = {
@@ -664,10 +664,10 @@ describe("teal support in tealdoc: records", function()
                         x = 12,
                     },
                     params = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     }
                 }
             })
@@ -735,11 +735,11 @@ describe("teal support in tealdoc: records", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyRecord" },
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord"),
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     }
                 },
                 ["$test~MyRecord.$meta.__add(MyRecord, string)"] = {
@@ -757,11 +757,11 @@ describe("teal support in tealdoc: records", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyRecord" },
+                        util.referenced_type("MyRecord", "$test~MyRecord"),
                         { type = "string" }
                     },
                     returns = {
-                        { type = "MyRecord" }
+                        util.referenced_type("MyRecord", "$test~MyRecord")
                     }
                 }
             })
@@ -1272,11 +1272,11 @@ describe("teal support in tealdoc: records", function()
                         x = 23,
                     },
                     params = {
-                        { type = "MyInterface" },
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface"),
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     },
                     returns = {
-                        { type = "MyInterface" }
+                        util.referenced_type("MyInterface", "$test~MyInterface")
                     }
                 },
                 ["$test~MyRecord"] = {
