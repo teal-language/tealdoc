@@ -318,6 +318,21 @@ describe("Site generator", function()
 
             return Camera
         ]], "Camera.tl", env)
+        tealdoc.process_text([[
+            local record types
+                --- A type published at another root.
+                record Root
+                    --- Copies this value.
+                    copy: function(self): Root
+                end
+
+                --- A type omitted from the projection.
+                record Hidden
+                end
+            end
+
+            return types
+        ]], "types.tl", env)
 
         local output = os.tmpname()
         os.remove(output)
@@ -331,7 +346,16 @@ describe("Site generator", function()
                 {
                     path = "api",
                     title = "Combined",
-                    api = {"first", "second", "Camera"},
+                    api = {
+                        "first",
+                        "second",
+                        "Camera",
+                        {
+                            module = "types",
+                            public = "public",
+                            include = {"Root"},
+                        },
+                    },
                     public = "public.api",
                 },
             },
@@ -347,6 +371,9 @@ describe("Site generator", function()
         assert.is_truthy(html:find('id="public.api.copy"', 1, true), html)
         assert.is_truthy(html:find('id="public.api.Camera"', 1, true), html)
         assert.is_truthy(html:find('id="public.api.Camera.x"', 1, true), html)
+        assert.is_truthy(html:find('id="public.Root"', 1, true), html)
+        assert.is_truthy(html:find('href="/api/#public.Root"', 1, true), html)
+        assert.is_falsy(html:find('id="public.Hidden"', 1, true))
         assert.is_falsy(html:find('id="public.api.x"', 1, true))
         assert.is_truthy(html:find('href="/api/#public.api.Widget"', 1, true), html)
         assert.is_falsy(html:find("#public.api.Secret", 1, true))

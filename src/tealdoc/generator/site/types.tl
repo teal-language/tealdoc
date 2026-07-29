@@ -1,6 +1,12 @@
 local tealdoc = require("tealdoc")
 
 local record SiteTypes
+    record ApiSource
+        module: string
+        public: string
+        include: {string}
+    end
+
     record Link
         text: string
         path: string
@@ -24,7 +30,7 @@ local record SiteTypes
         title: string
         description: string
         source: string
-        api: string | {string}
+        api: string | {string | ApiSource}
         public: string
         layout: string
         hero_title: string
