@@ -193,6 +193,7 @@ local function same_public_item(
         and right is tealdoc.VariableItem
     then
         return left.typename == right.typename
+            and left.is_const == right.is_const
             and summary_line(left) == summary_line(right)
     end
     local left_target = canonical_alias(left, env)
@@ -228,6 +229,7 @@ function SiteView.prepare(
     local source_paths: {string} = {}
     local mounted_from: {string: string} = {}
     local root_children: {string} = {}
+    local module_texts: {string} = {}
 
     local function mount(
         source_path: string,
@@ -323,6 +325,9 @@ function SiteView.prepare(
             env.registry["$" .. module_name],
             "configured API module not found: " .. module_name
         )
+        if module_item.text and module_item.text ~= "" then
+            table.insert(module_texts, module_item.text)
+        end
         local module_record = env.registry[module_name]
         local basename = module_name:match("([^.]+)$") or module_name
         local public_basename = public:match("([^.]+)$") or public
@@ -368,6 +373,9 @@ function SiteView.prepare(
         path = "$" .. public,
         name = public,
         children = {public},
+        text = #module_texts > 0
+            and table.concat(module_texts, "\n\n")
+            or nil,
     }
     local public_root: tealdoc.Item = {
         kind = "module",

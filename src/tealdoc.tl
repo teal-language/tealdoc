@@ -276,6 +276,9 @@ local record tealdoc
 
         --- The name of the type of the variable.
         typename: string
+        --- Whether a local or global declaration carries the Teal `<const>`
+        --- attribute. Record fields leave this unset.
+        is_const: boolean
     end
 
     --- This record represents a type item in Tealdoc.

@@ -143,6 +143,33 @@ local function process_comments(comments: {tl.Comment}, item: tealdoc.Item, env:
     return #lines > 0
 end
 
+local function process_module_comment(
+    text: string,
+    item: tealdoc.Item,
+    env: tealdoc.Env
+)
+    local equals = text:match("^%-%-%[(=*)%[")
+    if equals == nil then
+        return
+    end
+
+    local opening_end = 4 + #equals
+    local closing = text:find(
+        "]" .. equals .. "]",
+        opening_end + 1,
+        true
+    )
+    if not closing then
+        return
+    end
+
+    local body = text:sub(opening_end + 1, closing - 1)
+        :gsub("^\r?\n", "")
+        :gsub("\r?\n$", "")
+    CommentParser.parse_text(body, item, env)
+    env.documented_items[item] = true
+end
+
 
 -- TODO: temporary for now?
 local function typeinfo_to_string(typeinfo: tl.TypeInfo): string
@@ -354,7 +381,8 @@ end
 local function get_path(item: tealdoc.Item, state: VisitState, typ?: tl.Type): string
     assert(item.name)
     if typ and typ.typeid == state.module_item_typeid then
-        state.env.registry["$"..state.module_name].text = item.text
+        local module_item = state.env.registry["$"..state.module_name]
+        module_item.text = module_item.text or item.text
         return state.module_name
     end
     return state.path..item.name
@@ -672,9 +700,12 @@ local function variable_declarations_visitor(node: tl.Node, state: VisitState)
                     state
                 )
             else
+                local name_values = name as {string: any}
+                local name_attribute = name_values["attribute"] as string
                 local variable_item = {
                     kind = "variable",
                     typename = typename,
+                    is_const = name_attribute == "const" and true or nil,
                     visibility = node.kind == "local_declaration" and "local" or "global",
                     location = location_for_node(name)
                 }
@@ -1385,6 +1416,7 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
     }
     table.insert(env.modules, module_name)
     env.registry[module_item.path] = module_item
+    process_module_comment(text, module_item, env)
     visit_node(result.ast, state)
 end
 

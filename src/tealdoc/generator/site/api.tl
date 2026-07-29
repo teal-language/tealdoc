@@ -15,7 +15,7 @@ local record SiteApi
         resolver: MarkdownGenerator.URLResolver,
         attached_examples: {string: {SiteTypes.PreparedExample}},
         used_examples: {string: boolean}
-    ): string
+    ): string, string
     summary: function(
         view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver
@@ -145,6 +145,79 @@ function SiteApi.type_links(
     return links
 end
 
+-- The kinds `Generator.item_kind` answers for something a caller calls. What
+-- is left over after these and the types is a value: a field, a variable, an
+-- enum member.
+local FUNCTION_KINDS: {string: boolean} = {
+    ["function"] = true,
+    method = true,
+    metamethod = true,
+    macro = true,
+}
+
+local function rebase_headings(text: string, target: integer): string
+    local lines: {string} = {}
+    for line in (text .. "\n"):gmatch("(.-)\n") do
+        table.insert(lines, (line:gsub("\r$", "")))
+    end
+
+    local shallowest: integer
+    local fence_character: string
+    local fence_length = 0
+    for _, line in ipairs(lines) do
+        local fence = line:match("^%s*(```+)")
+            or line:match("^%s*(~~~+)")
+        if fence then
+            local character = fence:sub(1, 1)
+            if not fence_character then
+                fence_character = character
+                fence_length = #fence
+            elseif character == fence_character and #fence >= fence_length then
+                fence_character = nil
+                fence_length = 0
+            end
+        elseif not fence_character then
+            local hashes = line:match("^%s*(#+)%s+")
+            if hashes and #hashes <= 6
+                and (not shallowest or #hashes < shallowest)
+            then
+                shallowest = #hashes
+            end
+        end
+    end
+    if not shallowest then
+        return text
+    end
+
+    local shift = target - shallowest
+    fence_character = nil
+    fence_length = 0
+    for index, line in ipairs(lines) do
+        local fence = line:match("^%s*(```+)")
+            or line:match("^%s*(~~~+)")
+        if fence then
+            local character = fence:sub(1, 1)
+            if not fence_character then
+                fence_character = character
+                fence_length = #fence
+            elseif character == fence_character and #fence >= fence_length then
+                fence_character = nil
+                fence_length = 0
+            end
+        elseif not fence_character then
+            local indentation, hashes, rest =
+                line:match("^(%s*)(#+)(%s+.*)$")
+            if hashes and #hashes <= 6 then
+                local level = math.min(6, #hashes + shift)
+                lines[index] = indentation ..
+                    string.rep("#", level) ..
+                    rest
+            end
+        end
+    end
+    return table.concat(lines, "\n")
+end
+
 local function add_kind_badges(markdown: string, env: tealdoc.Env): string
     for path, item in pairs(env.registry) do
         if item.kind ~= "module" and Generator.filter(item, env) then
@@ -173,22 +246,114 @@ local function add_kind_badges(markdown: string, env: tealdoc.Env): string
     return markdown
 end
 
+local function group_details(
+    markdown: string,
+    view: SiteTypes.ApiView
+): string
+    local env = view.env
+    local module = env.registry[view.public]
+    if not module or not module.children then
+        return ""
+    end
+
+    local positioned: {{tealdoc.Item, integer}} = {}
+    for _, path in ipairs(module.children) do
+        local item = env.registry[path]
+        if item and Generator.filter(item, env) then
+            local anchor = '<a id="' .. path .. '"></a>'
+            local start = markdown:find(anchor, 1, true)
+            if start then
+                table.insert(positioned, {item, start})
+            end
+        end
+    end
+    table.sort(
+        positioned,
+        function(
+            left: {tealdoc.Item, integer},
+            right: {tealdoc.Item, integer}
+        ): boolean
+            return left[2] < right[2]
+        end
+    )
+
+    local details: {string: string} = {}
+    for index, entry in ipairs(positioned) do
+        local ending = index < #positioned
+            and positioned[index + 1][2] - 1
+            or #markdown
+        details[entry[1].path] = markdown:sub(entry[2], ending)
+            :gsub("^%s+", "")
+            :gsub("%s+$", "")
+    end
+
+    local items: {tealdoc.Item} = {}
+    for _, entry in ipairs(positioned) do
+        table.insert(items, entry[1])
+    end
+    table.sort(items, function(a: tealdoc.Item, b: tealdoc.Item): boolean
+        local left = a.name:lower()
+        local right = b.name:lower()
+        if left == right then
+            return a.path < b.path
+        end
+        return left < right
+    end)
+
+    local groups: {{string, {tealdoc.Item}}} = {
+        { "Types", {} },
+        { "Functions", {} },
+        { "Values", {} },
+    }
+    for _, item in ipairs(items) do
+        local kind = Generator.item_kind(item, env)
+        local group = 3
+        if FUNCTION_KINDS[kind] then
+            group = 2
+        elseif item is tealdoc.TypeItem then
+            group = 1
+        end
+        table.insert(groups[group][2], item)
+    end
+
+    local output: {string} = {}
+    for _, group in ipairs(groups) do
+        if #group[2] > 0 then
+            table.insert(output, "## " .. group[1])
+            for _, item in ipairs(group[2]) do
+                table.insert(output, details[item.path])
+            end
+        end
+    end
+    return table.concat(output, "\n\n")
+end
+
 function SiteApi.markdown(
     view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {SiteTypes.PreparedExample}},
     used_examples: {string: boolean}
-): string
+): string, string
     if not view then
-        return ""
+        return "", ""
     end
 
     local page_env = view.env
 
+    local original_texts: {{tealdoc.Item, string}} = {}
+    for _, item in pairs(page_env.registry) do
+        if item.kind ~= "module" and item.text and item.text ~= "" then
+            table.insert(original_texts, {item, item.text})
+            item.text = rebase_headings(item.text, 3)
+        end
+    end
     local markdown = add_kind_badges(
         MarkdownGenerator.render(page_env, resolver, false),
         page_env
     )
+    for _, entry in ipairs(original_texts) do
+        entry[1].text = entry[2]
+    end
 
     for item_path, examples in pairs(attached_examples or {}) do
         local anchor = '<a id="' .. item_path .. '"></a>'
@@ -223,27 +388,21 @@ function SiteApi.markdown(
         end
     end
 
-    local module_anchor = '<a id="' .. view.public .. '"></a>'
-    local _, ending = markdown:find(module_anchor, 1, true)
-    if ending then
-        markdown = markdown:sub(ending + 1)
+    local public_anchor = '<a id="' .. view.public .. '"></a>'
+    local _, public_end = markdown:find(public_anchor, 1, true)
+    if public_end then
+        markdown = markdown:sub(public_end + 1)
     end
+    local module_item = page_env.registry["$" .. view.public]
+    local introduction = module_item and module_item.text
+        and rebase_headings(module_item.text, 2)
+        or ""
     markdown = "\n" .. markdown
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
         return "\n" .. string.rep("#", math.min(#level + 1, 6)) .. " "
     end)
-    return markdown:sub(2)
+    return group_details(markdown:sub(2), view), introduction
 end
-
--- The kinds `Generator.item_kind` answers for something a caller calls. What
--- is left over after these and the types is a value: a field, a variable, an
--- enum member.
-local FUNCTION_KINDS: {string: boolean} = {
-    ["function"] = true,
-    method = true,
-    metamethod = true,
-    macro = true,
-}
 
 local function item_text(item: tealdoc.Item, env: tealdoc.Env): string
     if item.text and item.text ~= "" then
@@ -259,9 +418,13 @@ local function item_text(item: tealdoc.Item, env: tealdoc.Env): string
 end
 
 local function item_summary(item: tealdoc.Item, env: tealdoc.Env): string
+    local prefix = item is tealdoc.VariableItem
+        and item.is_const
+        and "`<const>` "
+        or ""
     local text = item_text(item, env)
     if text == "" then
-        return "—"
+        return prefix .. "—"
     end
     text = text:gsub("```[%s%S]-```", " ")
     text = text:gsub("%[([^%]]+)%]%([^%)]+%)", "%1")
@@ -271,14 +434,25 @@ local function item_summary(item: tealdoc.Item, env: tealdoc.Env): string
     text = text:gsub("^%s*#+%s*", "")
     text = text:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
 
+    local sentences = 1
+    if text:match("^Read%-only%.%s")
+        or text:match("^Caller%-writable%.%s")
+        or text:match("^Engine%-owned%.%s")
+    then
+        sentences = 2
+    end
+    local found = 0
     for index = 1, #text do
         local character = text:sub(index, index)
         local following = text:sub(index + 1, index + 1)
         if (character == "." or character == "!" or character == "?")
             and (following == "" or following:match("%s"))
         then
-            text = text:sub(1, index)
-            break
+            found = found + 1
+            if found == sentences then
+                text = text:sub(1, index)
+                break
+            end
         end
     end
 
@@ -288,7 +462,7 @@ local function item_summary(item: tealdoc.Item, env: tealdoc.Env): string
         shortened = shortened:match("^(.*)%s+%S*$") or shortened
         text = shortened:gsub("%s+$", "") .. "..."
     end
-    return (text:gsub("\\", "\\\\"):gsub("|", "\\|"))
+    return prefix .. (text:gsub("\\", "\\\\"):gsub("|", "\\|"))
 end
 
 function SiteApi.summary(
@@ -356,7 +530,7 @@ function SiteApi.summary(
             if #output > 0 then
                 table.insert(output, "\n")
             end
-            table.insert(output, "### " .. heading .. "\n\n")
+            table.insert(output, "**" .. heading .. "**\n\n")
             if show_kind then
                 table.insert(
                     output,
