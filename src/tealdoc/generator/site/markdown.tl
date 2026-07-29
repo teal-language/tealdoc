@@ -285,30 +285,50 @@ function SiteMarkdown.render(
     -- A fence carries a newline before its closing line, and a browser renders
     -- that as a blank last line inside the block. Nobody wrote it, so it goes.
     html = html:gsub("\n+(</code></pre>)", "%1")
-    local function highlight_code(
-        language: string,
-        links?: Highlighter.Links
+    -- One pass over every fenced block, whatever it is written in.
+    --
+    -- The language is captured rather than built into the pattern, so a fence
+    -- carrying attributes is found too. Lunamark writes the whole info string
+    -- into the class, and `teal{3}` never matched a pattern assembled from
+    -- `teal`: those blocks shipped unhighlighted and nothing reported it. The
+    -- attributes are cut before the language is looked up and left on the
+    -- class, so a site can still style them and nothing here has to know what
+    -- they mean.
+    --
+    -- The wrapper is what carries the language for the corner label. It
+    -- cannot be the `pre`, which is the horizontal scroll container: a label
+    -- positioned against that scrolls out of the corner it is meant to sit in
+    -- as soon as the block is wide enough to scroll. The label is drawn from
+    -- `data-lang` by CSS rather than written as an element, so it stays out
+    -- of the search index and out of whatever a reader copies.
+    local links_for: {string: Highlighter.Links} = {
+        teal = type_links or {},
+        lua = {},
+    }
+    html = html:gsub(
+        '<pre><code class="language%-([^"]+)">(.-)</code></pre>',
+        function(info: string, code: string): string
+            local language = info:match("^([%w_#+-]+)") or info
+            code = code:gsub("&lt;", "<")
+                :gsub("&gt;", ">")
+                :gsub("&quot;", '"')
+                :gsub("&#39;", "'")
+                :gsub("&amp;", "&")
+            local links = links_for[language]
+            local body = links
+                and Highlighter.highlight(code, links)
+                or escape_html(code)
+            return '<div class="tealdoc-code-block" data-lang="' ..
+                escape_html(language) ..
+                '"><pre class="language-' ..
+                escape_html(info) ..
+                '"><code class="language-' ..
+                escape_html(info) ..
+                '">' ..
+                body ..
+                "</code></pre></div>"
+        end
     )
-        html = html:gsub(
-            '<pre><code class="language%-' .. language .. '">(.-)</code></pre>',
-            function(code: string): string
-                code = code:gsub("&lt;", "<")
-                    :gsub("&gt;", ">")
-                    :gsub("&quot;", '"')
-                    :gsub("&#39;", "'")
-                    :gsub("&amp;", "&")
-                return '<pre class="language-' ..
-                    language ..
-                    '"><code class="language-' ..
-                    language ..
-                    '">' ..
-                    Highlighter.highlight(code, links) ..
-                    "</code></pre>"
-            end
-        )
-    end
-    highlight_code("teal", type_links)
-    highlight_code("lua")
     return html
 end
 

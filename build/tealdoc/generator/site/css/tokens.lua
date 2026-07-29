@@ -50,6 +50,11 @@ return [[
     --tealdoc-code-block-font-size: 0.8rem;
     --tealdoc-code-block-radius: 8px;
     --tealdoc-code-block-padding: 0.8rem 0.9rem;
+    --tealdoc-code-lang-color: var(--tealdoc-text-faint);
+    --tealdoc-code-lang-font-size: 0.68rem;
+    --tealdoc-code-lang-top: 0.55rem;
+    --tealdoc-code-lang-right: 0.75rem;
+    --tealdoc-code-lang-clearance: 1.8rem;
     --tealdoc-inline-code-font-size: 0.91em;
     --tealdoc-inline-code-padding: 0.1em 0.35em;
     --tealdoc-inline-code-radius: 4px;
