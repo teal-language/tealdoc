@@ -35,7 +35,7 @@ return [[
 
 .tealdoc-hero-text {
     max-width: 650px;
-    margin: 1.2rem 0 0;
+    margin: 1.08rem 0 0;
     color: var(--tealdoc-text-muted);
     font-size: var(--tealdoc-hero-text-size);
     line-height: 1.35;
@@ -51,15 +51,21 @@ return [[
 /* The box is smaller; the type in it is not. A hero action is read at the
  * same size wherever it sits, so what comes off is the padding around it and
  * the height that padding implied. */
+/* The box is smaller; the type in it is not. A hero action is read at the
+ * same size wherever it sits, so what comes off is the padding around it.
+ * `line-height` comes off with it: the type's own line box was most of the
+ * height, and leaving it at the document's meant the padding could be cut in
+ * half without the button looking any smaller. */
 .tealdoc-hero-action {
     display: inline-flex;
-    min-height: 35px;
+    min-height: 0;
     align-items: center;
     justify-content: center;
-    padding: 0.48rem 0.92rem;
+    padding: 0.52rem 0.95rem;
     border: 1px solid transparent;
-    border-radius: 18px;
+    border-radius: 16px;
     font-size: 0.9rem;
+    line-height: 1;
     font-weight: 650;
     text-decoration: none;
 }
