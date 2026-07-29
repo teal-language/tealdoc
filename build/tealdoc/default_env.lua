@@ -586,6 +586,16 @@ function DefaultEnv.init()
       end,
    }
 
+
+
+
+
+
+
+   local type_param_columns = { "Name", "Constraint", "Description" }
+   local param_columns = { "Name", "Type", "Description" }
+   local return_columns = { "Type", "Description" }
+
    local type_params_phase = {
       name = "type_params",
       run = function(ctx, item)
@@ -596,19 +606,23 @@ function DefaultEnv.init()
          end
 
          ctx.builder:h4(attr("header"), "Type Parameters")
-         ctx.builder:unordered_list(function(list_item)
+         ctx.builder:table(type_param_columns, function(row)
             for _, typearg in ipairs(item.typeargs) do
-               list_item(function()
-                  ctx.builder:b(function()
-                     ctx.builder:code(attr("name"), typearg.name or "?")
-                  end)
-
+               row(
+               function()
+                  ctx.builder:code(attr("name"), typearg.name or "?")
+               end,
+               function()
                   if typearg.constraint then
-                     ctx.builder:text(attr("constraint"), " ( is ", function() ctx.builder:code(typearg.constraint) end, ")")
-                  end
+                     ctx.builder:code(
+                     attr("constraint"),
+                     typearg.constraint)
 
+                  end
+               end,
+               function()
                   if typearg.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         typearg.description))
@@ -616,6 +630,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,
@@ -631,21 +646,23 @@ function DefaultEnv.init()
          end
 
          markdown_section(ctx, item, "Type Parameters")
-         ctx.builder:unordered_list(function(list_item)
+         ctx.builder:table(type_param_columns, function(row)
             for _, typearg in ipairs(item.typeargs) do
-               list_item(function()
-                  ctx.builder:b(function()
-                     ctx.builder:code(attr("name"), typearg.name or "?")
-                  end)
-
+               row(
+               function()
+                  ctx.builder:code(attr("name"), typearg.name or "?")
+               end,
+               function()
                   if typearg.constraint then
-                     ctx.builder:text(attr("constraint"), " ( is ", function()
-                        ctx.builder:code(typearg.constraint)
-                     end, ")")
-                  end
+                     ctx.builder:code(
+                     attr("constraint"),
+                     typearg.constraint)
 
+                  end
+               end,
+               function()
                   if typearg.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         typearg.description))
@@ -653,6 +670,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,
@@ -668,17 +686,20 @@ function DefaultEnv.init()
          end
 
          ctx.builder:h4(attr("name"), "Parameters")
-         ctx.builder:unordered_list(function(list_item)
+         ctx.builder:table(param_columns, function(row)
             for _, param in ipairs(item.params) do
-               list_item(function()
+               row(
+               function()
                   if param.name then
-                     ctx.builder:b(function()
-                        ctx.builder:code(attr("name"), param.name)
-                     end)
+                     ctx.builder:code(attr("name"), param.name)
                   end
-                  ctx.builder:text(attr("type"), " (", function() ctx.builder:code(param.type or "?") end, ")")
+               end,
+               function()
+                  ctx.builder:code(attr("type"), param.type or "?")
+               end,
+               function()
                   if param.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         param.description))
@@ -686,6 +707,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,
@@ -702,19 +724,26 @@ function DefaultEnv.init()
             return
          end
 
-         ctx.builder:unordered_list(function(list_item)
+         ctx.builder:table(param_columns, function(row)
             for _, param in ipairs(item.params) do
-               list_item(function()
+               row(
+               function()
                   if param.name then
-                     ctx.builder:b(function()
-                        ctx.builder:code(attr("name"), param.name)
-                     end)
+                     ctx.builder:code(attr("name"), param.name)
                   end
-                  ctx.builder:text(attr("type"), " (", function()
-                     markdown_type(ctx, param.type or "?", param.type_references)
-                  end, ")")
+               end,
+               function()
+                  ctx.builder:text(attr("type"), function()
+                     markdown_type(
+                     ctx,
+                     param.type or "?",
+                     param.type_references)
+
+                  end)
+               end,
+               function()
                   if param.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         param.description))
@@ -722,6 +751,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,
@@ -738,12 +768,15 @@ function DefaultEnv.init()
 
          ctx.builder:h4(attr("header"), "Returns")
 
-         ctx.builder:ordered_list(function(list_item)
+         ctx.builder:table(return_columns, function(row)
             for _, ret in ipairs(item.returns) do
-               list_item(function()
-                  ctx.builder:text(attr("type"), "(", function() ctx.builder:code(ret.type or "?") end, ")")
+               row(
+               function()
+                  ctx.builder:code(attr("type"), ret.type or "?")
+               end,
+               function()
                   if ret.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         ret.description))
@@ -751,6 +784,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,
@@ -767,14 +801,21 @@ function DefaultEnv.init()
             return
          end
 
-         ctx.builder:ordered_list(function(list_item)
+         ctx.builder:table(return_columns, function(row)
             for _, ret in ipairs(item.returns) do
-               list_item(function()
-                  ctx.builder:text(attr("type"), "(", function()
-                     markdown_type(ctx, ret.type or "?", ret.type_references)
-                  end, ")")
+               row(
+               function()
+                  ctx.builder:text(attr("type"), function()
+                     markdown_type(
+                     ctx,
+                     ret.type or "?",
+                     ret.type_references)
+
+                  end)
+               end,
+               function()
                   if ret.description then
-                     ctx.builder:text(attr("description"), " — ", function()
+                     ctx.builder:text(attr("description"), function()
                         ctx.builder:md(markdown_with_type_links(
                         ctx,
                         ret.description))
@@ -782,6 +823,7 @@ function DefaultEnv.init()
                      end)
                   end
                end)
+
             end
          end)
       end,

@@ -306,6 +306,44 @@ describe("Site generator", function()
         remove_tree(output)
     end)
 
+    it("carries a union type through a parameter table to the page", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Finds a thing by name.
+                --- @param name What to look for.
+                --- @return The thing, or nil when there is none.
+                find: function(name: string): string | nil
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Union",
+            pages = {
+                {path = "", title = "Home"},
+                {path = "api", title = "API", api = "api"},
+            },
+        })
+
+        local html = read_file(output .. "/api/index.html")
+
+        -- The pipe that spells the union is also the cell separator, so it only
+        -- reaches the page if the row it was written into kept it out of the way.
+        assert.is_truthy(html:find("<th>Name</th>", 1, true), html)
+        assert.is_truthy(html:find(
+            "<td><code>string | nil</code></td>",
+            1,
+            true
+        ), html)
+
+        remove_tree(output)
+    end)
+
     it("prefers a dedicated page over a parent-page item route", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
@@ -1105,7 +1143,7 @@ print(value)
             true
         ), api)
         assert.is_truthy(api:find(
-            '(<a href="/modules/window/"><code>Window</code></a>)',
+            '<td><a href="/modules/window/"><code>Window</code></a></td>',
             1,
             true
         ), api)

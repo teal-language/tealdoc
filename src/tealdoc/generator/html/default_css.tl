@@ -29,6 +29,31 @@ return [[
     li {
         margin: 0.5em 0;
     }
+    table {
+        border-collapse: collapse;
+        margin: 0.5em 0 1.5em 0;
+        width: 100%;
+        display: block;
+        overflow-x: auto;
+    }
+    th, td {
+        border-bottom: 1px solid #e2e2e2;
+        padding: 0.4em 0.8em 0.4em 0;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        color: #555;
+        font-size: 0.85em;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    /* Every column but the last names a type or a parameter, so it should stay
+       on one line and let the description take the rest of the width. */
+    td:not(:last-child) {
+        white-space: nowrap;
+    }
     a {
         color: #007bff;
         text-decoration: none;

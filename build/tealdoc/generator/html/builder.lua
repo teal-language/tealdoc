@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local table = _tl_compat and _tl_compat.table or table; local type = type; local Generator = require("tealdoc.generator")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local table = _tl_compat and _tl_compat.table or table; local type = type; local Generator = require("tealdoc.generator")
 local Text = require("tealdoc.generator.text")
 
 local lunamark = require("lunamark")
@@ -186,6 +186,33 @@ HTMLBuilder.unordered_list = function(self, content)
    self:rawline("<ul>")
    content(item)
    self:rawline("</ul>")
+   return self
+end
+
+HTMLBuilder.table = function(self, headers, content)
+   local row = function(...)
+      self:rawtext("<tr>")
+      for i = 1, select("#", ...) do
+         self:rawtext("<td>")
+         local write = (select(i, ...))
+         write()
+         self:rawtext("</td>")
+      end
+      self:rawline("</tr>")
+   end
+
+   self:rawline("<table>")
+   self:rawtext("<thead><tr>")
+   for _, header in ipairs(headers) do
+      self:rawtext("<th>")
+      self:text(header)
+      self:rawtext("</th>")
+   end
+   self:rawline("</tr></thead>")
+   self:rawline("<tbody>")
+   content(row)
+   self:rawline("</tbody>")
+   self:rawline("</table>")
    return self
 end
 

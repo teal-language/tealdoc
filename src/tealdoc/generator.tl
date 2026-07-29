@@ -31,6 +31,12 @@ local record Generator
         ordered_list: function(self, content: function(item: function(content: function))): Builder
         unordered_list: function(self, content: function(item: function(content: function))): Builder
 
+        -- Write a table. `headers` names the columns, and `content` is called
+        -- with a `row` function taking one content function per column. Every
+        -- row must be given as many cells as there are headers; a cell with
+        -- nothing to say writes nothing and leaves the cell empty.
+        table: function(self, headers: {string}, content: function(row: function(...: function))): Builder
+
         b: function(self, ...: Content): Builder
         i: function(self, ...: Content): Builder
         code: function(self, ...: Content): Builder

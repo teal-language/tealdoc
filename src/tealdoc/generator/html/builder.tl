@@ -189,6 +189,33 @@ HTMLBuilder.unordered_list = function(self, content: function(item: function(con
     return self
 end
 
+HTMLBuilder.table = function(self, headers: {string}, content: function(row: function(...: function))): HTMLBuilder
+    local row = function(...: function)
+        self:rawtext("<tr>")
+        for i = 1, select("#", ...) do
+            self:rawtext("<td>")
+            local write = (select(i, ...)) as function
+            write()
+            self:rawtext("</td>")
+        end
+        self:rawline("</tr>")
+    end
+
+    self:rawline("<table>")
+    self:rawtext("<thead><tr>")
+    for _, header in ipairs(headers) do
+        self:rawtext("<th>")
+        self:text(header)
+        self:rawtext("</th>")
+    end
+    self:rawline("</tr></thead>")
+    self:rawline("<tbody>")
+    content(row)
+    self:rawline("</tbody>")
+    self:rawline("</table>")
+    return self
+end
+
 HTMLBuilder.b = function(self, ...: Content): HTMLBuilder
     self:rawtext("<b>")
     self:text(...)

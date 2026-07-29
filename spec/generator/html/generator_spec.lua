@@ -95,4 +95,117 @@ describe("HTML generator", function()
             true
         ))
     end)
+
+    it("tabulates parameters and returns", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Handle
+                end
+            end
+
+            --- Open a handle.
+            --- @param name What to open.
+            --- @param mode How to open it.
+            --- @return The handle.
+            function api.open(name: string, mode: integer): api.Handle
+                return nil
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local builder = HTMLBuilder.init()
+        local ctx = {
+            builder = builder,
+            module_name = "api",
+            path_mode = "relative",
+            env = env,
+            url_for_path = function(path)
+                return HTMLGenerator.url_for_path(path, "api", env)
+            end,
+        }
+        local item = env.registry["api.open"]
+
+        for _, phase in ipairs(HTMLGenerator.item_phases["function"]) do
+            if phase.name == "function_params"
+                or phase.name == "function_returns"
+            then
+                phase.run(ctx, item)
+            end
+        end
+
+        local html = builder:build()
+
+        assert.is_truthy(html:find(
+            "<thead><tr><th>Name</th><th>Type</th><th>Description</th></tr>"
+                .. "</thead>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            "<tr><td><code>name</code></td><td><code>string</code></td>"
+                .. "<td>What to open.</td></tr>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            "<tr><td><code>mode</code></td><td><code>integer</code></td>"
+                .. "<td>How to open it.</td></tr>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            "<thead><tr><th>Type</th><th>Description</th></tr></thead>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            "<tr><td><code>api.Handle</code></td>"
+                .. "<td>The handle.</td></tr>",
+            1,
+            true
+        ), html)
+        -- Nothing survives from the lists the tables replaced.
+        assert.is_nil(html:find("<ul>", 1, true))
+        assert.is_nil(html:find("<ol>", 1, true))
+    end)
+
+    it("leaves a cell empty when a row has nothing to put in it", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Reset everything.
+                reset: function(count: integer)
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local builder = HTMLBuilder.init()
+        local ctx = {
+            builder = builder,
+            module_name = "api",
+            path_mode = "relative",
+            env = env,
+            url_for_path = function(path)
+                return HTMLGenerator.url_for_path(path, "api", env)
+            end,
+        }
+        local item = env.registry["api.reset"]
+
+        for _, phase in ipairs(HTMLGenerator.item_phases["function"]) do
+            if phase.name == "function_params" then
+                phase.run(ctx, item)
+            end
+        end
+
+        assert.is_truthy(builder:build():find(
+            "<tr><td></td><td><code>integer</code></td><td></td></tr>",
+            1,
+            true
+        ))
+    end)
 end)

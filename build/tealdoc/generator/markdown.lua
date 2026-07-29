@@ -155,6 +155,59 @@ MarkdownBuilder.unordered_list = function(self, content)
    return self
 end
 
+
+
+
+MarkdownBuilder.table = function(self, headers, content)
+
+
+
+
+
+
+
+   local function cell(write)
+      local outer = self.output
+      self.output = {}
+      write()
+      local written = table.concat(self.output, "")
+      self.output = outer
+
+      written = written:gsub("`([^`]*)`", function(inner)
+         if not inner:find("|", 1, true) then
+            return "`" .. inner .. "`"
+         end
+         return "<code>" ..
+         (Text.escape_html(inner):gsub("|", "&#124;")) ..
+         "</code>"
+      end)
+
+
+
+      return (written:gsub("|", "&#124;"):gsub("%s*\n%s*", " "))
+   end
+
+   local row = function(...)
+      local cells = {}
+      for i = 1, select("#", ...) do
+         table.insert(cells, cell((select(i, ...))))
+      end
+      self:rawline("| ", table.concat(cells, " | "), " |")
+   end
+
+   local rule = {}
+   for _ = 1, #headers do
+      table.insert(rule, "---")
+   end
+
+   self:line()
+   self:rawline("| ", table.concat(headers, " | "), " |")
+   self:rawline("| ", table.concat(rule, " | "), " |")
+   content(row)
+   self:line()
+   return self
+end
+
 MarkdownBuilder.b = function(self, ...)
    self:rawtext("**")
    self:text(...)

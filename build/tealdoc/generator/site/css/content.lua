@@ -291,4 +291,26 @@ return [[
     width: 100%;
 }
 
+.tealdoc-content th,
+.tealdoc-content td {
+    padding: 0.4em 0.9em 0.4em 0;
+    vertical-align: top;
+}
+
+.tealdoc-content thead th {
+    color: var(--tealdoc-text-muted);
+    font-size: 0.82em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* A parameter row is as tall as its description, and the name and the type it
+   belongs to have to stay beside the first line of that description rather
+   than float in the middle of it. Every column but the last holds one of those
+   short values, so it keeps to one line and lets the description take the
+   width that is left. */
+.tealdoc-content td:not(:last-child) {
+    white-space: nowrap;
+}
+
 ]]
