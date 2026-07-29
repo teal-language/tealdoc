@@ -89,6 +89,7 @@ build = {
          ["tealdoc.generator.site.config"] = "src/tealdoc/generator/site/config.tl",
          ["tealdoc.generator.site.examples"] = "src/tealdoc/generator/site/examples.tl",
          ["tealdoc.generator.site.markdown"] = "src/tealdoc/generator/site/markdown.tl",
+         ["tealdoc.generator.site.scintillua"] = "src/tealdoc/generator/site/scintillua.tl",
          ["tealdoc.generator.site.types"] = "src/tealdoc/generator/site/types.tl",
          ["tealdoc.generator.site.view"] = "src/tealdoc/generator/site/view.tl",
          ["tealdoc.generator.site.validator"] = "src/tealdoc/generator/site/validator.tl",
