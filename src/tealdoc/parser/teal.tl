@@ -1,5 +1,6 @@
 local tl <const> = require("tl")
 local tealdoc = require("tealdoc")
+local Config = require("tealdoc.config")
 local log = require("tealdoc.log")
 local CommentParser = require("tealdoc.comment_parser")
 local record VisitState
@@ -1123,29 +1124,10 @@ local record TealConfigFile
     gen_target: string
 end
 
-local function path_from_config(config_dir: string, path: string): string
-    if path:match("^[/\\]") or path:match("^%a:[/\\]") then
-        return path
-    end
-    if config_dir == "." then
-        return path
-    end
-    return config_dir .. package.config:sub(1, 1) .. path
-end
-
 local function get_project_config(): ProjectConfig
     local path_separator = package.config:sub(1, 1)
-    local filename = "tlconfig.lua"
-    local file: FILE = nil
-    for _ = 1, 20 do
-        file = io.open(filename, "r")
-        if file then
-            break
-        end
-        filename = ".." .. path_separator .. filename
-    end
-
-    if not file then
+    local loaded = Config.load()
+    if not loaded.filename then
         log:debug("Could not find tlconfig.lua in the current directory or any parent directory.")
         return {
             source_dir = "",
@@ -1154,89 +1136,55 @@ local function get_project_config(): ProjectConfig
         }
     end
 
-    local config_dir = filename:match("^(.*)[/\\][^/\\]+$") or "."
-    local contents = file:read("*a")
-    file:close()
-    if contents then
-        local load_config, err = load(contents)
-        if not load_config then
-            log:error("Error loading tlconfig.lua:\n" .. err)
-            return {
-                source_dir = "",
-                module_path = package.path,
-                env_options = {}
-            }
-        end
-        local ok, config = pcall(load_config)
-        if not ok then
-            log:error("Error executing tlconfig.lua:\n" .. tostring(config))
-            return {
-                source_dir = "",
-                module_path = package.path,
-                env_options = {}
-            }
-        end
-
-        if config is table then
-            local project_config = config as TealConfigFile
-            local source_dir = ""
-            local configured_source_dir = project_config.source_dir
-            if configured_source_dir is string then
-                source_dir = path_from_config(config_dir, configured_source_dir)
-            else
-                log:debug("tlconfig.lua does not contain 'source_dir' field.")
-            end
-
-            local module_paths: {string} = {}
-            local include_dirs = project_config.include_dir
-            if include_dirs then
-                for _, include_dir in ipairs(include_dirs) do
-                    local path = path_from_config(config_dir, include_dir)
-                    table.insert(module_paths, path .. path_separator .. "?.lua")
-                    table.insert(module_paths, path .. path_separator .. "?" ..
-                        path_separator .. "init.lua")
-                end
-            end
-            table.insert(module_paths, package.path)
-
-            local defaults: any = {}
-            local feat_arity = project_config.feat_arity
-            if feat_arity is string then
-                defaults.feat_arity = feat_arity
-            end
-            local gen_compat = project_config.gen_compat
-            if gen_compat is string then
-                defaults.gen_compat = gen_compat
-            end
-            local gen_target = project_config.gen_target
-            if gen_target is string then
-                defaults.gen_target = gen_target
-            end
-
-            local predefined_modules: {string}
-            local global_env_def = project_config.global_env_def
-            if global_env_def is string then
-                predefined_modules = {global_env_def}
-            end
-            local env_options: tl.EnvOptions = {
-                defaults = defaults,
-                predefined_modules = predefined_modules
-            }
-
-            return {
-                source_dir = source_dir,
-                module_path = table.concat(module_paths, ";"),
-                env_options = env_options
-            }
-        else
-            log:error("tlconfig.lua did not return a table.")
-        end
+    local project_config = loaded.values as TealConfigFile
+    local source_dir = ""
+    local configured_source_dir = project_config.source_dir
+    if configured_source_dir is string then
+        source_dir = Config.resolve_path(loaded.directory, configured_source_dir)
+    else
+        log:debug("tlconfig.lua does not contain 'source_dir' field.")
     end
 
+    local module_paths: {string} = {}
+    local include_dirs = project_config.include_dir
+    if include_dirs then
+        for _, include_dir in ipairs(include_dirs) do
+            local path = Config.resolve_path(loaded.directory, include_dir)
+            table.insert(module_paths, path .. path_separator .. "?.lua")
+            table.insert(module_paths, path .. path_separator .. "?" ..
+                path_separator .. "init.lua")
+        end
+    end
+    table.insert(module_paths, package.path)
+
+    local defaults: any = {}
+    local feat_arity = project_config.feat_arity
+    if feat_arity is string then
+        defaults.feat_arity = feat_arity
+    end
+    local gen_compat = project_config.gen_compat
+    if gen_compat is string then
+        defaults.gen_compat = gen_compat
+    end
+    local gen_target = project_config.gen_target
+    if gen_target is string then
+        defaults.gen_target = gen_target
+    end
+
+    local predefined_modules: {string}
+    local global_env_def = project_config.global_env_def
+    if global_env_def is string then
+        predefined_modules = {global_env_def}
+    end
+    local env_options: tl.EnvOptions = {
+        defaults = defaults,
+        predefined_modules = predefined_modules
+    }
+
     return {
-        source_dir = "",
-        module_path = package.path,
-        env_options = {}
+        source_dir = source_dir,
+        module_path = table.concat(module_paths, ";"),
+        env_options = env_options
     }
 end
 
