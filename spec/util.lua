@@ -51,6 +51,18 @@ function util.registry_for_text(text, filename)
     return env.registry
 end
 
+function util.referenced_type(type_name, path)
+    return {
+        type = type_name,
+        type_references = {
+            {
+                name = type_name,
+                path = path,
+            },
+        },
+    }
+end
+
 function util.check_registry(text, expected) 
     text = util.dedent(text)
     text = text.."\nlocal record test\nend\nreturn test"
