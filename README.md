@@ -448,6 +448,14 @@ return {
                 { text = "Home", path = "" },
                 { text = "API", path = "api" },
             },
+            sidebar = {
+                {
+                    text = "Reference",
+                    items = {
+                        { path = "api" },
+                    },
+                },
+            },
             pages = {
                 {
                     path = "",
@@ -513,8 +521,11 @@ A site can combine four kinds of content:
 - generated API references selected by page `api` fields; and
 - checked Teal or Lua `examples`, either as pages or attached to API items.
 
-Each page can use one or both of `source` and `api`. Tealdoc renders the
-handwritten material first, then the generated reference. A module page can
+Each page can use one or both of `source` and `api`. `api` accepts either one
+module name or an ordered list of modules projected under the page's required
+`public` namespace. Tealdoc rejects duplicate projected public paths and links
+only exact items rendered by an API page. Tealdoc renders the handwritten
+material first, then the generated reference. A module page can
 therefore explain concepts, examples, and caveats without manually maintaining
 an exhaustive API list.
 
@@ -569,6 +580,7 @@ settings document their complete nested table shape.
 | [`redirects`](docs/site_configuration.md#redirects) | `{}` | Old route to destination mappings. |
 | [`sources`](docs/site_configuration.md#sources) | `{}` | Teal source files and directories. |
 | [`pages`](docs/site_configuration.md#pages) | `{}` | Handwritten and API pages. |
+| [`sidebar`](docs/site_configuration.md#sidebar) | derived | Explicit recursively nested sidebar. |
 | [`examples`](docs/site_configuration.md#examples) | `{}` | Page and attached examples. |
 | [`validate_links`](docs/site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
 | [`nav`](docs/site_configuration.md#nav) | `{}` | Header navigation link tables. |
@@ -623,6 +635,11 @@ nav = {
     { text = "Community", path = "https://example.com/community" },
 }
 ```
+
+Set `sidebar` when route-derived grouping is not expressive enough. It is a
+recursive array of `{ text?, path?, items?, collapsed? }` tables. Page titles
+fill omitted text, every path must name a configured page, and groups with a
+path place that page inside the group as an `Overview` row.
 
 Tealdoc emits the composed Markdown beside every HTML page and always links it
 from the header.

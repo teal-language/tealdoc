@@ -187,11 +187,16 @@ end
 local record MarkdownGenerator 
     type URLResolver = function(path: string): string
 
-    init: function(output: string, type_url_for_path?: URLResolver): Generator.Base
+    init: function(
+        output: string,
+        type_url_for_path?: URLResolver,
+        allow_local_type_links?: boolean
+    ): Generator.Base
     resolve_type_url: function(
         env: tealdoc.Env,
         path: string,
-        type_url_for_path: URLResolver
+        type_url_for_path: URLResolver,
+        allow_local_type_links?: boolean
     ): string
     item_phases: {string: {Generator.Phase}}
 end
@@ -201,7 +206,8 @@ MarkdownGenerator.item_phases = {}
 function MarkdownGenerator.resolve_type_url(
     env: tealdoc.Env,
     path: string,
-    type_url_for_path: MarkdownGenerator.URLResolver
+    type_url_for_path: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
 ): string
     local seen: {string: boolean} = {}
     while path and not seen[path] do
@@ -211,7 +217,9 @@ function MarkdownGenerator.resolve_type_url(
             return type_url_for_path(path)
         end
         if Generator.filter(item, env) then
-            return type_url_for_path(path) or "#" .. path
+            return type_url_for_path(path)
+                or allow_local_type_links ~= false and "#" .. path
+                or nil
         end
         if item is tealdoc.TypeItem
             and item.type_kind == "type"
@@ -225,7 +233,11 @@ function MarkdownGenerator.resolve_type_url(
     return nil
 end
 
-MarkdownGenerator.init = function(output: string, type_url_for_path?: MarkdownGenerator.URLResolver): Generator.Base
+MarkdownGenerator.init = function(
+    output: string,
+    type_url_for_path?: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+): Generator.Base
     local builder = MarkdownBuilder.init()
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
@@ -243,7 +255,8 @@ MarkdownGenerator.init = function(output: string, type_url_for_path?: MarkdownGe
                 return MarkdownGenerator.resolve_type_url(
                     env,
                     path,
-                    type_url_for_path
+                    type_url_for_path,
+                    allow_local_type_links
                 )
             end
         end
