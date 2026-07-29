@@ -60,10 +60,11 @@ local record CLI
     end
 
     init: function(CLI, env: tealdoc.Env, skip_default_commands?: boolean)
-    run: function(CLI)
+    run: function(CLI, argv?: {string}): boolean
     add_default_commands: function(CLI)
     add_command: function(CLI, command: Command)
 
+    _run: function(CLI, argv?: {string})
     _parser: argparse.Parser
     _commands: {string: Command.Handler}
     _env: tealdoc.Env
@@ -196,6 +197,9 @@ end
 function CLI:init(env: tealdoc.Env, skip_default_commands?: boolean)
     self._parser = argparse("tealdoc", nil, nil)
     self._parser:option("--plugin", "plugin to load", nil, nil, nil, "*")
+    self._parser:flag("-V --version", "show version and exit")
+        :target("version")
+    self._parser:require_command(false)
     self._parser:command_target("command")
     self._commands = {}
     self._env = env
@@ -211,8 +215,12 @@ function CLI:add_command(command: CLI.Command)
     self._commands[command.name] = command.handler
 end
 
-function CLI:run()
-    local args = self._parser:parse(nil)
+function CLI:_run(argv?: {string})
+    local args = self._parser:parse(argv)
+    if args["version"] then
+        print("tealdoc " .. tealdoc.version)
+        return
+    end
     local command_name = args["command"]
 
     tl.loader()
@@ -236,6 +244,24 @@ function CLI:run()
     local handler = self._commands[command_name as string]
     assert(handler)
     handler(args)
+end
+
+local function error_message(value: any): string
+    local message = tostring(value)
+    message = message:gsub("^.-:%d+:%s*", "", 1)
+    return message
+end
+
+function CLI:run(argv?: {string}): boolean
+    local ok, result = pcall(function(): boolean
+        self:_run(argv)
+        return true
+    end)
+    if not ok then
+        io.stderr:write("tealdoc: " .. error_message(result) .. "\n")
+        return false
+    end
+    return true
 end
 
 return CLI

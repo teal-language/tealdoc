@@ -4,5 +4,6 @@ local DefaultEnv = require("tealdoc.default_env")
 local env = DefaultEnv.init()
 
 CLI:init(env)
-CLI:run()
-
+if not CLI:run() then
+    os.exit(1)
+end

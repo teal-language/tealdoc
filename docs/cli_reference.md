@@ -23,6 +23,10 @@ tealdoc --help
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
 *   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
+*   `-V, --version`: Prints the Tealdoc version and exits.
+
+Command and configuration errors are written as concise diagnostics without a
+Lua traceback, and the process exits with a nonzero status.
 
 ### Project Configuration
 
@@ -384,12 +388,15 @@ my.api.open(value)
 -- #endregion open-basic
 ```
 
-The markers are omitted from the rendered example. Tealdoc checks the selected
-region, not the surrounding file, with the project's configured Teal compiler
-environment; Lua regions receive a syntax check. The code a reader sees is the
-code Tealdoc checked. Set `check = false` only for an intentionally incomplete
-example. Examples are listed explicitly rather than discovered with globs, so
-the site configuration is also the list of examples the site publishes.
+The markers are omitted from the rendered example. Regions may be nested;
+Tealdoc tracks every open marker so an inner region cannot end an outer
+selection early. CRLF files and trailing whitespace on markers are accepted.
+Tealdoc checks the selected region, not the surrounding file, with the
+project's configured Teal compiler environment; Lua regions receive a syntax
+check. The code a reader sees is the code Tealdoc checked. Set `check = false`
+only for an intentionally incomplete example. Examples are listed explicitly
+rather than discovered with globs, so the site configuration is also the list
+of examples the site publishes.
 
 Handwritten pages accept VitePress's `::: code-group` container, labeled
 fences such as `` ```teal [Components] ``, and
