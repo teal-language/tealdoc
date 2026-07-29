@@ -1,3 +1,5 @@
+local lfs = require("lfs")
+
 local record Config
     record Loaded
         filename: string
@@ -5,10 +7,14 @@ local record Config
         values: any
     end
 
+    discover: function(): string
     load: function(filename?: string): Loaded
+    resolve_path: function(directory: string, path: string): string
 end
 
-local function discover(): string
+local discovered_cache: {string: Config.Loaded} = {}
+
+function Config.discover(): string
     local separator = package.config:sub(1, 1)
     local filename = "tlconfig.lua"
     for _ = 1, 20 do
@@ -23,13 +29,22 @@ local function discover(): string
 end
 
 function Config.load(filename?: string): Config.Loaded
-    local selected = filename or discover()
+    local selected = filename or Config.discover()
     if not selected then
         return {
             filename = nil,
             directory = ".",
             values = {},
         }
+    end
+    local cache_key: string
+    if not filename then
+        cache_key = assert(lfs.currentdir()) ..
+            package.config:sub(1, 1) ..
+            selected
+        if discovered_cache[cache_key] then
+            return discovered_cache[cache_key]
+        end
     end
 
     local chunk, load_error = loadfile(selected)
@@ -51,13 +66,27 @@ function Config.load(filename?: string): Config.Loaded
     )
     assert(
         type(settings) == "table",
-        "Teal configuration must return a table"
+        "Teal configuration '" .. selected .. "' must return a table"
     )
-    return {
+    local loaded: Config.Loaded = {
         filename = selected,
         directory = selected:match("^(.*)[/\\][^/\\]+$") or ".",
         values = settings,
     }
+    if cache_key then
+        discovered_cache[cache_key] = loaded
+    end
+    return loaded
+end
+
+function Config.resolve_path(directory: string, path: string): string
+    if path:match("^[/\\]") or path:match("^%a:[/\\]") then
+        return path
+    end
+    if directory == "." then
+        return path
+    end
+    return directory .. package.config:sub(1, 1) .. path
 end
 
 return Config

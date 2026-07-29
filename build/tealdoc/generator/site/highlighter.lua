@@ -1,4 +1,5 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tl = require("tl")
+local Text = require("tealdoc.generator.text")
 
 local Highlighter = {}
 
@@ -60,16 +61,6 @@ local punctuation = {
    ["."] = true,
    ["?"] = true,
 }
-
-local function escape_html(text)
-   return (text:gsub("([&<>'\"])", {
-      ["&"] = "&amp;",
-      ["<"] = "&lt;",
-      [">"] = "&gt;",
-      ["'"] = "&#39;",
-      ['"'] = "&quot;",
-   }))
-end
 
 local function token_style(tokens, index)
    local token = tokens[index]
@@ -200,16 +191,16 @@ function Highlighter.highlight(code, links)
    local cursor = 1
    for _, segment in ipairs(segments) do
       if segment.first >= cursor and segment.first <= #code then
-         table.insert(output, escape_html(code:sub(cursor, segment.first - 1)))
+         table.insert(output, Text.escape_html(code:sub(cursor, segment.first - 1)))
          local text = code:sub(segment.first, segment.last)
          local token = '<span class="' ..
          token_classes(segment.style, text) ..
          '">' ..
-         escape_html(text) ..
+         Text.escape_html(text) ..
          "</span>"
          if segment.url then
             token = '<a class="tealdoc-code-link" href="' ..
-            escape_html(segment.url) ..
+            Text.escape_html(segment.url) ..
             '">' ..
             token ..
             "</a>"
@@ -218,7 +209,7 @@ function Highlighter.highlight(code, links)
          cursor = segment.last + 1
       end
    end
-   table.insert(output, escape_html(code:sub(cursor)))
+   table.insert(output, Text.escape_html(code:sub(cursor)))
    return table.concat(output)
 end
 

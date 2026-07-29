@@ -1,5 +1,6 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
+local Text = require("tealdoc.generator.text")
 local log = require("tealdoc.log")
 
 local MarkdownBuilder = {}
@@ -19,17 +20,6 @@ function MarkdownBuilder.init()
 end
 
 
-
-local function escape_html(text)
-   local output = text:gsub("([&<>'\"])", {
-      ["&"] = "&amp;",
-      ["<"] = "&lt;",
-      [">"] = "&gt;",
-      ["'"] = "&#39;",
-      ['"'] = "&quot;",
-   })
-   return output
-end
 
 MarkdownBuilder.h1 = function(self, ...)
    self:rawtext("# ")
@@ -72,7 +62,7 @@ MarkdownBuilder.link = function(self, to, ...)
       self:text(...)
       return self
    end
-   self:rawtext("<a href=\"#", escape_html(to), "\">")
+   self:rawtext("<a href=\"#", Text.escape_html(to), "\">")
    self:text(...)
    self:rawtext("</a>")
    return self
@@ -93,7 +83,7 @@ MarkdownBuilder.text = function(self, ...)
    for i = 1, select("#", ...) do
       local c = select(i, ...)
       if type(c) == "string" then
-         table.insert(self.output, self.in_code and c or escape_html(c))
+         table.insert(self.output, self.in_code and c or Text.escape_html(c))
       elseif type(c) == "function" then
          c(self)
       end
@@ -240,7 +230,7 @@ MarkdownGenerator.init = function(output, type_url_for_path)
    local base = Generator.Base.init()
    base.item_phases = MarkdownGenerator.item_phases
    base.on_item_start = function(_, item, _, _)
-      builder:rawline("<a id=\"", escape_html(item.path), "\"></a>")
+      builder:rawline("<a id=\"", Text.escape_html(item.path), "\"></a>")
    end
    base.on_context_for_item = function(_, ctx, _, _, env)
       ctx.builder = builder

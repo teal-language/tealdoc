@@ -2,6 +2,7 @@ local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
 local HTMLBuilder = require("tealdoc.generator.html.builder")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
+local Text = require("tealdoc.generator.text")
 local default_css = require("tealdoc.generator.site.default_css")
 local default_js = require("tealdoc.generator.site.default_js")
 local pico_css = require("tealdoc.generator.site.pico_css")
@@ -773,41 +774,10 @@ local function copy_public_directory(
     end
 end
 
-local function escape_html(text: string): string
-    return ((text or ""):gsub("([&<>'\"])", {
-        ["&"] = "&amp;",
-        ["<"] = "&lt;",
-        [">"] = "&gt;",
-        ["'"] = "&#39;",
-        ['"'] = "&quot;",
-    }))
-end
-
-local function strip_tags(text: string): string
-    local stripped = text:gsub(
-        '%s*<span class="tealdoc%-kind%-badge[^"]*">.-</span>',
-        ""
-    )
-    stripped = stripped:gsub("<[^>]+>", "")
-    stripped = stripped:gsub("&quot;", '"')
-        :gsub("&#39;", "'")
-        :gsub("&lt;", "<")
-        :gsub("&gt;", ">")
-        :gsub("&amp;", "&")
-    return stripped
-end
-
-local function plain_text(html: string): string
-    return (strip_tags(html):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", ""))
-end
-
-local function slug(text: string): string
-    local value = strip_tags(text):lower()
-    value = value:gsub("[^%w%s%-_%.]", "")
-    value = value:gsub("[%s_%.]+", "-")
-    value = value:gsub("^%-+", ""):gsub("%-+$", "")
-    return value
-end
+local escape_html = Text.escape_html
+local strip_tags = Text.strip_tags
+local plain_text = Text.plain_text
+local slug = Text.slug
 
 local function page_url(base: string, path: string): string
     local root = base or "/"

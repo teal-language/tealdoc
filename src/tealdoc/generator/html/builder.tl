@@ -1,4 +1,5 @@
 local Generator = require("tealdoc.generator")
+local Text = require("tealdoc.generator.text")
 
 local lunamark = require("lunamark")
 
@@ -109,22 +110,11 @@ HTMLBuilder.link_url = function(self, url: string, ...: Content): HTMLBuilder
     return self
 end
 
-local function escape_html(text: string): string
-    local output = text:gsub("([&<>'\"])", {
-        ["&"] = "&amp;",
-        ["<"] = "&lt;",
-        [">"] = "&gt;",
-        ["'"] = "&#39;",
-        ['"'] = "&quot;"
-    })
-    return output
-end
-
 HTMLBuilder.text = function(self, ...: Content): HTMLBuilder
     for i = 1, select("#", ...) do
         local c = select(i, ...)
         if c is string then
-            table.insert(self.output, escape_html(c))
+            table.insert(self.output, Text.escape_html(c))
         elseif c is function then
             c(self)
         end

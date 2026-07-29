@@ -1,5 +1,6 @@
 local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
+local Text = require("tealdoc.generator.text")
 local log = require("tealdoc.log")
 
 local record MarkdownBuilder is Generator.Builder
@@ -19,17 +20,6 @@ function MarkdownBuilder.init(): MarkdownBuilder
 end
 
 local type Content = Generator.Builder.Content
-
-local function escape_html(text: string): string
-    local output = text:gsub("([&<>'\"])", {
-        ["&"] = "&amp;",
-        ["<"] = "&lt;",
-        [">"] = "&gt;",
-        ["'"] = "&#39;",
-        ['"'] = "&quot;"
-    })
-    return output
-end
 
 MarkdownBuilder.h1 = function(self, ...: Content): MarkdownBuilder
     self:rawtext("# ")
@@ -72,7 +62,7 @@ MarkdownBuilder.link = function(self, to: string, ...: Content): MarkdownBuilder
         self:text(...)
         return self
     end
-    self:rawtext("<a href=\"#", escape_html(to), "\">")
+    self:rawtext("<a href=\"#", Text.escape_html(to), "\">")
     self:text(...)
     self:rawtext("</a>")
     return self
@@ -93,7 +83,7 @@ MarkdownBuilder.text = function(self, ...: Content): MarkdownBuilder
     for i = 1, select("#", ...) do
         local c = select(i, ...)
         if c is string then
-            table.insert(self.output, self.in_code and c or escape_html(c))
+            table.insert(self.output, self.in_code and c or Text.escape_html(c))
         elseif c is function then
             c(self)
         end
@@ -240,7 +230,7 @@ MarkdownGenerator.init = function(output: string, type_url_for_path?: MarkdownGe
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
     base.on_item_start = function(_, item: tealdoc.Item, _: string, _: tealdoc.Env)
-        builder:rawline("<a id=\"", escape_html(item.path), "\"></a>")
+        builder:rawline("<a id=\"", Text.escape_html(item.path), "\"></a>")
     end
     base.on_context_for_item = function(_, ctx: Generator.Phase.Context, _: tealdoc.Item, _: string, env: tealdoc.Env)
         ctx.builder = builder

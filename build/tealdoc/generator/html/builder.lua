@@ -1,4 +1,5 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local Generator = require("tealdoc.generator")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local table = _tl_compat and _tl_compat.table or table; local type = type; local Generator = require("tealdoc.generator")
+local Text = require("tealdoc.generator.text")
 
 local lunamark = require("lunamark")
 
@@ -109,22 +110,11 @@ HTMLBuilder.link_url = function(self, url, ...)
    return self
 end
 
-local function escape_html(text)
-   local output = text:gsub("([&<>'\"])", {
-      ["&"] = "&amp;",
-      ["<"] = "&lt;",
-      [">"] = "&gt;",
-      ["'"] = "&#39;",
-      ['"'] = "&quot;",
-   })
-   return output
-end
-
 HTMLBuilder.text = function(self, ...)
    for i = 1, select("#", ...) do
       local c = select(i, ...)
       if type(c) == "string" then
-         table.insert(self.output, escape_html(c))
+         table.insert(self.output, Text.escape_html(c))
       elseif type(c) == "function" then
          c(self)
       end

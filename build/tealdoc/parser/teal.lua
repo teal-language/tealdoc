@@ -1,5 +1,6 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tl = require("tl")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local tl = require("tl")
 local tealdoc = require("tealdoc")
+local Config = require("tealdoc.config")
 local log = require("tealdoc.log")
 local CommentParser = require("tealdoc.comment_parser")
 
@@ -1123,29 +1124,10 @@ local TealParser = {}
 
 
 
-local function path_from_config(config_dir, path)
-   if path:match("^[/\\]") or path:match("^%a:[/\\]") then
-      return path
-   end
-   if config_dir == "." then
-      return path
-   end
-   return config_dir .. package.config:sub(1, 1) .. path
-end
-
 local function get_project_config()
    local path_separator = package.config:sub(1, 1)
-   local filename = "tlconfig.lua"
-   local file = nil
-   for _ = 1, 20 do
-      file = io.open(filename, "r")
-      if file then
-         break
-      end
-      filename = ".." .. path_separator .. filename
-   end
-
-   if not file then
+   local loaded = Config.load()
+   if not loaded.filename then
       log:debug("Could not find tlconfig.lua in the current directory or any parent directory.")
       return {
          source_dir = "",
@@ -1154,89 +1136,55 @@ local function get_project_config()
       }
    end
 
-   local config_dir = filename:match("^(.*)[/\\][^/\\]+$") or "."
-   local contents = file:read("*a")
-   file:close()
-   if contents then
-      local load_config, err = load(contents)
-      if not load_config then
-         log:error("Error loading tlconfig.lua:\n" .. err)
-         return {
-            source_dir = "",
-            module_path = package.path,
-            env_options = {},
-         }
-      end
-      local ok, config = pcall(load_config)
-      if not ok then
-         log:error("Error executing tlconfig.lua:\n" .. tostring(config))
-         return {
-            source_dir = "",
-            module_path = package.path,
-            env_options = {},
-         }
-      end
-
-      if type(config) == "table" then
-         local project_config = config
-         local source_dir = ""
-         local configured_source_dir = project_config.source_dir
-         if type(configured_source_dir) == "string" then
-            source_dir = path_from_config(config_dir, configured_source_dir)
-         else
-            log:debug("tlconfig.lua does not contain 'source_dir' field.")
-         end
-
-         local module_paths = {}
-         local include_dirs = project_config.include_dir
-         if include_dirs then
-            for _, include_dir in ipairs(include_dirs) do
-               local path = path_from_config(config_dir, include_dir)
-               table.insert(module_paths, path .. path_separator .. "?.lua")
-               table.insert(module_paths, path .. path_separator .. "?" ..
-               path_separator .. "init.lua")
-            end
-         end
-         table.insert(module_paths, package.path)
-
-         local defaults = {}
-         local feat_arity = project_config.feat_arity
-         if type(feat_arity) == "string" then
-            defaults.feat_arity = feat_arity
-         end
-         local gen_compat = project_config.gen_compat
-         if type(gen_compat) == "string" then
-            defaults.gen_compat = gen_compat
-         end
-         local gen_target = project_config.gen_target
-         if type(gen_target) == "string" then
-            defaults.gen_target = gen_target
-         end
-
-         local predefined_modules
-         local global_env_def = project_config.global_env_def
-         if type(global_env_def) == "string" then
-            predefined_modules = { global_env_def }
-         end
-         local env_options = {
-            defaults = defaults,
-            predefined_modules = predefined_modules,
-         }
-
-         return {
-            source_dir = source_dir,
-            module_path = table.concat(module_paths, ";"),
-            env_options = env_options,
-         }
-      else
-         log:error("tlconfig.lua did not return a table.")
-      end
+   local project_config = loaded.values
+   local source_dir = ""
+   local configured_source_dir = project_config.source_dir
+   if type(configured_source_dir) == "string" then
+      source_dir = Config.resolve_path(loaded.directory, configured_source_dir)
+   else
+      log:debug("tlconfig.lua does not contain 'source_dir' field.")
    end
 
+   local module_paths = {}
+   local include_dirs = project_config.include_dir
+   if include_dirs then
+      for _, include_dir in ipairs(include_dirs) do
+         local path = Config.resolve_path(loaded.directory, include_dir)
+         table.insert(module_paths, path .. path_separator .. "?.lua")
+         table.insert(module_paths, path .. path_separator .. "?" ..
+         path_separator .. "init.lua")
+      end
+   end
+   table.insert(module_paths, package.path)
+
+   local defaults = {}
+   local feat_arity = project_config.feat_arity
+   if type(feat_arity) == "string" then
+      defaults.feat_arity = feat_arity
+   end
+   local gen_compat = project_config.gen_compat
+   if type(gen_compat) == "string" then
+      defaults.gen_compat = gen_compat
+   end
+   local gen_target = project_config.gen_target
+   if type(gen_target) == "string" then
+      defaults.gen_target = gen_target
+   end
+
+   local predefined_modules
+   local global_env_def = project_config.global_env_def
+   if type(global_env_def) == "string" then
+      predefined_modules = { global_env_def }
+   end
+   local env_options = {
+      defaults = defaults,
+      predefined_modules = predefined_modules,
+   }
+
    return {
-      source_dir = "",
-      module_path = package.path,
-      env_options = {},
+      source_dir = source_dir,
+      module_path = table.concat(module_paths, ";"),
+      env_options = env_options,
    }
 end
 

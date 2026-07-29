@@ -1,4 +1,5 @@
 local tl = require("tl")
+local Text = require("tealdoc.generator.text")
 
 local record Highlighter
     type Links = {string: string}
@@ -60,16 +61,6 @@ local punctuation: {string: boolean} = {
     ["."] = true,
     ["?"] = true,
 }
-
-local function escape_html(text: string): string
-    return (text:gsub("([&<>'\"])", {
-        ["&"] = "&amp;",
-        ["<"] = "&lt;",
-        [">"] = "&gt;",
-        ["'"] = "&#39;",
-        ['"'] = "&quot;",
-    }))
-end
 
 local function token_style(tokens: {tl.Token}, index: integer): string
     local token = tokens[index]
@@ -200,16 +191,16 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
     local cursor = 1
     for _, segment in ipairs(segments) do
         if segment.first >= cursor and segment.first <= #code then
-            table.insert(output, escape_html(code:sub(cursor, segment.first - 1)))
+            table.insert(output, Text.escape_html(code:sub(cursor, segment.first - 1)))
             local text = code:sub(segment.first, segment.last)
             local token = '<span class="' ..
                 token_classes(segment.style, text) ..
                 '">' ..
-                escape_html(text) ..
+                Text.escape_html(text) ..
                 "</span>"
             if segment.url then
                 token = '<a class="tealdoc-code-link" href="' ..
-                    escape_html(segment.url) ..
+                    Text.escape_html(segment.url) ..
                     '">' ..
                     token ..
                     "</a>"
@@ -218,7 +209,7 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
             cursor = segment.last + 1
         end
     end
-    table.insert(output, escape_html(code:sub(cursor)))
+    table.insert(output, Text.escape_html(code:sub(cursor)))
     return table.concat(output)
 end
 
