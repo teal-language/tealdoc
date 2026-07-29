@@ -1245,12 +1245,11 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            "transform: translateY(-12px)",
-            1,
-            true
-        ))
-        assert.is_truthy(css:find(
-            ".tealdoc-hero-image {\n    position: relative;\n    display: grid;\n    min-height: 340px;",
+            ".tealdoc-hero-image {\n" ..
+                "    position: relative;\n" ..
+                "    display: grid;\n" ..
+                "    align-self: center;\n" ..
+                "    place-items: center;",
             1,
             true
         ))

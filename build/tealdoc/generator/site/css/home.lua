@@ -83,14 +83,15 @@ return [[
     background: var(--tealdoc-button-alt-hover-background);
 }
 
-/* The image is the one thing that centers, against whichever column is taller. */
+/* The image is the one thing that centers, against whichever column is taller.
+ * It carries no floor of its own: a floor taller than the image only pushes
+ * the image down the middle of it and away from the heading it sits beside,
+ * and the row is already as tall as the taller of the two columns. */
 .tealdoc-hero-image {
     position: relative;
     display: grid;
-    min-height: 340px;
     align-self: center;
     place-items: center;
-    transform: translateY(-12px);
 }
 
 .tealdoc-hero-starburst {
