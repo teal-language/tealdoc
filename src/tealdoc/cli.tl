@@ -68,6 +68,7 @@ local record CLI
     _parser: argparse.Parser
     _commands: {string: Command.Handler}
     _env: tealdoc.Env
+    _config: Config.Loaded
 end
 
 function CLI:add_default_commands()
@@ -107,7 +108,7 @@ function CLI:add_default_commands()
             end
             
             local resolver: MarkdownGenerator.URLResolver
-            local settings = Config.load().values as {string: any}
+            local settings = self._config.values as {string: any}
             local tealdoc_config = settings["tealdoc"] as {string: any}
             local markdown_config = tealdoc_config
                 and tealdoc_config["markdown"] as {string: any}
@@ -157,7 +158,7 @@ function CLI:add_default_commands()
             if args["no_warn_missing"] then
                 self._env.no_warnings_on_missing = true
             end
-            local loaded = Config.load()
+            local loaded = self._config
             local values = loaded.values as {string: any}
             local tealdoc_config = values["tealdoc"] as {string: any}
             local site_config = tealdoc_config
@@ -220,6 +221,22 @@ function CLI:_run(argv?: {string})
     if args["version"] then
         print("tealdoc " .. tealdoc.version)
         return
+    end
+    self._config = Config.load()
+    local settings = self._config.values as {string: any}
+    local tealdoc_config = settings["tealdoc"] as {string: any}
+    local doc_precedence = tealdoc_config
+        and tealdoc_config["doc_precedence"]
+    if doc_precedence ~= nil then
+        assert(
+            doc_precedence == "declaration"
+                or doc_precedence == "definition"
+                or doc_precedence == "error",
+            "tealdoc.doc_precedence must be 'declaration', " ..
+                "'definition', or 'error'"
+        )
+        self._env.doc_precedence =
+            doc_precedence as tealdoc.Env.DocPrecedence
     end
     local command_name = args["command"]
 

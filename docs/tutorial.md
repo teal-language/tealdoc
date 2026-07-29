@@ -126,7 +126,11 @@ function Square:multiply_sides(x: number)
 end
 ```
 
-**Note:** If a function has documentation at both its declaration (inside the record) and its definition, the definition's documentation will be prioritized, and a warning will be emitted.
+**Note:** If a function has documentation at both its declaration and its
+definition, the declaration's documentation is retained by default and a
+warning identifies the item and retained comment. The project-wide
+`tealdoc.doc_precedence` setting can instead retain the definition or treat
+the duplicate documentation as an error.
 
 ### Enums
 

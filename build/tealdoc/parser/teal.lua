@@ -116,6 +116,7 @@ local function process_comments(comments, item, env)
 
    if first_comment and is_long_comment(first_comment) then
       CommentParser.parse_text(strip_long_comment(first_comment), item, env)
+      env.documented_items[item] = true
       return true
    end
 
@@ -136,6 +137,9 @@ local function process_comments(comments, item, env)
    end
 
    CommentParser.parse_lines(lines, item, env)
+   if #lines > 0 then
+      env.documented_items[item] = true
+   end
    return #lines > 0
 end
 
@@ -233,6 +237,35 @@ local function is_item_global(item)
    return type(item) == "table" and item.visibility == "global"
 end
 
+local function retain_function_declaration(
+   declaration,
+   definition,
+   path,
+   env)
+
+   local declaration_documented = env.documented_items[declaration] or false
+   local definition_documented = env.documented_items[definition] or false
+   if declaration_documented and definition_documented then
+      local precedence = env.doc_precedence or "declaration"
+      if precedence == "error" then
+         error(
+         "Both the declaration and definition for function '" ..
+         path ..
+         "' have Tealdoc comments; doc_precedence is 'error', " ..
+         "so neither comment is retained")
+
+      end
+      log:warning(
+      "Both the declaration and definition for function '%s' have " ..
+      "Tealdoc comments; the %s comment is retained",
+      path,
+      precedence)
+
+      return precedence == "declaration"
+   end
+   return declaration_documented and not definition_documented
+end
+
 local function store_item_at_path(item, path, state)
    local old_item = state.env.registry[path]
    if old_item then
@@ -242,12 +275,18 @@ local function store_item_at_path(item, path, state)
          if not item.text then
             item.text = old_item.text
          end
+         if state.env.documented_items[old_item] then
+            state.env.documented_items[item] = true
+         end
 
       elseif old_item.kind == "function" and item.kind == "function" and old_item.is_declaration and not item.is_declaration then
          item.visibility = old_item.visibility
-         if old_item.text and item.text then
-            log:warning("Both the function declaration and definition contain tealdoc comments. The comment from the declaration will be discarded.")
-         elseif not item.text and old_item.text then
+         if retain_function_declaration(
+            old_item,
+            item,
+            path,
+            state.env) then
+
             return nil
          end
       elseif is_item_local(item) then
@@ -285,10 +324,13 @@ local function store_item_at_path(item, path, state)
          end
       elseif old_item.kind == "function" and item.kind == "function" then
 
-         if old_item.is_declaration then
-            if old_item.text and item.text then
-               log:warning("Both the function declaration and definition for this record function contain tealdoc comments. The comment from the declaration will be discarded.")
-            elseif not item.text and old_item.text then
+         if old_item.is_declaration and not item.is_declaration then
+            if retain_function_declaration(
+               old_item,
+               item,
+               path,
+               state.env) then
+
                return nil
             end
          else

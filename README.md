@@ -189,7 +189,11 @@ function Square:multiply_sides(x: number)
 end
 ```
 
-**Note:** If a function has documentation at both its declaration (inside the record) and its definition, the definition's documentation will be prioritized, and a warning will be emitted.
+**Note:** If a function has documentation at both its declaration and its
+definition, the declaration's documentation is retained by default and a
+warning identifies the item and retained comment. The project-wide
+`tealdoc.doc_precedence` setting can instead retain the definition or treat
+the duplicate documentation as an error.
 
 ### Enums
 
@@ -286,6 +290,37 @@ Tealdoc reads its project settings from the `tealdoc` table in the nearest
 `tlconfig.lua`, using the same current-directory and parent-directory search as
 Teal. The namespace lets Tealdoc add settings without colliding with compiler
 or other tool settings.
+
+`tealdoc.doc_precedence` controls duplicate function documentation across
+ordinary and record functions. It accepts `"declaration"`, `"definition"`, or
+`"error"` and defaults to `"declaration"`:
+
+```lua
+return {
+    tealdoc = {
+        doc_precedence = "declaration",
+    },
+}
+```
+
+When both a function declaration and its definition have Tealdoc comments,
+`"declaration"` retains the declaration comment and `"definition"` retains the
+definition comment. Both modes warn with the canonical item path and the
+comment retained. `"error"` stops generation with the item path instead of
+choosing one. A declaration remains documented when only its comment exists,
+and a definition remains documented when only its comment exists.
+
+Programmatic users set the same policy on an environment before processing
+source:
+
+```lua
+local env = tealdoc.Env.init()
+env.doc_precedence = "definition"
+```
+
+`Env.init()` defaults to `"declaration"`. The CLI reads `tlconfig.lua` only
+after handling `--version`, so version reporting never executes project
+configuration.
 
 For Markdown output, `markdown.type_links` can map canonical Tealdoc path
 prefixes to URL prefixes:
@@ -1088,6 +1123,32 @@ You can also use it to access the registry of items.
 record tealdoc.Env
 ```
 
+<a id="tealdoc.Env.DocPrecedence"></a>
+### tealdoc.Env.DocPrecedence
+
+Selects which doc comment wins when both a function declaration
+and its definition are documented.
+
+
+```teal
+enum tealdoc.Env.DocPrecedence
+```
+
+<a id="tealdoc.Env.DocPrecedence.&quot;declaration&quot;"></a>
+#### tealdoc.Env.DocPrecedence.&quot;declaration&quot;
+
+Retain documentation from the function declaration.
+
+<a id="tealdoc.Env.DocPrecedence.&quot;definition&quot;"></a>
+#### tealdoc.Env.DocPrecedence.&quot;definition&quot;
+
+Retain documentation from the function definition.
+
+<a id="tealdoc.Env.DocPrecedence.&quot;error&quot;"></a>
+#### tealdoc.Env.DocPrecedence.&quot;error&quot;
+
+Reject functions whose declaration and definition are documented.
+
 <a id="tealdoc.Env.registry"></a>
 ### tealdoc.Env.registry
 
@@ -1133,6 +1194,17 @@ If this is true, Tealdoc will not log warnings about missing items.
 
 ```teal
 tealdoc.Env.no_warnings_on_missing: boolean
+```
+
+<a id="tealdoc.Env.doc_precedence"></a>
+### tealdoc.Env.doc_precedence
+
+Which function comment to retain when both the declaration and
+definition have documentation.
+
+
+```teal
+tealdoc.Env.doc_precedence: DocPrecedence
 ```
 
 <a id="tealdoc.Env.add_parser"></a>
