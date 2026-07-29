@@ -10,6 +10,13 @@ local record SiteApi
         view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver
     ): Highlighter.Links
+    --- Every documented type on the site, against the page documenting it. A
+    --- page's own view is the better answer where it has one, so this is what
+    --- a page falls back to rather than what it starts from.
+    site_type_links: function(
+        env: tealdoc.Env,
+        resolver: MarkdownGenerator.URLResolver
+    ): Highlighter.Links
     markdown: function(
         view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver,
@@ -216,6 +223,33 @@ local function rebase_headings(text: string, target: integer): string
         end
     end
     return table.concat(lines, "\n")
+end
+
+--- The whole site's types, so a page documenting none of its own still links
+--- the ones it mentions.
+---
+--- A guide is prose with code in it and declares no API, so it had no view,
+--- and with no view no links: every example on every guide page went unlinked
+--- while the module pages beside them were fully linked. The names come from
+--- the registry rather than from the pages, because the registry is what the
+--- pages are rendered from.
+---
+--- A name two modules both declare resolves to neither. That is
+--- `add_type_link`'s rule, and it matters more here than on a page, where a
+--- name is usually unambiguous inside one module and only collides across the
+--- site: `Event` is three different records.
+function SiteApi.site_type_links(
+    env: tealdoc.Env,
+    resolver: MarkdownGenerator.URLResolver
+): Highlighter.Links
+    local links: Highlighter.Links = {}
+    local ambiguous: {string: boolean} = {}
+    for path, item in pairs(env.registry) do
+        if item is tealdoc.TypeItem and Generator.filter(item, env) then
+            add_type_link(links, ambiguous, item.name, resolver(path))
+        end
+    end
+    return links
 end
 
 local function add_kind_badges(markdown: string, env: tealdoc.Env): string

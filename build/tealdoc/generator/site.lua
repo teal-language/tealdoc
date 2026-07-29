@@ -1615,7 +1615,8 @@ local function render_page(
    context,
    resolver,
    attached_examples,
-   used_examples)
+   used_examples,
+   site_links)
 
    local markdown = SiteApi.source_markdown(page)
    local api, module_introduction = SiteApi.markdown(
@@ -1646,7 +1647,17 @@ local function render_page(
       api
    end
 
+
+
+
+
+
    local type_links = SiteApi.type_links(view, resolver)
+   for name, url in pairs(site_links or {}) do
+      if type_links[name] == nil then
+         type_links[name] = url
+      end
+   end
    local content = SiteMarkdown.render(markdown, type_links)
    local outline
    local page_headings
@@ -2016,6 +2027,9 @@ function SiteGenerator.build(
       end
    end
    local resolver = routes_for_pages(context.pages, views, settings.base)
+
+
+   local site_links = SiteApi.site_type_links(env, resolver)
    local search_entries = {}
    local page_markdown = {}
    for _, page in ipairs(context.pages) do
@@ -2034,7 +2048,8 @@ function SiteGenerator.build(
       context,
       resolver,
       attached_examples,
-      used_examples)
+      used_examples,
+      site_links)
 
       write_file(path, html)
       table.insert(context.files, path)
@@ -2108,7 +2123,8 @@ function SiteGenerator.build(
       context,
       resolver,
       attached_examples,
-      used_examples)
+      used_examples,
+      site_links)
 
       local html_path = output .. "/404.html"
       write_file(html_path, html)

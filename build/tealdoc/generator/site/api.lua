@@ -22,6 +22,13 @@ local SiteApi = {}
 
 
 
+
+
+
+
+
+
+
 local function read_file(path)
    local file = assert(io.open(path, "rb"), "Could not open " .. path)
    local contents = assert(file:read("*a"), "Could not read " .. path)
@@ -216,6 +223,33 @@ local function rebase_headings(text, target)
       end
    end
    return table.concat(lines, "\n")
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SiteApi.site_type_links(
+   env,
+   resolver)
+
+   local links = {}
+   local ambiguous = {}
+   for path, item in pairs(env.registry) do
+      if item.kind == "type" and Generator.filter(item, env) then
+         add_type_link(links, ambiguous, item.name, resolver(path))
+      end
+   end
+   return links
 end
 
 local function add_kind_badges(markdown, env)
