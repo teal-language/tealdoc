@@ -183,6 +183,23 @@ local function type_to_string(report, typ)
    return typeinfo_to_string(typeinfo_for_type(report, typ))
 end
 
+local function typearg_constraint_to_string(
+   report,
+   constraint)
+
+   if not constraint then
+      return nil
+   end
+   local reported = type_to_string(report, constraint)
+   local direct = tostring(constraint)
+   if reported and reported:match("^function<") and
+      not direct:match("^table:") then
+
+      return direct
+   end
+   return reported
+end
+
 local function type_references_for_type(typ, state)
    local references = {}
    local seen = {}
@@ -473,6 +490,7 @@ local function item_for_function_type(t, visibility, kind, state, owner)
       location = location_for_type(t),
    }
 
+   local is_generic = t.typename == "generic"
    if t.typename == "generic" then
       local base = t.t
       assert(base.typename == "function")
@@ -482,7 +500,10 @@ local function item_for_function_type(t, visibility, kind, state, owner)
          local normalized = typearg.typearg:gsub("@.*", "")
          item.typeargs[i] = {
             name = normalized,
-            constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint),
+            constraint = typearg_constraint_to_string(
+            state.type_report,
+            typearg.constraint),
+
          }
       end
 
@@ -494,7 +515,10 @@ local function item_for_function_type(t, visibility, kind, state, owner)
    if t.args and #t.args.tuple > 0 then
       item.params = {}
       for i, ar in ipairs(t.args.tuple) do
-         if t.is_method and i == 1 then
+         if i == 1 and
+            owner and
+            (t.is_method or is_generic and ar.typename == "self") then
+
 
 
 
