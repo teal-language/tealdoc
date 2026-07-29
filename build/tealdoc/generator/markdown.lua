@@ -254,6 +254,12 @@ local MarkdownGenerator = {}
 
 
 
+
+
+
+
+
+
 MarkdownGenerator.item_phases = {}
 
 function MarkdownGenerator.resolve_type_url(
@@ -286,8 +292,16 @@ function MarkdownGenerator.resolve_type_url(
    return nil
 end
 
-MarkdownGenerator.init = function(
-   output,
+
+
+
+
+
+
+
+
+
+local function generator_for(
    type_url_for_path,
    allow_local_type_links)
 
@@ -314,6 +328,22 @@ MarkdownGenerator.init = function(
          end
       end
    end
+   return base, builder
+end
+
+
+
+
+
+
+
+
+MarkdownGenerator.init = function(
+   output,
+   type_url_for_path,
+   allow_local_type_links)
+
+   local base, builder = generator_for(type_url_for_path, allow_local_type_links)
    base.on_end = function(_, _)
       local file = io.open(output, "w")
       assert(file, "Could not open file for writing: " .. output)
@@ -322,6 +352,28 @@ MarkdownGenerator.init = function(
       log:info("Markdown documentation generated to " .. output)
    end
    return base
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+MarkdownGenerator.render = function(
+   env,
+   type_url_for_path,
+   allow_local_type_links)
+
+   local base, builder = generator_for(type_url_for_path, allow_local_type_links)
+   base:run(env)
+   return builder:build()
 end
 
 return MarkdownGenerator

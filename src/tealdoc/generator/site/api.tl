@@ -185,11 +185,10 @@ function SiteApi.markdown(
 
     local page_env = view.env
 
-    local output = os.tmpname()
-    MarkdownGenerator.init(output, resolver, false):run(page_env)
-    local markdown = read_file(output)
-    os.remove(output)
-    markdown = add_kind_badges(markdown, page_env)
+    local markdown = add_kind_badges(
+        MarkdownGenerator.render(page_env, resolver, false),
+        page_env
+    )
 
     for item_path, examples in pairs(attached_examples or {}) do
         local anchor = '<a id="' .. item_path .. '"></a>'
