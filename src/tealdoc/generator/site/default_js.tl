@@ -2,6 +2,31 @@ return [[
 (() => {
     "use strict";
 
+    const themeInput = document.querySelector(".tealdoc-theme-input");
+    const themeStorageKey = "tealdoc-theme";
+    const colorScheme = window.matchMedia?.("(prefers-color-scheme: dark)");
+    let storedTheme = null;
+    try {
+        const value = window.localStorage.getItem(themeStorageKey);
+        if (value === "light" || value === "dark") storedTheme = value;
+    } catch {}
+
+    const restoreTheme = () => {
+        if (!themeInput || !storedTheme) return;
+        const systemIsDark = colorScheme?.matches || false;
+        themeInput.checked = (storedTheme === "dark") !== systemIsDark;
+    };
+
+    restoreTheme();
+    themeInput?.addEventListener("change", () => {
+        const systemIsDark = colorScheme?.matches || false;
+        storedTheme = themeInput.checked !== systemIsDark ? "dark" : "light";
+        try {
+            window.localStorage.setItem(themeStorageKey, storedTheme);
+        } catch {}
+    });
+    colorScheme?.addEventListener?.("change", restoreTheme);
+
     const searchDialog = document.querySelector(".tealdoc-search-dialog");
     const searchInput = searchDialog?.querySelector("input");
     const searchResults = searchDialog?.querySelector(".tealdoc-search-results");

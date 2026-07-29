@@ -460,7 +460,8 @@ first opened. A query returns at most 50 ranked results. Home-page hero,
 action, feature, and Markdown content are part of the page entry. Navigation,
 theme switching, syntax highlighting, and disclosure controls work without
 JavaScript, and the page outline remains a usable list of links when scripting
-is unavailable.
+is unavailable. When scripting is available, the selected light or dark theme
+persists across pages.
 
 Generated reference headings keep canonical item names unchanged and add a
 compact semantic badge such as `method`, `function`, `field`, `record`, or

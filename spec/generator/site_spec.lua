@@ -1835,7 +1835,16 @@ print(value)
             1,
             true
         ))
-        assert.is_falsy(js:find("localStorage", 1, true))
+        assert.is_truthy(js:find(
+            'window.localStorage.getItem(themeStorageKey)',
+            1,
+            true
+        ))
+        assert.is_truthy(js:find(
+            'window.localStorage.setItem(themeStorageKey, storedTheme)',
+            1,
+            true
+        ))
         assert.is_truthy(search:find("API › api.open", 1, true))
         assert.is_truthy(search:find("Hello", 1, true), search)
         assert.is_truthy(search:find("Static documentation.", 1, true), search)
