@@ -217,6 +217,7 @@ describe("Site generator", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
         tealdoc.process_text([[
+            local type Camera = require("Camera")
             local record first
                 --- A projected widget.
                 record Widget
@@ -225,6 +226,9 @@ describe("Site generator", function()
 
                 --- A shared alias exported by more than one module.
                 type Shared = Widget
+
+                --- A class exported from its own source module.
+                Camera: Camera
             end
 
             return first
@@ -299,6 +303,59 @@ describe("Site generator", function()
         assert.is_falsy(html:find("#public.api.Secret", 1, true))
         assert.is_falsy(html:find("#hidden.Secret", 1, true))
 
+        remove_tree(output)
+    end)
+
+    it("prefers a dedicated page over a parent-page item route", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record watch
+                record Options
+                    recursive: boolean
+                end
+            end
+            return watch
+        ]], "watch.tl", env)
+        tealdoc.process_text([[
+            local type watch = require("watch")
+            local record filesystem
+                watch: watch
+                observe: function(): watch.Options
+            end
+            return filesystem
+        ]], "filesystem.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Nested APIs",
+            pages = {
+                {
+                    path = "",
+                    title = "Home",
+                },
+                {
+                    path = "filesystem",
+                    title = "Filesystem",
+                    api = "filesystem",
+                    public = "public.filesystem",
+                },
+                {
+                    path = "filesystem/watch",
+                    title = "Watch",
+                    api = "watch",
+                    public = "public.filesystem.watch",
+                },
+            },
+        })
+
+        local html = read_file(output .. "/filesystem/index.html")
+        assert.is_truthy(html:find(
+            'href="/filesystem/watch/#public.filesystem.watch.Options"',
+            1,
+            true
+        ), html)
         remove_tree(output)
     end)
 

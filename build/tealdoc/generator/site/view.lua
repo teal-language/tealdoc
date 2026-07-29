@@ -269,6 +269,11 @@ function SiteView.prepare(
             clone.parent = parent
             clone.children = {}
             clone.text = existing.text or clone.text
+            if exported_root and
+               type(clone) == "table" then
+
+               clone.visibility = "global"
+            end
             projected.registry[public_path] = clone
             mounted_from[public_path] = source_path
             existing = clone

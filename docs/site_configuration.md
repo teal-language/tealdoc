@@ -358,6 +358,13 @@ the parsed registry. Compatible re-exports coalesce at the same public path;
 unrelated collisions fail the build. Type and alias links are emitted only for
 exact items rendered by a configured API page.
 
+Lowercase module basenames contribute their public children directly.
+Uppercase module basenames, conventionally record or class modules, retain that
+basename below `public`. Thus `my.components` contributes `my.graphics.Sprite`
+while `my.Camera` contributes `my.graphics.Camera` and its members. A dedicated
+page for a nested public namespace owns its links in preference to the parent
+page's summary item.
+
 ## sidebar
 
 Optional recursively nested array. When omitted, Tealdoc derives its sidebar
