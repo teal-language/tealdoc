@@ -16,23 +16,34 @@ local HTMLBuilder = { Options = {} }
 
 
 
+
 function HTMLBuilder.init(options)
    local writer = lunamark.writer.html.new()
+   local dynamic_writer = writer
    if options and options.blockquote then
       writer.blockquote = options.blockquote
    end
    if options and options.div then
       writer.div = options.div
    end
+   if options and options.header then
+      dynamic_writer["header"] = options.header
+   end
    if options and options.paragraph then
-      local dynamic_writer = writer
       dynamic_writer["paragraph"] = options.paragraph
    end
-   local parse = lunamark.reader.markdown.new(writer, {
+   local reader_options = {
       fenced_code_blocks = true,
       fenced_divs = options and options.fenced_divs or false,
+      header_attributes = true,
       pipe_tables = true,
-   })
+   }
+   local markdown_reader = lunamark.reader.markdown
+   local create_reader = markdown_reader["new"]
+
+
+
+   local parse = create_reader(writer, reader_options)
 
    local builder = {
       output = {},

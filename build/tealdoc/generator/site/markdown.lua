@@ -199,10 +199,65 @@ local function site_paragraph(content)
    }
 end
 
+local function heading_slug(text)
+   local value = text:gsub("!?%[([^%]]+)%]%b()", "%1"):
+   gsub("!?%[([^%]]+)%]%s*%[[^%]]*%]", "%1"):
+   gsub("`+", ""):
+   gsub("\\(.)", "%1")
+   return Text.slug(value)
+end
+
+local function markdown_heading_slugs(markdown)
+   local slugs = {}
+   local previous = ""
+   local fence_character = ""
+   local fence_length = 0
+   for line in (markdown .. "\n"):gmatch("(.-)\n") do
+      local next_previous = ""
+      if fence_character ~= "" then
+         local closing = line:match("^%s*([`~]+)%s*$")
+         if closing and
+            closing:sub(1, 1) == fence_character and
+            #closing >= fence_length then
+
+            fence_character = ""
+            fence_length = 0
+         end
+      else
+         local opening = line:match("^%s*([`~]+)")
+         if opening and #opening >= 3 then
+            fence_character = opening:sub(1, 1)
+            fence_length = #opening
+         else
+            local hashes, heading_text = line:match("^%s*(#+)%s+(.+)$")
+            if hashes and #hashes <= 6 then
+               heading_text = heading_text:gsub("%s+#+%s*$", ""):
+               gsub("%s+{[^}]*}%s*$", "")
+               table.insert(slugs, heading_slug(heading_text))
+            elseif previous:match("%S") and
+               line:match("^%s*[=-]+%s*$") then
+
+               local setext_text = previous:gsub(
+               "%s+{[^}]*}%s*$",
+               "")
+
+               table.insert(slugs, heading_slug(setext_text))
+            else
+               next_previous = line
+            end
+         end
+      end
+      previous = next_previous
+   end
+   return slugs
+end
+
 function SiteMarkdown.render(
    markdown,
    type_links)
 
+   local heading_slugs = markdown_heading_slugs(markdown)
+   local heading_index = 0
    local prepared = {}
    local fence
    local labeled_fence = false
@@ -243,6 +298,41 @@ function SiteMarkdown.render(
       fenced_divs = true,
       blockquote = site_blockquote,
       div = site_div,
+      header = function(
+         content,
+         level,
+         attributes)
+
+         heading_index = heading_index + 1
+         local id = attributes.id and
+         ' id="' .. escape_html(attributes.id) .. '"' or
+         ""
+         local class = attributes.class and attributes.class ~= "" and
+         ' class="' .. escape_html(attributes.class) .. '"' or
+         ""
+         local lang = attributes.lang and
+         ' lang="' .. escape_html(attributes.lang) .. '"' or
+         ""
+         local natural = heading_slugs[heading_index]
+         local identity = level <= 4 and natural and natural ~= "" and
+         ' data-tealdoc-heading-slug="' ..
+         escape_html(natural) ..
+         '"' or
+         ""
+         return {
+            "<h",
+            level,
+            id,
+            class,
+            lang,
+            identity,
+            ">",
+            content,
+            "</h",
+            level,
+            ">",
+         }
+      end,
       paragraph = site_paragraph,
    })
    builder:md(markdown)

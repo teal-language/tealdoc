@@ -195,13 +195,19 @@ local function canonical_url(
 end
 
 local function link_url(base, path)
-   if path:match("^https?://") or
-      path:match("^mailto:") or
-      path:sub(1, 1) == "#" then
+   if path:match("^%a[%w+.-]*:") or
+      path:sub(1, 2) == "//" or
+      path:sub(1, 1) == "#" or
+      path:sub(1, 1) == "?" then
 
       return path
    end
-   return page_url(base, path)
+   local target, suffix = path:match("^([^?#]*)(.*)$")
+   local filename = target:match("([^/]+)$")
+   if filename and filename:find("%.") then
+      return root_file_url(base, target) .. suffix
+   end
+   return page_url(base, target) .. suffix
 end
 
 local function markdown_url(base, path)
@@ -410,25 +416,49 @@ local function headings(html)
    local outline = {}
    local found = {}
    local used = {}
+   local explicit = {}
+   for attributes in html:gmatch("<h[1-6]([^>]*)>") do
+      local id = attributes:match(' id="([^"]+)"')
+      if id then
+         assert(not explicit[id], "duplicate explicit heading id: " .. id)
+         explicit[id] = true
+         used[id] = true
+      end
+   end
    local parent = ""
    local outline_prefix = ""
    local with_ids = html:gsub(
-   "<h([1-4])>(.-)</h%1>",
-   function(level_text, content)
-      local level = tonumber(level_text)
-      local id = slug(content)
-      if level == 4 and
-         (id == "arguments" or id == "returns") and
-         parent ~= "" then
+   "<h([1-4])([^>]*)>(.-)</h%1>",
+   function(
+      level_text,
+      attributes,
+      content)
 
-         id = parent .. "-" .. id
-      end
-      if id == "" then
-         id = "section"
-      end
-      used[id] = (used[id] or 0) + 1
-      if used[id] > 1 then
-         id = id .. "-" .. tostring(used[id])
+      local level = tonumber(level_text)
+      local id = attributes:match(' id="([^"]+)"')
+      local natural = attributes:match(
+      ' data%-tealdoc%-heading%-slug="([^"]*)"')
+
+      attributes = attributes:gsub('%s+id="[^"]*"', ""):
+      gsub('%s+data%-tealdoc%-heading%-slug="[^"]*"', "")
+      if not id then
+         id = natural or slug(content)
+         if level == 4 and
+            (id == "arguments" or id == "returns") and
+            parent ~= "" then
+
+            id = parent .. "-" .. id
+         end
+         if id == "" then
+            id = "section"
+         end
+         local base = id
+         local suffix = 1
+         while used[id] do
+            suffix = suffix + 1
+            id = base .. "-" .. tostring(suffix)
+         end
+         used[id] = true
       end
       if level == 2 or level == 3 then
          parent = id
@@ -469,6 +499,7 @@ local function headings(html)
       local label = "Permalink to " .. strip_tags(content)
       return "<h" ..
       level_text ..
+      attributes ..
       ' id="' ..
       escape_html(id) ..
       '" tabindex="-1">' ..
