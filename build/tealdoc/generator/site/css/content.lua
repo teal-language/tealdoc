@@ -176,6 +176,8 @@ return [[
     z-index: 1;
     top: var(--tealdoc-code-lang-top);
     right: var(--tealdoc-code-lang-right);
+    padding: var(--tealdoc-code-lang-padding);
+    background: var(--tealdoc-code-background);
     color: var(--tealdoc-code-lang-color);
     content: attr(data-lang);
     font-family: var(--tealdoc-font-mono);
@@ -185,11 +187,6 @@ return [[
     user-select: none;
 }
 
-/* A labelled block keeps the label's own room above the first line, so the
- * two never sit on top of one another. */
-.tealdoc-content .tealdoc-code-block[data-lang] > pre {
-    padding-top: var(--tealdoc-code-lang-clearance);
-}
 
 .tealdoc-content pre {
     overflow: auto;
