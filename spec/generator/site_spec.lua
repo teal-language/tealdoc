@@ -1058,7 +1058,8 @@ print(value)
         assert.is_truthy(api:find("<h4", 1, true))
         assert.is_falsy(api:find("Public APIs in", 1, true))
         assert.is_falsy(api:find("Every public item", 1, true))
-        assert.is_truthy(api:find("<th>API</th>", 1, true), api)
+        assert.is_truthy(api:find("<th>Function</th>", 1, true), api)
+        assert.is_truthy(markdown:find("### Functions", 1, true), markdown)
         assert.is_truthy(markdown:find(
             "| [`reset`](/modules/api/#api.reset) | <span class=\"tealdoc-kind-badge tealdoc-kind-method\">method</span> |",
             1,

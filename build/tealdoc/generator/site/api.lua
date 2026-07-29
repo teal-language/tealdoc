@@ -235,6 +235,16 @@ function SiteApi.markdown(
    return markdown:sub(2)
 end
 
+
+
+
+local FUNCTION_KINDS = {
+   ["function"] = true,
+   method = true,
+   metamethod = true,
+   macro = true,
+}
+
 local function item_text(item, env)
    if item.text and item.text ~= "" then
       return item.text
@@ -313,27 +323,55 @@ function SiteApi.summary(
       return ""
    end
 
-   local output = {
-      "| API | Kind | Description |\n",
-      "| --- | --- | --- |\n",
+
+
+
+
+   local groups = {
+      { "Types", "Type", {} },
+      { "Functions", "Function", {} },
+      { "Values", "Value", {} },
    }
    for _, item in ipairs(items) do
-      local url = resolver(item.path) or "#" .. item.path
       local kind = Generator.item_kind(item, env)
-      table.insert(
-      output,
-      "| [`" ..
-      item.name ..
-      "`](" ..
-      url ..
-      ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
-      kind ..
-      '">' ..
-      kind ..
-      "</span> | " ..
-      item_summary(item, env) ..
-      " |\n")
+      local group = 3
+      if FUNCTION_KINDS[kind] then
+         group = 2
+      elseif item.kind == "type" then
+         group = 1
+      end
+      table.insert(groups[group][3], item)
+   end
 
+   local output = {}
+   for _, group in ipairs(groups) do
+      local heading, column, group_items = group[1], group[2], group[3]
+      if #group_items > 0 then
+         if #output > 0 then
+            table.insert(output, "\n")
+         end
+         table.insert(output, "### " .. heading .. "\n\n")
+         table.insert(output, "| " .. column .. " | Kind | Description |\n")
+         table.insert(output, "| --- | --- | --- |\n")
+         for _, item in ipairs(group_items) do
+            local url = resolver(item.path) or "#" .. item.path
+            local kind = Generator.item_kind(item, env)
+            table.insert(
+            output,
+            "| [`" ..
+            item.name ..
+            "`](" ..
+            url ..
+            ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
+            kind ..
+            '">' ..
+            kind ..
+            "</span> | " ..
+            item_summary(item, env) ..
+            " |\n")
+
+         end
+      end
    end
    return table.concat(output)
 end

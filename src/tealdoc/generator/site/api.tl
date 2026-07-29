@@ -235,6 +235,16 @@ function SiteApi.markdown(
     return markdown:sub(2)
 end
 
+-- The kinds `Generator.item_kind` answers for something a caller calls. What
+-- is left over after these and the types is a value: a field, a variable, an
+-- enum member.
+local FUNCTION_KINDS: {string: boolean} = {
+    ["function"] = true,
+    method = true,
+    metamethod = true,
+    macro = true,
+}
+
 local function item_text(item: tealdoc.Item, env: tealdoc.Env): string
     if item.text and item.text ~= "" then
         return item.text
@@ -313,27 +323,55 @@ function SiteApi.summary(
         return ""
     end
 
-    local output: {string} = {
-        "| API | Kind | Description |\n",
-        "| --- | --- | --- |\n",
+    -- One table per group rather than one alphabetical list of everything. A
+    -- reader arriving at a module wants either the shapes it defines or the
+    -- calls it answers, and interleaving them by name means reading the kind
+    -- column of every row to find out which of the two a name is.
+    local groups: {{string, string, {tealdoc.Item}}} = {
+        { "Types", "Type", {} },
+        { "Functions", "Function", {} },
+        { "Values", "Value", {} },
     }
     for _, item in ipairs(items) do
-        local url = resolver(item.path) or "#" .. item.path
         local kind = Generator.item_kind(item, env)
-        table.insert(
-            output,
-            "| [`" ..
-                item.name ..
-                "`](" ..
-                url ..
-                ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
-                kind ..
-                '">' ..
-                kind ..
-                "</span> | " ..
-                item_summary(item, env) ..
-                " |\n"
-        )
+        local group = 3
+        if FUNCTION_KINDS[kind] then
+            group = 2
+        elseif item is tealdoc.TypeItem then
+            group = 1
+        end
+        table.insert(groups[group][3], item)
+    end
+
+    local output: {string} = {}
+    for _, group in ipairs(groups) do
+        local heading, column, group_items = group[1], group[2], group[3]
+        if #group_items > 0 then
+            if #output > 0 then
+                table.insert(output, "\n")
+            end
+            table.insert(output, "### " .. heading .. "\n\n")
+            table.insert(output, "| " .. column .. " | Kind | Description |\n")
+            table.insert(output, "| --- | --- | --- |\n")
+            for _, item in ipairs(group_items) do
+                local url = resolver(item.path) or "#" .. item.path
+                local kind = Generator.item_kind(item, env)
+                table.insert(
+                    output,
+                    "| [`" ..
+                        item.name ..
+                        "`](" ..
+                        url ..
+                        ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
+                        kind ..
+                        '">' ..
+                        kind ..
+                        "</span> | " ..
+                        item_summary(item, env) ..
+                        " |\n"
+                )
+            end
+        end
     end
     return table.concat(output)
 end
