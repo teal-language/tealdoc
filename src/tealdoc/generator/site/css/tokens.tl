@@ -153,9 +153,9 @@ return [[
      * larger page and the heading and the line under it come apart. A rem
      * scales by exactly the zoom factor, which is what was asked for. */
     --tealdoc-hero-name-size: 5.5rem;
-    --tealdoc-hero-text-size: 2rem;
+    --tealdoc-hero-text-size: 1.6rem;
     --tealdoc-hero-name-size-narrow: 4rem;
-    --tealdoc-hero-text-size-narrow: 1.5rem;
+    --tealdoc-hero-text-size-narrow: 1.2rem;
     --tealdoc-home-width: 1152px;
     --tealdoc-home-gutter: 2rem;
     --tealdoc-button-brand-background: var(--tealdoc-accent);

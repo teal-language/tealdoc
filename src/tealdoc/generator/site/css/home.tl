@@ -35,7 +35,7 @@ return [[
 
 .tealdoc-hero-text {
     max-width: 650px;
-    margin: 1.5rem 0 0;
+    margin: 1.2rem 0 0;
     color: var(--tealdoc-text-muted);
     font-size: var(--tealdoc-hero-text-size);
     line-height: 1.35;
@@ -48,14 +48,17 @@ return [[
     margin-top: 2rem;
 }
 
+/* The box is smaller; the type in it is not. A hero action is read at the
+ * same size wherever it sits, so what comes off is the padding around it and
+ * the height that padding implied. */
 .tealdoc-hero-action {
     display: inline-flex;
-    min-height: 44px;
+    min-height: 35px;
     align-items: center;
     justify-content: center;
-    padding: 0.6rem 1.15rem;
+    padding: 0.48rem 0.92rem;
     border: 1px solid transparent;
-    border-radius: 22px;
+    border-radius: 18px;
     font-size: 0.9rem;
     font-weight: 650;
     text-decoration: none;
