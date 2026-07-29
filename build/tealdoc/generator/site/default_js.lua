@@ -200,5 +200,26 @@ return [[
         window.addEventListener("hashchange", scheduleOutlineUpdate);
         updateOutline();
     }
+
+    // The sidebar scrolls on its own, so a page far enough down the tree
+    // loads with its own row out of sight. This is scrollTop on the sidebar
+    // rather than scrollIntoView, which scrolls every scrollable ancestor
+    // including the document and would land the reader partway down the page
+    // they just opened. Nothing here is required to navigate: without it the
+    // row is still there, just not in view.
+    const current = document.querySelector(
+        '.tealdoc-sidebar a[aria-current="page"]'
+    );
+    if (current) {
+        const sidebar = current.closest(".tealdoc-sidebar");
+        if (sidebar && sidebar.scrollHeight > sidebar.clientHeight) {
+            const row = current.getBoundingClientRect();
+            const view = sidebar.getBoundingClientRect();
+            if (row.top < view.top || row.bottom > view.bottom) {
+                sidebar.scrollTop +=
+                    row.top - view.top - (view.height - row.height) / 2;
+            }
+        }
+    }
 })();
 ]]
