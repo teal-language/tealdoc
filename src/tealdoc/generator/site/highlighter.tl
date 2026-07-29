@@ -4,15 +4,22 @@ local Text = require("tealdoc.generator.text")
 local record Highlighter
     type Links = {string: string}
 
+    record Segment
+        first: integer
+        last: integer
+        style: string
+        url: string
+    end
+
     highlight: function(string, Links): string
+    --- Emits the spans a list of segments describes over the code they were
+    --- read from. Segments come from a tokenizer; this is the half that does
+    --- not care which one, so a lexer that is not Teal's reaches the same
+    --- markup and the same theme.
+    render: function(string, {Segment}): string
 end
 
-local record Segment
-    first: integer
-    last: integer
-    style: string
-    url: string
-end
+local type Segment = Highlighter.Segment
 
 local type_names: {string: boolean} = {
     ["any"] = true,
@@ -187,6 +194,10 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
         return a.first < b.first
     end)
 
+    return Highlighter.render(code, segments)
+end
+
+function Highlighter.render(code: string, segments: {Segment}): string
     local output: {string} = {}
     local cursor = 1
     for _, segment in ipairs(segments) do

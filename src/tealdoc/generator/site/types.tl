@@ -79,6 +79,7 @@ local record SiteTypes
         robots: boolean
         not_found: Page
         custom_css: string
+        lexers: string
         templates: string
         copyright: string
         license: string

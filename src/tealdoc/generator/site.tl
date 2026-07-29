@@ -9,6 +9,7 @@ local PageTemplate = require("tealdoc.generator.site.page_template")
 local SiteApi = require("tealdoc.generator.site.api")
 local SiteConfig = require("tealdoc.generator.site.config")
 local SiteExamples = require("tealdoc.generator.site.examples")
+local Scintillua = require("tealdoc.generator.site.scintillua")
 local SiteMarkdown = require("tealdoc.generator.site.markdown")
 local SiteTypes = require("tealdoc.generator.site.types")
 local SiteValidator = require("tealdoc.generator.site.validator")
@@ -1939,6 +1940,10 @@ function SiteGenerator.build(
     config_directory?: string
 )
     local settings = SiteConfig.configure(raw_settings, config_directory)
+    -- Where a site keeps its Scintillua lexers, if it keeps any. Set once for
+    -- the build rather than threaded through every render, because it is a
+    -- property of the installation and not of a page.
+    Scintillua.configure(settings.lexers)
     local pages: {SiteGenerator.Page}
     local attached_examples: {string: {PreparedExample}}
     pages, attached_examples = SiteExamples.prepare(settings, env)

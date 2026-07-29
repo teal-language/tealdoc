@@ -40,6 +40,7 @@ build = {
       ["tealdoc.generator.site.config"] = "build/tealdoc/generator/site/config.lua",
       ["tealdoc.generator.site.examples"] = "build/tealdoc/generator/site/examples.lua",
       ["tealdoc.generator.site.markdown"] = "build/tealdoc/generator/site/markdown.lua",
+      ["tealdoc.generator.site.scintillua"] = "build/tealdoc/generator/site/scintillua.lua",
       ["tealdoc.generator.site.types"] = "build/tealdoc/generator/site/types.lua",
       ["tealdoc.generator.site.view"] = "build/tealdoc/generator/site/view.lua",
       ["tealdoc.generator.site.validator"] = "build/tealdoc/generator/site/validator.lua",

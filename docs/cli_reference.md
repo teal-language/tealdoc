@@ -266,6 +266,7 @@ settings document their complete nested table shape.
 | [`robots`](site_configuration.md#robots) | `true` | Generate `robots.txt`. |
 | [`not_found`](site_configuration.md#not_found) | omitted | Custom 404 page. |
 | [`custom_css`](site_configuration.md#custom_css) | omitted | Project stylesheet. |
+| [`lexers`](site_configuration.md#lexers) | omitted | Scintillua lexers for non-Teal blocks. |
 | [`templates`](site_configuration.md#templates) | omitted | Template override directory. |
 | [`copyright`](site_configuration.md#copyright) | omitted | Escaped footer copyright. |
 | [`license`](site_configuration.md#license) | omitted | Escaped footer license. |

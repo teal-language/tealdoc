@@ -242,6 +242,26 @@ describe("Site generator", function()
             assert.is_falsy(shell:find("tealdoc-token-", 1, true))
         end)
 
+    it("leaves a block alone when no lexer directory is configured", function()
+        -- The whole point of the setting being optional: a site that says
+        -- nothing about lexers gets exactly what it got before there were
+        -- any, rather than a hard dependency on a library that is not on
+        -- LuaRocks.
+        local Scintillua = require("tealdoc.generator.site.scintillua")
+        Scintillua.configure(nil)
+        local html = SiteMarkdown.render("```bash\nls -l # note\n```\n", {})
+        assert.is_truthy(html:find(
+            '<div class="tealdoc-code-block" data-lang="bash">',
+            1,
+            true
+        ), html)
+        assert.is_falsy(html:find("tealdoc-token-", 1, true), html)
+        Scintillua.configure("/tealdoc-spec/no/such/directory")
+        local missing = SiteMarkdown.render("```bash\nls -l\n```\n", {})
+        assert.is_falsy(missing:find("tealdoc-token-", 1, true), missing)
+        Scintillua.configure(nil)
+    end)
+
     it("assembles one public API page from several source modules", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

@@ -1,7 +1,14 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tl = require("tl")
 local Text = require("tealdoc.generator.text")
 
-local Highlighter = {}
+local Highlighter = { Segment = {} }
+
+
+
+
+
+
+
 
 
 
@@ -187,6 +194,10 @@ function Highlighter.highlight(code, links)
       return a.first < b.first
    end)
 
+   return Highlighter.render(code, segments)
+end
+
+function Highlighter.render(code, segments)
    local output = {}
    local cursor = 1
    for _, segment in ipairs(segments) do

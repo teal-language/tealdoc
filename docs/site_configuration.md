@@ -224,6 +224,25 @@ selectors can customize the theme without replacing templates.
 custom_css = "docs/site.css"
 ```
 
+## lexers
+
+Optional directory of [Scintillua](https://github.com/orbitalquark/scintillua)
+lexers, used to highlight fenced blocks in languages other than Teal.
+
+Teal and Lua are always highlighted through the Teal compiler's own lexer,
+which is what turns a type name in a code block into a link to the page that
+documents it. Every other language is read by whichever Scintillua lexer
+matches the fence's language, and a language with no lexer here is emitted
+exactly as it was written.
+
+Tealdoc neither vendors nor depends on Scintillua: it is not published on
+LuaRocks, so a site that wants these languages installs it and says where the
+lexers landed. Omit this and nothing changes.
+
+```lua
+lexers = "vendor/scintillua/lexers"
+```
+
 ## templates
 
 Optional config-relative directory containing narrow

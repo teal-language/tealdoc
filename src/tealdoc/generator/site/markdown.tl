@@ -1,5 +1,6 @@
 local HTMLBuilder = require("tealdoc.generator.html.builder")
 local Highlighter = require("tealdoc.generator.site.highlighter")
+local Scintillua = require("tealdoc.generator.site.scintillua")
 local Text = require("tealdoc.generator.text")
 
 local record SiteMarkdown
@@ -314,10 +315,20 @@ function SiteMarkdown.render(
                 :gsub("&quot;", '"')
                 :gsub("&#39;", "'")
                 :gsub("&amp;", "&")
+            -- Teal and Lua go through the compiler's own lexer, which is
+            -- what carries the type links. Anything else Scintillua has a
+            -- grammar for reaches the same emitter through its segments, and
+            -- anything neither knows is left as it was written.
             local links = links_for[language]
-            local body = links
-                and Highlighter.highlight(code, links)
-                or escape_html(code)
+            local body: string
+            if links then
+                body = Highlighter.highlight(code, links)
+            else
+                local segments = Scintillua.segments(language, code)
+                body = segments
+                    and Highlighter.render(code, segments)
+                    or escape_html(code)
+            end
             return '<div class="tealdoc-code-block" data-lang="' ..
                 escape_html(language) ..
                 '"><pre class="language-' ..
