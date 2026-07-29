@@ -1227,8 +1227,10 @@ print(value)
         ))
         assert.is_true(introduction_at < types_at)
         assert.is_true(introduction_at < functions_at)
+        assert.is_true(function_summary_at < type_summary_at, markdown)
         assert.is_true(type_summary_at < types_at)
         assert.is_true(function_summary_at < functions_at)
+        assert.is_true(functions_at < types_at)
         assert.is_truthy(markdown:find("\n## Display changes\n", 1, true))
         assert.is_truthy(
             markdown:find("\n#### Window lifetime\n", 1, true),

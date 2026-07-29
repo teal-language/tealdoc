@@ -301,17 +301,17 @@ local function group_details(
    end)
 
    local groups = {
-      { "Types", {} },
       { "Functions", {} },
+      { "Types", {} },
       { "Values", {} },
    }
    for _, item in ipairs(items) do
       local kind = Generator.item_kind(item, env)
       local group = 3
       if FUNCTION_KINDS[kind] then
-         group = 2
-      elseif item.kind == "type" then
          group = 1
+      elseif item.kind == "type" then
+         group = 2
       end
       table.insert(groups[group][2], item)
    end
@@ -507,17 +507,17 @@ function SiteApi.summary(
 
 
    local groups = {
-      { "Types", "Type", true, {} },
       { "Functions", "Function", false, {} },
+      { "Types", "Type", true, {} },
       { "Values", "Value", true, {} },
    }
    for _, item in ipairs(items) do
       local kind = Generator.item_kind(item, env)
       local group = 3
       if FUNCTION_KINDS[kind] then
-         group = 2
-      elseif item.kind == "type" then
          group = 1
+      elseif item.kind == "type" then
+         group = 2
       end
       table.insert(groups[group][4], item)
    end
