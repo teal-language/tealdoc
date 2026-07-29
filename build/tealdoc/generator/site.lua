@@ -139,7 +139,6 @@ local SiteGenerator = { Link = {}, Feature = {}, HeadEntry = {}, Page = {}, Exam
 
 
 
-
 local function read_file(path)
    local file = assert(io.open(path, "rb"), "Could not open " .. path)
    local contents = assert(file:read("*a"), "Could not read " .. path)
@@ -249,7 +248,6 @@ local site_keys = {
    site_url = true,
    logo = true,
    github = true,
-   show_markdown_link = true,
    favicon = true,
    public = true,
    cname = true,
@@ -397,7 +395,6 @@ local function configured_settings(
    type(values["title"]) == "string" and values["title"] ~= "",
    "tealdoc.site.title is required")
 
-   validate_optional_boolean(values, "show_markdown_link")
    for _, key in ipairs({
          "name",
          "description",
@@ -460,7 +457,6 @@ local function configured_settings(
       site_url = values["site_url"],
       logo = values["logo"],
       github = values["github"],
-      show_markdown_link = (values["show_markdown_link"] or false),
       favicon = values["favicon"],
       public = values["public"] and
       resolve_file_path(
@@ -2326,16 +2322,14 @@ local function header_actions(
    page)
 
    local output = {}
-   if settings.show_markdown_link then
-      table.insert(
-      output,
-      '<a class="tealdoc-icon-link" href="' ..
-      escape_html(markdown_url(settings.base, page.path)) ..
-      '" aria-label="View this page as Markdown" title="View Markdown">' ..
-      icon("markdown") ..
-      "</a>")
+   table.insert(
+   output,
+   '<a class="tealdoc-icon-link" href="' ..
+   escape_html(markdown_url(settings.base, page.path)) ..
+   '" aria-label="View this page as Markdown" title="View Markdown">' ..
+   icon("markdown") ..
+   "</a>")
 
-   end
    table.insert(
    output,
    '<label class="tealdoc-icon-link tealdoc-theme-toggle" for="tealdoc-theme-input" aria-label="Toggle light and dark theme" title="Toggle theme">' ..

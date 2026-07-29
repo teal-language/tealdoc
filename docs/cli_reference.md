@@ -96,7 +96,6 @@ return {
             site_url = "https://docs.example.com",
             logo = "/images/logo.svg",
             github = "https://github.com/example/my-project",
-            show_markdown_link = true,
             favicon = "favicon.svg",
             public = "docs/public",
             cname = "docs.example.com",
@@ -207,42 +206,43 @@ and command-line Teal files remain relative to the invoking directory.
 
 #### Site settings
 
-Tealdoc rejects unknown setting names. Site settings and defaults are:
+Tealdoc rejects unknown setting names. Every setting below links to its own
+reference section with its type, behavior, and a minimal example. Compound
+settings document their complete nested table shape.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `title` | required | Project name used in document titles. |
-| `name` | `title` | Header wordmark; use `""` for a logo-only header. |
-| `description` | `""` | Fallback page description. |
-| `language` | `"en"` | HTML language and Open Graph locale. |
-| `base` | `"/"` | Root URL path. It must begin with `/`; Tealdoc adds the trailing slash. |
-| `site_url` | omitted | HTTP(S) origin used for canonical URLs and the sitemap. |
-| `logo` | omitted | Header logo URL. |
-| `github` | omitted | GitHub repository URL shown in the header. |
-| `show_markdown_link` | `false` | Show a header link to the Markdown Tealdoc always emits. |
-| `favicon` | omitted | Favicon URL; relative values use `base`. |
-| `public` | omitted | Config-relative directory copied to the output root. |
-| `cname` | omitted | Bare DNS name written to `CNAME`. |
-| `head` | `{}` | Escaped, allowlisted `meta` and `link` entries. |
-| `author` | omitted | Author metadata. |
-| `social_image` | omitted | Default Open Graph and Twitter image. |
-| `twitter_site` | omitted | Twitter account metadata. |
-| `sitemap` | `site_url ~= nil` | Generate `sitemap.xml`. |
-| `robots` | `true` | Generate `robots.txt`. |
-| `not_found` | omitted | Custom 404 page definition. |
-| `custom_css` | omitted | Project stylesheet appended after the defaults. |
-| `templates` | omitted | Directory containing supported template overrides. |
-| `copyright` | omitted | Escaped copyright text in the footer. |
-| `license` | omitted | Escaped license text in the footer. |
-| `footer_links` | `{}` | Structured footer links. |
-| `redirects` | `{}` | Old route to destination mappings. |
-| `sources` | `{}` | Teal files or directories to process for API pages. |
-| `pages` | `{}` | Handwritten and API page definitions. |
-| `examples` | `{}` | Complete page examples or examples attached to API items. |
-| `validate_links` | `true` | Validate generated internal links and anchors. |
-| `nav` | `{}` | Header navigation links. |
-| `before_build` | omitted | Trusted Lua hook run immediately before rendering. |
-| `after_build` | omitted | Trusted Lua hook run after all normal artifacts are written. |
+| [`title`](site_configuration.md#title) | required | Project name used in document titles. |
+| [`name`](site_configuration.md#name) | `title` | Header wordmark; use `""` for a logo-only header. |
+| [`description`](site_configuration.md#description) | `""` | Fallback page description. |
+| [`language`](site_configuration.md#language) | `"en"` | HTML language and Open Graph locale. |
+| [`base`](site_configuration.md#base) | `"/"` | Root URL path. |
+| [`site_url`](site_configuration.md#site_url) | omitted | HTTP(S) origin used for canonical URLs and the sitemap. |
+| [`logo`](site_configuration.md#logo) | omitted | Header logo URL. |
+| [`github`](site_configuration.md#github) | omitted | GitHub repository URL shown in the header. |
+| [`favicon`](site_configuration.md#favicon) | omitted | Favicon URL. |
+| [`public`](site_configuration.md#public) | omitted | Config-relative static asset directory. |
+| [`cname`](site_configuration.md#cname) | omitted | Bare DNS name written to `CNAME`. |
+| [`head`](site_configuration.md#head) | `{}` | Escaped `meta` and `link` entries. |
+| [`author`](site_configuration.md#author) | omitted | Author metadata. |
+| [`social_image`](site_configuration.md#social_image) | omitted | Default social image. |
+| [`twitter_site`](site_configuration.md#twitter_site) | omitted | Twitter account metadata. |
+| [`sitemap`](site_configuration.md#sitemap) | `site_url ~= nil` | Generate `sitemap.xml`. |
+| [`robots`](site_configuration.md#robots) | `true` | Generate `robots.txt`. |
+| [`not_found`](site_configuration.md#not_found) | omitted | Custom 404 page. |
+| [`custom_css`](site_configuration.md#custom_css) | omitted | Project stylesheet. |
+| [`templates`](site_configuration.md#templates) | omitted | Template override directory. |
+| [`copyright`](site_configuration.md#copyright) | omitted | Escaped footer copyright. |
+| [`license`](site_configuration.md#license) | omitted | Escaped footer license. |
+| [`footer_links`](site_configuration.md#footer_links) | `{}` | Structured footer links. |
+| [`redirects`](site_configuration.md#redirects) | `{}` | Old route to destination mappings. |
+| [`sources`](site_configuration.md#sources) | `{}` | Teal source files and directories. |
+| [`pages`](site_configuration.md#pages) | `{}` | Handwritten and API pages. |
+| [`examples`](site_configuration.md#examples) | `{}` | Page and attached examples. |
+| [`validate_links`](site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
+| [`nav`](site_configuration.md#nav) | `{}` | Header navigation link tables. |
+| [`before_build`](site_configuration.md#before_build) | omitted | Pre-render build hook. |
+| [`after_build`](site_configuration.md#after_build) | omitted | Post-render build hook. |
 
 At least one page or example is required, but Teal sources are not. A
 Markdown-only site is a supported zero-Teal build.
@@ -272,8 +272,19 @@ page outline, breadcrumbs, previous and next links, heading permalinks, and
 JavaScript-free mobile navigation and light/dark controls. The optional logo is
 a URL, while `github` adds the GitHub header action. Set `name` to an empty
 string for a logo-only header, omit `logo` for text only, or provide both.
-Tealdoc emits the composed Markdown beside every HTML page regardless of
-`show_markdown_link`; that setting controls only its header link.
+`nav` is an ordered array of link tables. Each entry requires `text` and
+`path`; paths may be site routes, absolute paths, or external URLs:
+
+```lua
+nav = {
+    { text = "Guide", path = "guide" },
+    { text = "API", path = "reference/api" },
+    { text = "Community", path = "https://example.com/community" },
+}
+```
+
+Tealdoc emits the composed Markdown beside every HTML page and always links it
+from the header.
 Every page also emits the same composed Markdown as a page-local `llms.txt`
 and links it from the footer. A page at `modules/window` therefore writes
 `modules/window/llms.txt`; the home page writes the root `llms.txt`. Every

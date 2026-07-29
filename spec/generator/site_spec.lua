@@ -343,7 +343,6 @@ print(value)
                     },
                 },
             },
-            show_markdown_link = true,
             copyright = "Copyright Test contributors",
             license = "Test License",
             footer_links = {
@@ -1270,7 +1269,6 @@ print(value)
         local settings = {
             title = "Project",
             base = "/reference",
-            show_markdown_link = true,
             custom_css = "docs/site.css",
             sources = {"src"},
             pages = {
@@ -1379,9 +1377,9 @@ print(value)
             SiteGenerator.build(output, env, {
                 title = "Typo",
                 pages = {{path = "", title = "Home"}},
-                show_markdown_links = true,
+                unexpected = true,
             })
-        end, "unknown tealdoc.site setting: show_markdown_links")
+        end, "unknown tealdoc.site setting: unexpected")
         assert.has_error(function()
             SiteGenerator.build(output, env, {
                 pages = {{path = "", title = "Home"}},
