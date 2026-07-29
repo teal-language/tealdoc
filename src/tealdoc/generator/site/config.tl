@@ -102,6 +102,7 @@ local site_keys: {string: boolean} = {
     redirects = true,
     examples = true,
     validate_links = true,
+    format_generated_code = true,
     pages = true,
     sidebar = true,
     nav = true,
@@ -282,6 +283,7 @@ function SiteConfig.configure(
         "sitemap",
         "robots",
         "validate_links",
+        "format_generated_code",
     }) do
         validate_optional_boolean(values, key)
     end
@@ -347,6 +349,7 @@ function SiteConfig.configure(
         redirects = {},
         examples = {},
         validate_links = values["validate_links"] ~= false,
+        format_generated_code = values["format_generated_code"] == true,
         pages = {},
         sidebar = {},
         nav = {},

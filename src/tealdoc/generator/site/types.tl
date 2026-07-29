@@ -93,6 +93,7 @@ local record SiteTypes
         redirects: {string: string}
         examples: {Example}
         validate_links: boolean
+        format_generated_code: boolean
         pages: {Page}
         sidebar: {SidebarItem}
         nav: {Link}

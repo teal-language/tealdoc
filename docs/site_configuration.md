@@ -481,6 +481,24 @@ only when another build step deliberately owns unresolved links.
 validate_links = false
 ```
 
+## format_generated_code
+
+Optional boolean, defaulting to `false`. When enabled, Tealdoc formats the Teal
+declarations it synthesizes for API references with Cerulean before syntax
+highlighting them. Handwritten fenced blocks and configured page or attached
+examples retain their original formatting.
+
+Cerulean remains an optional runtime dependency. Tealdoc loads it from the
+standard Lua `package.path` and `package.cpath`; install it normally with
+LuaRocks or set `LUA_PATH` and `LUA_CPATH` when invoking Tealdoc. Enabling this
+setting fails the build with a clear error when Cerulean cannot be loaded or
+cannot safely format a generated declaration. Cerulean is initialized once per
+site build, and identical generated declarations reuse the formatted result.
+
+```lua
+format_generated_code = true
+```
+
 ## nav
 
 Optional ordered array, defaulting to `{}`. Each top-level header link requires

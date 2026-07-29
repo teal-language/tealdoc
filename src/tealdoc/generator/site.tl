@@ -54,6 +54,136 @@ end
 local type PreparedExample = SiteTypes.PreparedExample
 local MANIFEST_PATH = ".tealdoc-manifest"
 local MANIFEST_HEADER = "tealdoc-manifest-v1\n"
+local CERULEAN_WRAPPER = "-- tealdoc:generated-declaration-end"
+
+local function cerulean_formatter(): function(string): string
+    local function load_module(name: string): any
+        return require(name)
+    end
+    local options_ok: boolean
+    local options_module: any
+    options_ok, options_module = pcall(load_module, "cerulean.options")
+    assert(
+        options_ok,
+        "tealdoc.site.format_generated_code requires Cerulean on Lua's " ..
+            "package path: " ..
+            tostring(options_module)
+    )
+    local rewriter_ok: boolean
+    local rewriter_module: any
+    rewriter_ok, rewriter_module = pcall(load_module, "cerulean.rewriter")
+    assert(
+        rewriter_ok,
+        "tealdoc.site.format_generated_code requires Cerulean on Lua's " ..
+            "package path: " ..
+            tostring(rewriter_module)
+    )
+
+    local options_values = options_module as {string: any}
+    local rewriter_values = rewriter_module as {string: any}
+    assert(
+        type(options_values["default"]) == "function"
+            and type(rewriter_values["rewrite"]) == "function",
+        "tealdoc.site.format_generated_code found an incompatible Cerulean"
+    )
+    local default_options = options_values["default"] as function(): any
+    local rewrite = rewriter_values["rewrite"] as function(
+        string,
+        string,
+        any
+    ): any
+    local formatter_options = default_options()
+    local formatted_cache: {string: string} = {}
+
+    local function result_errors(result: {string: any}): {any}
+        return result["parse_errors"] as {any} or {}
+    end
+
+    local function failure_message(result: {string: any}): string
+        local reason = result["failure_reason"]
+        if type(reason) == "string" and reason ~= "" then
+            return reason as string
+        end
+        local messages: {string} = {}
+        for _, error_value in ipairs(result_errors(result)) do
+            local message: any
+            if type(error_value) == "table" then
+                message = (error_value as {string: any})["msg"]
+            end
+            table.insert(messages, tostring(message or error_value))
+        end
+        if #messages > 0 then
+            return table.concat(messages, "; ")
+        end
+        return "unknown formatter failure"
+    end
+
+    local function complete_declarations(code: string): string, integer
+        local output: {string} = {}
+        local wrapper_count = 0
+        local normalized = code:gsub("\n*$", "")
+        for line in (normalized .. "\n"):gmatch("(.-)\n") do
+            table.insert(output, line .. "\n")
+            local first_word, second_word = line:match(
+                "^%s*(%S+)%s*(%S*)"
+            )
+            local needs_body = first_word == "function"
+                or first_word == "macroexp"
+            if first_word == "local" or first_word == "global" then
+                needs_body = second_word == "function"
+                    or second_word == "macroexp"
+            end
+            if needs_body then
+                wrapper_count = wrapper_count + 1
+                table.insert(output, "end " .. CERULEAN_WRAPPER .. "\n")
+            end
+        end
+        return table.concat(output), wrapper_count
+    end
+
+    return function(code: string): string
+        local cached = formatted_cache[code]
+        if cached then
+            return cached
+        end
+
+        -- API function signatures are declarations without bodies. Complete
+        -- every one independently so later declarations cannot become part
+        -- of an earlier function while Cerulean parses the generated block.
+        local input, wrapper_count = complete_declarations(code)
+        local result = rewrite(
+            input,
+            "tealdoc-generated.tl",
+            formatter_options
+        ) as {string: any}
+        assert(
+            #result_errors(result) == 0 and result["status"] ~= "failed",
+            "Cerulean could not format Tealdoc-generated code: " ..
+                failure_message(result)
+        )
+        assert(
+            type(result["output"]) == "string",
+            "Cerulean returned no formatted output for Tealdoc-generated code"
+        )
+        local formatted = result["output"] as string
+        if wrapper_count > 0 then
+            local removed: integer
+            formatted, removed = formatted:gsub(
+                "[ \t]*end[ \t]+%-%- tealdoc:" ..
+                    "generated%-declaration%-end[ \t]*\n?",
+                "",
+                wrapper_count
+            )
+            assert(
+                removed == wrapper_count,
+                "Cerulean changed Tealdoc's temporary declaration wrappers"
+            )
+        end
+        formatted = formatted:gsub("\n*$", "") .. "\n"
+        formatted_cache[code] = formatted
+        return formatted
+    end
+end
 
 local function read_file(path: string): string
     local file = assert(io.open(path, "rb"), "Could not open " .. path)
@@ -1616,14 +1746,16 @@ local function render_page(
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {PreparedExample}},
     used_examples: {string: boolean},
-    site_links: Highlighter.Links
+    site_links: Highlighter.Links,
+    format_code?: function(string): string
 ): string, {SearchEntry}, string
     local markdown = SiteApi.source_markdown(page)
     local api, module_introduction = SiteApi.markdown(
         view,
         resolver,
         attached_examples,
-        used_examples
+        used_examples,
+        format_code
     )
     if view then
         local summary = submodule_summary(page, context, context.settings.base) ..
@@ -1954,6 +2086,9 @@ function SiteGenerator.build(
     config_directory?: string
 )
     local settings = SiteConfig.configure(raw_settings, config_directory)
+    local format_code = settings.format_generated_code
+        and cerulean_formatter()
+        or nil
     -- Where a site keeps its Scintillua lexers, if it keeps any. Set once for
     -- the build rather than threaded through every render, because it is a
     -- property of the installation and not of a page.
@@ -2049,7 +2184,8 @@ function SiteGenerator.build(
             resolver,
             attached_examples,
             used_examples,
-            site_links
+            site_links,
+            format_code
         )
         write_file(path, html)
         table.insert(context.files, path)
@@ -2124,7 +2260,8 @@ function SiteGenerator.build(
             resolver,
             attached_examples,
             used_examples,
-            site_links
+            site_links,
+            format_code
         )
         local html_path = output .. "/404.html"
         write_file(html_path, html)

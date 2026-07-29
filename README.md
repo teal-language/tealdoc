@@ -479,6 +479,7 @@ return {
                 },
             },
             custom_css = "docs/site.css",
+            format_generated_code = true,
             templates = "docs/templates",
             copyright = "Copyright My project contributors",
             license = "MIT licensed",
@@ -637,6 +638,7 @@ settings document their complete nested table shape.
 | [`sidebar`](docs/site_configuration.md#sidebar) | derived | Explicit recursively nested sidebar. |
 | [`examples`](docs/site_configuration.md#examples) | `{}` | Page and attached examples. |
 | [`validate_links`](docs/site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
+| [`format_generated_code`](docs/site_configuration.md#format_generated_code) | `false` | Format generated Teal with Cerulean. |
 | [`nav`](docs/site_configuration.md#nav) | `{}` | Header navigation link tables. |
 | [`before_build`](docs/site_configuration.md#before_build) | omitted | Pre-render build hook. |
 | [`after_build`](docs/site_configuration.md#after_build) | omitted | Post-render build hook. |
@@ -862,6 +864,11 @@ documentation sentence, shortened to 120 characters with `...` when needed.
 The section heading includes the public module name, such as
 `tecs.window.Window Reference`. A generic “Public APIs in …” introduction is
 only added when the configured module page has no handwritten documentation.
+
+Set `format_generated_code = true` to run synthesized API declarations through
+Cerulean. Tealdoc loads Cerulean from Lua's existing package paths at runtime;
+it remains an optional dependency. Authored fenced blocks and configured
+examples are never reformatted.
 
 ##### Cross-links in documentation comments
 

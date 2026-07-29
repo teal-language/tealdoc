@@ -53,6 +53,31 @@ local function write_nested_file(root, path, contents)
     write_file(root .. "/" .. path, contents)
 end
 
+local function with_preloaded_modules(modules, run)
+    local previous_preload = {}
+    local previous_loaded = {}
+    local had_preload = {}
+    local had_loaded = {}
+    for name, loader in pairs(modules) do
+        had_preload[name] = package.preload[name] ~= nil
+        had_loaded[name] = package.loaded[name] ~= nil
+        previous_preload[name] = package.preload[name]
+        previous_loaded[name] = package.loaded[name]
+        package.preload[name] = loader
+        package.loaded[name] = nil
+    end
+    local ok, message = pcall(run)
+    for name in pairs(modules) do
+        package.preload[name] = had_preload[name]
+            and previous_preload[name]
+            or nil
+        package.loaded[name] = had_loaded[name]
+            and previous_loaded[name]
+            or nil
+    end
+    assert.is_true(ok, message)
+end
+
 describe("Site generator", function()
     it("requires every page template value", function()
         assert.has_error(function()
@@ -422,6 +447,164 @@ describe("Site generator", function()
             true
         ), html)
 
+        remove_tree(output)
+    end)
+
+    it("formats generated code with Cerulean without changing examples", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Runs a generated operation.
+                ---
+                --- ```teal
+                --- local documented  =  true
+                --- ```
+                run: function(first: string, second: string): boolean
+                --- Stops a generated operation.
+                stop: function(reason: string)
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local source = os.tmpname()
+        write_file(source, [[
+# Authored page
+
+```teal
+local authored  =  true
+```
+]])
+        local example = os.tmpname()
+        write_file(example, "local example  =  true\n")
+        local output = os.tmpname()
+        os.remove(output)
+
+        local calls = 0
+        local initializations = 0
+        with_preloaded_modules({
+            ["cerulean.options"] = function()
+                return {
+                    default = function()
+                        initializations = initializations + 1
+                        return {max_line_width = 88}
+                    end,
+                }
+            end,
+            ["cerulean.rewriter"] = function()
+                return {
+                    rewrite = function(code)
+                        calls = calls + 1
+                        if code:match("^function ")
+                            and not code:find(
+                                "end -- tealdoc:generated-declaration-end",
+                                1,
+                                true
+                            )
+                        then
+                            return {
+                                output = code,
+                                status = "unchanged",
+                                parse_errors = {
+                                    {msg = "expected 'end'"},
+                                },
+                            }
+                        end
+                        return {
+                            output = "-- formatted by Cerulean\n" .. code,
+                            status = "reformatted",
+                            parse_errors = {},
+                        }
+                    end,
+                }
+            end,
+        }, function()
+            SiteGenerator.build(output, env, {
+                title = "Formatting",
+                format_generated_code = true,
+                validate_links = false,
+                pages = {
+                    {
+                        path = "api",
+                        title = "API",
+                        source = source,
+                        api = "api",
+                    },
+                },
+                examples = {
+                    {
+                        attach_to = "api.run",
+                        source = example,
+                        language = "teal",
+                    },
+                },
+            })
+        end)
+
+        local markdown = read_file(output .. "/api.md")
+        assert.are.equal(1, initializations)
+        assert.are.equal(2, calls)
+        assert.is_truthy(markdown:find(
+            "```teal\n-- formatted by Cerulean\nfunction api.run",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "\nfunction api.stop",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "tealdoc:generated-declaration-end",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\nlocal authored  =  true\n```",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\nlocal documented  =  true\n```",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\nlocal example  =  true\n```",
+            1,
+            true
+        ), markdown)
+
+        remove_tree(output)
+        os.remove(source)
+        os.remove(example)
+    end)
+
+    it("requires Cerulean only when generated formatting is enabled", function()
+        local output = os.tmpname()
+        os.remove(output)
+        with_preloaded_modules({
+            ["cerulean.options"] = function()
+                error("Cerulean is unavailable for this test")
+            end,
+        }, function()
+            local ok, message = pcall(function()
+                SiteGenerator.build(output, DefaultEnv.init(), {
+                    title = "Formatting",
+                    format_generated_code = true,
+                    pages = {
+                        {path = "", title = "Home"},
+                    },
+                })
+            end)
+            assert.is_false(ok)
+            assert.is_truthy(tostring(message):find(
+                "format_generated_code requires Cerulean on Lua's package path",
+                1,
+                true
+            ), tostring(message))
+        end)
         remove_tree(output)
     end)
 
@@ -2319,7 +2502,7 @@ print(value)
         remove_tree(unsafe)
     end)
 
-    it("rejects unknown settings and requires a site title", function()
+    it("rejects invalid top-level site settings", function()
         local output = os.tmpname()
         os.remove(output)
         local env = DefaultEnv.init()
@@ -2335,6 +2518,13 @@ print(value)
                 pages = {{path = "", title = "Home"}},
             })
         end, "tealdoc.site.title is required")
+        assert.has_error(function()
+            SiteGenerator.build(output, env, {
+                title = "Formatting",
+                format_generated_code = "yes",
+                pages = {{path = "", title = "Home"}},
+            })
+        end, "tealdoc.site.format_generated_code must be a boolean")
         assert.is_nil(lfs.attributes(output))
     end)
     it("validates internal links and anchors under a configured base", function()

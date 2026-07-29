@@ -21,7 +21,8 @@ local record SiteApi
         view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver,
         attached_examples: {string: {SiteTypes.PreparedExample}},
-        used_examples: {string: boolean}
+        used_examples: {string: boolean},
+        format_code?: function(string): string
     ): string, string
     summary: function(
         view: SiteTypes.ApiView,
@@ -366,7 +367,8 @@ function SiteApi.markdown(
     view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {SiteTypes.PreparedExample}},
-    used_examples: {string: boolean}
+    used_examples: {string: boolean},
+    format_code?: function(string): string
 ): string, string
     if not view then
         return "", ""
@@ -382,7 +384,7 @@ function SiteApi.markdown(
         end
     end
     local markdown = add_kind_badges(
-        MarkdownGenerator.render(page_env, resolver, false),
+        MarkdownGenerator.render(page_env, resolver, false, format_code),
         page_env
     )
     for _, entry in ipairs(original_texts) do

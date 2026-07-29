@@ -6,12 +6,16 @@ local log = require("tealdoc.log")
 local record MarkdownBuilder is Generator.Builder
     output: {string}
     in_code: boolean
+    format_code: function(string): string
 end
 
-function MarkdownBuilder.init(): MarkdownBuilder
+function MarkdownBuilder.init(
+    format_code?: function(string): string
+): MarkdownBuilder
     local builder: MarkdownBuilder = {
         output = {},
-        in_code = false
+        in_code = false,
+        format_code = format_code,
     }
 
     local self = setmetatable(builder, {__index = MarkdownBuilder})
@@ -122,8 +126,16 @@ MarkdownBuilder.code_block = function(self, content: function): MarkdownBuilder
     self:line()
     self:rawline("```teal")
     self.in_code = true
+    local outer = self.output
+    self.output = {}
     content()
+    local code = table.concat(self.output, "")
+    self.output = outer
     self.in_code = false
+    if self.format_code then
+        code = self.format_code(code):gsub("\n*$", "") .. "\n"
+    end
+    self:rawtext(code)
     self:rawline("```")
     self:line()
     return self
@@ -249,7 +261,8 @@ local record MarkdownGenerator
     render: function(
         env: tealdoc.Env,
         type_url_for_path?: URLResolver,
-        allow_local_type_links?: boolean
+        allow_local_type_links?: boolean,
+        format_code?: function(string): string
     ): string
     resolve_type_url: function(
         env: tealdoc.Env,
@@ -303,9 +316,10 @@ end
 --- @return The generator, and the builder holding what it wrote.
 local function generator_for(
     type_url_for_path?: MarkdownGenerator.URLResolver,
-    allow_local_type_links?: boolean
+    allow_local_type_links?: boolean,
+    format_code?: function(string): string
 ): Generator.Base, MarkdownBuilder
-    local builder = MarkdownBuilder.init()
+    local builder = MarkdownBuilder.init(format_code)
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
     base.on_item_start = function(_, item: tealdoc.Item, _: string, _: tealdoc.Env)
@@ -369,9 +383,14 @@ end
 MarkdownGenerator.render = function(
     env: tealdoc.Env,
     type_url_for_path?: MarkdownGenerator.URLResolver,
-    allow_local_type_links?: boolean
+    allow_local_type_links?: boolean,
+    format_code?: function(string): string
 ): string
-    local base, builder = generator_for(type_url_for_path, allow_local_type_links)
+    local base, builder = generator_for(
+        type_url_for_path,
+        allow_local_type_links,
+        format_code
+    )
     base:run(env)
     return builder:build()
 end
