@@ -1,6 +1,4 @@
 local tealdoc = require("tealdoc")
-local Generator = require("tealdoc.generator")
-local HTMLBuilder = require("tealdoc.generator.html.builder")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local Text = require("tealdoc.generator.text")
 local default_css = require("tealdoc.generator.site.default_css")
@@ -8,103 +6,22 @@ local default_js = require("tealdoc.generator.site.default_js")
 local pico_css = require("tealdoc.generator.site.pico_css")
 local Highlighter = require("tealdoc.generator.site.highlighter")
 local PageTemplate = require("tealdoc.generator.site.page_template")
+local SiteApi = require("tealdoc.generator.site.api")
+local SiteConfig = require("tealdoc.generator.site.config")
+local SiteExamples = require("tealdoc.generator.site.examples")
+local SiteMarkdown = require("tealdoc.generator.site.markdown")
+local SiteTypes = require("tealdoc.generator.site.types")
+local SiteValidator = require("tealdoc.generator.site.validator")
 local lfs = require("lfs")
 
 local record SiteGenerator
-    record Link
-        text: string
-        path: string
-        theme: string
-    end
-
-    record Feature
-        title: string
-        details: string
-        icon: string
-        image: string
-    end
-
-    record HeadEntry
-        tag: string
-        attributes: {string: string}
-    end
-
-    record Page
-        path: string
-        title: string
-        description: string
-        source: string
-        api: string
-        public: string
-        layout: string
-        hero_title: string
-        hero_text: string
-        hero_image: string
-        hero_image_alt: string
-        hero_actions: {Link}
-        features: {Feature}
-        example_source: string
-        example_language: string
-        example_code: string
-        canonical: string
-        image: string
-        noindex: boolean
-    end
-
-    record Example
-        path: string
-        attach_to: string
-        region: string
-        title: string
-        description: string
-        source: string
-        language: string
-        check: boolean
-    end
-
-    record Settings
-        title: string
-        name: string
-        description: string
-        language: string
-        base: string
-        site_url: string
-        logo: string
-        github: string
-        favicon: string
-        public: string
-        cname: string
-        head: {HeadEntry}
-        author: string
-        social_image: string
-        twitter_site: string
-        sitemap: boolean
-        robots: boolean
-        not_found: Page
-        custom_css: string
-        templates: string
-        copyright: string
-        license: string
-        footer_links: {Link}
-        redirects: {string: string}
-        examples: {Example}
-        validate_links: boolean
-        pages: {Page}
-        nav: {Link}
-        sources: {string}
-        before_build: function(Context)
-        after_build: function(Context)
-    end
-
-    record Context
-        output: string
-        env: tealdoc.Env
-        settings: Settings
-        pages: {Page}
-        attached_examples: {string: {PreparedExample}}
-        attached_examples_used: {string: boolean}
-        files: {string}
-    end
+    type Link = SiteTypes.Link
+    type Feature = SiteTypes.Feature
+    type HeadEntry = SiteTypes.HeadEntry
+    type Page = SiteTypes.Page
+    type Example = SiteTypes.Example
+    type Settings = SiteTypes.Settings
+    type Context = SiteTypes.Context
 
     build: function(
         output: string,
@@ -127,17 +44,7 @@ local record SearchEntry
     text: string
 end
 
-local record TealValidator
-    validate: function(self, text: string, path: string): {string}
-end
-
-local record PreparedExample
-    attach_to: string
-    title: string
-    source: string
-    language: string
-    code: string
-end
+local type PreparedExample = SiteTypes.PreparedExample
 
 local function read_file(path: string): string
     local file = assert(io.open(path, "rb"), "Could not open " .. path)
@@ -182,547 +89,6 @@ local function mkdir_p(path: string)
         end
         lfs.mkdir(current)
     end
-end
-
-local function join_path(directory: string, path: string): string
-    if path:match("^[/\\]")
-        or path:match("^%a:[/\\]")
-        or directory == ""
-        or directory == "."
-    then
-        return path
-    end
-    local separator = package.config:sub(1, 1)
-    return directory:gsub("[/\\]+$", "") .. separator .. path
-end
-
-local function resolve_file_path(directory: string, path: any, name: string): string
-    assert(type(path) == "string" and path ~= "", name .. " must be a non-empty string")
-    return join_path(directory, path as string)
-end
-
-local function validate_keys(
-    values: any,
-    allowed: {string: boolean},
-    name: string
-)
-    assert(type(values) == "table", name .. " must be a table")
-    for key in pairs(values as {any: any}) do
-        assert(
-            type(key) == "string" and allowed[key as string],
-            "unknown " .. name .. " setting: " .. tostring(key)
-        )
-    end
-end
-
-local function validate_optional_string(values: {string: any}, key: string)
-    assert(
-        values[key] == nil or type(values[key]) == "string",
-        "tealdoc.site." .. key .. " must be a string"
-    )
-end
-
-local function validate_optional_table(
-    values: {string: any},
-    key: string
-)
-    assert(
-        values[key] == nil or type(values[key]) == "table",
-        "tealdoc.site." .. key .. " must be a table"
-    )
-end
-
-local function validate_optional_boolean(values: {string: any}, key: string)
-    assert(
-        values[key] == nil or type(values[key]) == "boolean",
-        "tealdoc.site." .. key .. " must be a boolean"
-    )
-end
-
-local site_keys: {string: boolean} = {
-    title = true,
-    name = true,
-    description = true,
-    language = true,
-    base = true,
-    site_url = true,
-    logo = true,
-    github = true,
-    favicon = true,
-    public = true,
-    cname = true,
-    head = true,
-    author = true,
-    social_image = true,
-    twitter_site = true,
-    sitemap = true,
-    robots = true,
-    not_found = true,
-    custom_css = true,
-    templates = true,
-    copyright = true,
-    license = true,
-    footer_links = true,
-    redirects = true,
-    examples = true,
-    validate_links = true,
-    pages = true,
-    nav = true,
-    sources = true,
-    before_build = true,
-    after_build = true,
-}
-
-local page_keys: {string: boolean} = {
-    path = true,
-    title = true,
-    description = true,
-    source = true,
-    api = true,
-    public = true,
-    layout = true,
-    hero_title = true,
-    hero_text = true,
-    hero_image = true,
-    hero_image_alt = true,
-    hero_actions = true,
-    features = true,
-    example_source = true,
-    example_language = true,
-    canonical = true,
-    image = true,
-    noindex = true,
-}
-
-local example_keys: {string: boolean} = {
-    path = true,
-    attach_to = true,
-    region = true,
-    title = true,
-    description = true,
-    source = true,
-    language = true,
-    check = true,
-}
-
-local link_keys: {string: boolean} = {
-    text = true,
-    path = true,
-    theme = true,
-}
-
-local feature_keys: {string: boolean} = {
-    title = true,
-    details = true,
-    icon = true,
-    image = true,
-}
-
-local head_entry_keys: {string: boolean} = {
-    tag = true,
-    attributes = true,
-}
-
-local function normalize_base(base: any): string
-    if base == nil or base == "" then
-        return "/"
-    end
-    assert(type(base) == "string", "tealdoc.site.base must be a string")
-    local normalized = (base as string):gsub("\\", "/")
-    assert(
-        normalized:sub(1, 1) == "/",
-        "tealdoc.site.base must begin with '/'"
-    )
-    normalized = normalized:gsub("/+", "/")
-    if normalized:sub(-1) ~= "/" then
-        normalized = normalized .. "/"
-    end
-    for segment in normalized:gmatch("[^/]+") do
-        assert(
-            segment ~= "." and segment ~= "..",
-            "tealdoc.site.base contains an unsafe path segment"
-        )
-    end
-    return normalized
-end
-
-local function normalize_route(
-    route: any,
-    name: string,
-    allow_empty: boolean
-): string
-    assert(type(route) == "string", name .. " must be a string")
-    local normalized = (route as string):gsub("\\", "/")
-    assert(
-        not normalized:find("[?#]"),
-        name .. " must not contain a query or fragment"
-    )
-    assert(
-        not normalized:find("[%z\1-\31\127]"),
-        name .. " must not contain control characters"
-    )
-    normalized = normalized:gsub("^/+", ""):gsub("/+$", ""):gsub("/+", "/")
-    assert(allow_empty or normalized ~= "", name .. " must not be empty")
-    for segment in normalized:gmatch("[^/]+") do
-        assert(
-            segment ~= "." and segment ~= "..",
-            name .. " contains an unsafe path segment: " .. (route as string)
-        )
-    end
-    return normalized
-end
-
-local function validate_link(link: any, name: string)
-    validate_keys(link, link_keys, name)
-    local values = link as {string: any}
-    assert(
-        type(values["text"]) == "string" and values["text"] ~= "",
-        name .. ".text is required"
-    )
-    assert(
-        type(values["path"]) == "string",
-        name .. ".path is required"
-    )
-end
-
-local function configured_settings(
-    raw: any,
-    config_directory?: string
-): SiteGenerator.Settings
-    validate_keys(raw, site_keys, "tealdoc.site")
-    local values = raw as {string: any}
-    assert(
-        type(values["title"]) == "string" and values["title"] ~= "",
-        "tealdoc.site.title is required"
-    )
-    for _, key in ipairs({
-        "name",
-        "description",
-        "language",
-        "site_url",
-        "logo",
-        "github",
-        "favicon",
-        "public",
-        "cname",
-        "author",
-        "social_image",
-        "twitter_site",
-        "custom_css",
-        "templates",
-        "copyright",
-        "license",
-    }) do
-        validate_optional_string(values, key)
-    end
-    for _, key in ipairs({
-        "redirects",
-        "examples",
-        "pages",
-        "nav",
-        "sources",
-        "head",
-        "footer_links",
-        "not_found",
-    }) do
-        validate_optional_table(values, key)
-    end
-    for _, key in ipairs({
-        "sitemap",
-        "robots",
-        "validate_links",
-    }) do
-        validate_optional_boolean(values, key)
-    end
-    assert(
-        values["before_build"] == nil
-            or type(values["before_build"]) == "function",
-        "tealdoc.site.before_build must be a function"
-    )
-    assert(
-        values["after_build"] == nil
-            or type(values["after_build"]) == "function",
-        "tealdoc.site.after_build must be a function"
-    )
-
-    local directory = config_directory or "."
-    local settings: SiteGenerator.Settings = {
-        title = values["title"] as string,
-        name = (values["name"] == nil
-            and values["title"]
-            or values["name"]) as string,
-        description = (values["description"] or "") as string,
-        language = (values["language"] or "en") as string,
-        base = normalize_base(values["base"]),
-        site_url = values["site_url"] as string,
-        logo = values["logo"] as string,
-        github = values["github"] as string,
-        favicon = values["favicon"] as string,
-        public = values["public"]
-            and resolve_file_path(
-                directory,
-                values["public"],
-                "tealdoc.site.public"
-            )
-            or nil,
-        cname = values["cname"] as string,
-        head = {},
-        author = values["author"] as string,
-        social_image = values["social_image"] as string,
-        twitter_site = values["twitter_site"] as string,
-        sitemap = values["sitemap"] == nil
-            and values["site_url"] ~= nil
-            or values["sitemap"] as boolean,
-        robots = values["robots"] ~= false,
-        not_found = nil,
-        custom_css = values["custom_css"]
-            and resolve_file_path(
-                directory,
-                values["custom_css"],
-                "tealdoc.site.custom_css"
-            )
-            or nil,
-        templates = values["templates"]
-            and resolve_file_path(
-                directory,
-                values["templates"],
-                "tealdoc.site.templates"
-            )
-            or nil,
-        copyright = values["copyright"] as string,
-        license = values["license"] as string,
-        footer_links = {},
-        redirects = {},
-        examples = {},
-        validate_links = values["validate_links"] ~= false,
-        pages = {},
-        nav = {},
-        sources = {},
-        before_build = values["before_build"] as function(SiteGenerator.Context),
-        after_build = values["after_build"] as function(SiteGenerator.Context),
-    }
-
-    assert(type(settings.name) == "string", "tealdoc.site.name must be a string")
-    assert(
-        type(settings.description) == "string",
-        "tealdoc.site.description must be a string"
-    )
-    if settings.site_url and settings.site_url ~= "" then
-        assert(
-            settings.site_url:match("^https?://[^/%?#]+/?$"),
-            "tealdoc.site.site_url must be an HTTP origin without a path"
-        )
-        settings.site_url = settings.site_url:gsub("/+$", "")
-    end
-    for index, entry in ipairs(values["head"] as {any} or {}) do
-        local name = "tealdoc.site.head[" .. tostring(index) .. "]"
-        validate_keys(entry, head_entry_keys, name)
-        local head_entry = entry as {string: any}
-        assert(
-            type(head_entry["tag"]) == "string",
-            name .. ".tag is required"
-        )
-        assert(
-            type(head_entry["attributes"]) == "table",
-            name .. ".attributes is required"
-        )
-        table.insert(settings.head, entry as SiteGenerator.HeadEntry)
-    end
-    for _, source in ipairs(values["sources"] as {any} or {}) do
-        table.insert(
-            settings.sources,
-            resolve_file_path(directory, source, "tealdoc.site.sources entry")
-        )
-    end
-    for index, link in ipairs(values["nav"] as {any} or {}) do
-        validate_link(link, "tealdoc.site.nav[" .. tostring(index) .. "]")
-        table.insert(settings.nav, link as SiteGenerator.Link)
-    end
-    for index, link in ipairs(values["footer_links"] as {any} or {}) do
-        validate_link(
-            link,
-            "tealdoc.site.footer_links[" .. tostring(index) .. "]"
-        )
-        table.insert(settings.footer_links, link as SiteGenerator.Link)
-    end
-    for index, page_value in ipairs(values["pages"] as {any} or {}) do
-        local name = "tealdoc.site.pages[" .. tostring(index) .. "]"
-        validate_keys(page_value, page_keys, name)
-        local page = page_value as {string: any}
-        assert(
-            type(page["title"]) == "string" and page["title"] ~= "",
-            name .. ".title is required"
-        )
-        for _, key in ipairs({
-            "description",
-            "source",
-            "api",
-            "public",
-            "layout",
-            "hero_title",
-            "hero_text",
-            "hero_image",
-            "hero_image_alt",
-            "example_source",
-            "example_language",
-            "canonical",
-            "image",
-        }) do
-            assert(
-                page[key] == nil or type(page[key]) == "string",
-                name .. "." .. key .. " must be a string"
-            )
-        end
-        assert(
-            page["hero_actions"] == nil
-                or type(page["hero_actions"]) == "table",
-            name .. ".hero_actions must be a table"
-        )
-        assert(
-            page["features"] == nil or type(page["features"]) == "table",
-            name .. ".features must be a table"
-        )
-        assert(
-            page["noindex"] == nil or type(page["noindex"]) == "boolean",
-            name .. ".noindex must be a boolean"
-        )
-        local normalized_values: {string: any} = {}
-        for key, value in pairs(page) do
-            normalized_values[key] = value
-        end
-        local normalized = normalized_values as SiteGenerator.Page
-        normalized.path = normalize_route(
-            page["path"] or "",
-            name .. ".path",
-            true
-        )
-        if page["source"] then
-            normalized.source = resolve_file_path(
-                directory,
-                page["source"],
-                name .. ".source"
-            )
-        end
-        for action_index, action in ipairs(
-            page["hero_actions"] as {any} or {}
-        ) do
-            validate_link(
-                action,
-                name .. ".hero_actions[" .. tostring(action_index) .. "]"
-            )
-        end
-        for feature_index, feature in ipairs(
-            page["features"] as {any} or {}
-        ) do
-            local feature_name = name ..
-                ".features[" ..
-                tostring(feature_index) ..
-                "]"
-            validate_keys(feature, feature_keys, feature_name)
-            local feature_values = feature as {string: any}
-            assert(
-                type(feature_values["title"]) == "string"
-                    and feature_values["title"] ~= "",
-                feature_name .. ".title is required"
-            )
-        end
-        table.insert(settings.pages, normalized)
-    end
-    for index, example_value in ipairs(values["examples"] as {any} or {}) do
-        local name = "tealdoc.site.examples[" .. tostring(index) .. "]"
-        validate_keys(example_value, example_keys, name)
-        local example = example_value as {string: any}
-        local has_path = type(example["path"]) == "string"
-            and example["path"] ~= ""
-        local has_attachment = type(example["attach_to"]) == "string"
-            and example["attach_to"] ~= ""
-        assert(
-            has_path ~= has_attachment,
-            name .. " requires exactly one of path or attach_to"
-        )
-        assert(
-            has_attachment
-                or type(example["title"]) == "string"
-                    and example["title"] ~= "",
-            name .. ".title is required for a page example"
-        )
-        assert(
-            type(example["source"]) == "string" and example["source"] ~= "",
-            name .. ".source is required"
-        )
-        assert(
-            example["description"] == nil
-                or type(example["description"]) == "string",
-            name .. ".description must be a string"
-        )
-        assert(
-            example["language"] == nil
-                or type(example["language"]) == "string",
-            name .. ".language must be a string"
-        )
-        assert(
-            example["region"] == nil or type(example["region"]) == "string",
-            name .. ".region must be a string"
-        )
-        assert(
-            example["check"] == nil or type(example["check"]) == "boolean",
-            name .. ".check must be a boolean"
-        )
-        local normalized_values: {string: any} = {}
-        for key, value in pairs(example) do
-            normalized_values[key] = value
-        end
-        local normalized = normalized_values as SiteGenerator.Example
-        if has_path then
-            normalized.path = normalize_route(
-                example["path"],
-                name .. ".path",
-                false
-            )
-        end
-        normalized.source = resolve_file_path(
-            directory,
-            example["source"],
-            name .. ".source"
-        )
-        table.insert(settings.examples, normalized)
-    end
-    if values["not_found"] ~= nil then
-        local name = "tealdoc.site.not_found"
-        validate_keys(values["not_found"], page_keys, name)
-        local configured = values["not_found"] as {string: any}
-        local normalized_values: {string: any} = {}
-        for key, value in pairs(configured) do
-            normalized_values[key] = value
-        end
-        local normalized = normalized_values as SiteGenerator.Page
-        if configured["source"] then
-            normalized.source = resolve_file_path(
-                directory,
-                configured["source"],
-                name .. ".source"
-            )
-        end
-        settings.not_found = normalized
-    end
-    assert(
-        #settings.pages > 0 or #settings.examples > 0,
-        "tealdoc.site.pages or tealdoc.site.examples is required"
-    )
-    if values["redirects"] ~= nil then
-        assert(
-            type(values["redirects"]) == "table",
-            "tealdoc.site.redirects must be a table"
-        )
-        for source, target in pairs(values["redirects"] as {any: any}) do
-            assert(
-                type(source) == "string" and type(target) == "string",
-                "tealdoc.site.redirects keys and values must be strings"
-            )
-            settings.redirects[source as string] = target as string
-        end
-    end
-    return settings
 end
 
 local function copy_public_directory(
@@ -845,195 +211,6 @@ local function markdown_url(base: string, path: string): string
     return root .. path:gsub("^/+", ""):gsub("/+$", "") .. ".md"
 end
 
-local function source_markdown(page: SiteGenerator.Page): string
-    if page.example_source then
-        local code = page.example_code or read_file(page.example_source)
-        local language = page.example_language
-        if not language then
-            language = page.example_source:match("%.tl$") and "teal"
-                or page.example_source:match("%.lua$") and "lua"
-                or "text"
-        end
-        local fence = "```"
-        while code:find(fence, 1, true) do
-            fence = fence .. "`"
-        end
-        local output = "# " .. page.title .. "\n\n"
-        if page.description then
-            output = output .. page.description .. "\n\n"
-        end
-        return output ..
-            fence ..
-            language ..
-            "\n" ..
-            code:gsub("\n*$", "") ..
-            "\n" ..
-            fence ..
-            "\n"
-    end
-    if not page.source then
-        return ""
-    end
-
-    local text = read_file(page.source)
-    if text:sub(1, 4) == "---\n" then
-        local ending = text:find("\n---\n", 5, true)
-        if ending then
-            text = text:sub(ending + 5)
-        end
-    end
-
-    local generated = text:find("\n<!-- @generated", 1, true)
-    if generated then
-        text = text:sub(1, generated - 1)
-    end
-    return text
-end
-
-local function extract_example_region(
-    code: string,
-    source: string,
-    region: string
-): string
-    if not region or region == "" then
-        return code
-    end
-
-    local output: {string} = {}
-    local found = 0
-    local active = false
-    for line in (code .. "\n"):gmatch("(.-)\n") do
-        local opening = line:match("^%s*%-%-%s*#region%s+(.+)%s*$")
-        local closing = line:match("^%s*%-%-%s*#endregion%s*(.-)%s*$")
-        if opening then
-            if opening == region then
-                assert(
-                    not active,
-                    "nested example region '" .. region .. "' in " .. source
-                )
-                found = found + 1
-                active = true
-            end
-        elseif closing ~= nil and active then
-            assert(
-                closing == "" or closing == region,
-                "example region '" ..
-                    region ..
-                    "' in " ..
-                    source ..
-                    " closes as '" ..
-                    closing ..
-                    "'"
-            )
-            active = false
-        elseif active then
-            table.insert(output, line)
-        end
-    end
-    assert(
-        found == 1 and not active,
-        found == 0
-            and "example region '" .. region .. "' was not found in " .. source
-            or "example region '" ..
-                region ..
-                "' must occur once and have an end marker in " ..
-                source
-    )
-    return table.concat(output, "\n"):gsub("\n*$", "") .. "\n"
-end
-
-local function validate_example(
-    example: SiteGenerator.Example,
-    code: string,
-    language: string,
-    env: tealdoc.Env
-)
-    if example.check == false then
-        return
-    end
-    local errors: {string} = {}
-    if language == "teal" then
-        local parser = env.parser_registry[".tl"] as TealValidator
-        assert(parser and parser.validate, "Teal parser cannot validate examples")
-        errors = parser:validate(code, example.source)
-    elseif language == "lua" then
-        local chunk, load_error = load(code, "@" .. example.source)
-        if not chunk then
-            table.insert(errors, tostring(load_error))
-        end
-    end
-    assert(
-        #errors == 0,
-        "invalid example '" ..
-            example.source ..
-            (example.region and "#" .. example.region or "") ..
-            "':\n" ..
-            table.concat(errors, "\n")
-    )
-end
-
-local function pages_with_examples(
-    settings: SiteGenerator.Settings,
-    env: tealdoc.Env
-): {SiteGenerator.Page}, {string: {PreparedExample}}
-    local pages: {SiteGenerator.Page} = {}
-    local attached: {string: {PreparedExample}} = {}
-    local paths: {string: boolean} = {}
-    for _, page in ipairs(settings.pages or {}) do
-        table.insert(pages, page)
-        paths[page.path or ""] = true
-    end
-
-    for _, example in ipairs(settings.examples or {}) do
-        local has_path = example.path and example.path ~= ""
-        local has_attachment = example.attach_to and example.attach_to ~= ""
-        assert(
-            has_path ~= has_attachment,
-            "example requires exactly one of path or attach_to"
-        )
-        if has_path then
-            assert(example.title and example.title ~= "", "example title is required")
-        end
-        assert(example.source and example.source ~= "", "example source is required")
-        if has_path then
-            assert(
-                not paths[example.path],
-                "example path conflicts with a page: " .. example.path
-            )
-        end
-        local code = read_file(example.source)
-        code = extract_example_region(code, example.source, example.region)
-        local language = example.language
-        if not language then
-            language = example.source:match("%.tl$") and "teal"
-                or example.source:match("%.lua$") and "lua"
-                or "text"
-        end
-        validate_example(example, code, language, env)
-        if has_attachment then
-            attached[example.attach_to] = attached[example.attach_to] or {}
-            table.insert(attached[example.attach_to], {
-                attach_to = example.attach_to,
-                title = example.title or "Example",
-                source = example.source,
-                language = language,
-                code = code,
-            })
-        else
-            table.insert(pages, {
-                path = example.path,
-                title = example.title,
-                description = example.description,
-                example_source = example.source,
-                example_language = language,
-                example_code = code,
-            })
-            paths[example.path] = true
-        end
-    end
-    return pages, attached
-end
-
 local function validated_redirects(
     pages: {SiteGenerator.Page},
     redirects: {string: string}
@@ -1041,7 +218,11 @@ local function validated_redirects(
     local routes: {string: string} = {}
     for _, page in ipairs(pages) do
         local original = page.path or ""
-        local normalized = normalize_route(original, "page route", true)
+        local normalized = SiteConfig.normalize_route(
+            original,
+            "page route",
+            true
+        )
         assert(
             routes[normalized] == nil,
             "duplicate normalized page or example route: " .. original
@@ -1052,7 +233,11 @@ local function validated_redirects(
 
     local normalized_redirects: {string: string} = {}
     for source, target in pairs(redirects or {}) do
-        local normalized = normalize_route(source, "redirect source", false)
+        local normalized = SiteConfig.normalize_route(
+            source,
+            "redirect source",
+            false
+        )
         assert(
             routes[normalized] == nil,
             "duplicate normalized page, example, or redirect route: " .. source
@@ -1063,7 +248,11 @@ local function validated_redirects(
             if target_route:sub(1, 1) == "/" then
                 target_route = target_route:sub(2)
             end
-            normalize_route(target_route, "redirect target", true)
+            SiteConfig.normalize_route(
+                target_route,
+                "redirect target",
+                true
+            )
         end
         normalized_redirects[normalized] = target
     end
@@ -1134,7 +323,7 @@ local function discover_source(path: string, files: {string})
     end
     table.sort(entries)
     for _, entry in ipairs(entries) do
-        local child = join_path(path, entry)
+        local child = SiteConfig.join_path(path, entry)
         local child_attributes = lfs.symlinkattributes(child)
         assert(
             not child_attributes or child_attributes.mode ~= "link",
@@ -1155,7 +344,7 @@ function SiteGenerator.source_files(
     raw: SiteGenerator.Settings,
     config_directory?: string
 ): {string}
-    local settings = configured_settings(raw, config_directory)
+    local settings = SiteConfig.configure(raw, config_directory)
     local files: {string} = {}
     local seen: {string: boolean} = {}
     for _, source in ipairs(settings.sources) do
@@ -1201,532 +390,6 @@ local function routes_for_pages(
         end
         return nil
     end
-end
-
-local function add_type_link(
-    links: Highlighter.Links,
-    ambiguous: {string: boolean},
-    name: string,
-    url: string
-)
-    if not name or name == "" or not url then
-        return
-    end
-    local function add(candidate: string)
-        if ambiguous[candidate] then
-            return
-        end
-        if links[candidate] and links[candidate] ~= url then
-            links[candidate] = nil
-            ambiguous[candidate] = true
-        else
-            links[candidate] = url
-        end
-    end
-    add(name)
-    local basename = name:match("([%w_]+)$")
-    if basename and basename ~= name then
-        add(basename)
-    end
-end
-
-local function type_links_for_page(
-    page: SiteGenerator.Page,
-    env: tealdoc.Env,
-    resolver: MarkdownGenerator.URLResolver
-): Highlighter.Links
-    local links: Highlighter.Links = {}
-    local ambiguous: {string: boolean} = {}
-    if not page.api then
-        return links
-    end
-
-    local function belongs_to_page(path: string): boolean
-        return path == page.api
-            or path:sub(1, #page.api + 1) == page.api .. "."
-    end
-
-    local function add_reference(reference: tealdoc.TypeReference)
-        local url = MarkdownGenerator.resolve_type_url(
-            env,
-            reference.path,
-            resolver
-        )
-        add_type_link(links, ambiguous, reference.name, url)
-    end
-
-    for path, item in pairs(env.registry) do
-        if belongs_to_page(path) then
-            if item is tealdoc.TypeItem
-                and path ~= page.api
-                and Generator.filter(item, env)
-            then
-                add_type_link(links, ambiguous, item.name, resolver(path))
-            elseif item is tealdoc.FunctionItem then
-                for _, param in ipairs(item.params or {}) do
-                    for _, reference in ipairs(param.type_references or {}) do
-                        add_reference(reference)
-                    end
-                end
-                for _, result in ipairs(item.returns or {}) do
-                    for _, reference in ipairs(result.type_references or {}) do
-                        add_reference(reference)
-                    end
-                end
-            end
-        end
-    end
-    return links
-end
-
-local function api_markdown(
-    page: SiteGenerator.Page,
-    env: tealdoc.Env,
-    resolver: MarkdownGenerator.URLResolver,
-    attached_examples: {string: {PreparedExample}},
-    attached_examples_used: {string: boolean}
-): string
-    if not page.api then
-        return ""
-    end
-
-    local page_env = tealdoc.Env.init()
-    page_env.registry = env.registry
-    page_env.modules = {page.api}
-    page_env.include_all = env.include_all
-    page_env.no_warnings_on_missing = true
-
-    local output = os.tmpname()
-    MarkdownGenerator.init(output, resolver):run(page_env)
-    local markdown = read_file(output)
-    os.remove(output)
-
-    for item_path, examples in pairs(attached_examples or {}) do
-        local anchor = '<a id="' .. item_path .. '"></a>'
-        local first, ending = markdown:find(anchor, 1, true)
-        if first then
-            attached_examples_used[item_path] = true
-            local following = markdown:find("\n<a id=\"", ending + 1, true)
-            local insertion = following or (#markdown + 1)
-            local blocks: {string} = {}
-            for _, example in ipairs(examples) do
-                local fence = "```"
-                while example.code:find(fence, 1, true) do
-                    fence = fence .. "`"
-                end
-                table.insert(
-                    blocks,
-                    "\n### " ..
-                        example.title ..
-                        "\n\n" ..
-                        fence ..
-                        example.language ..
-                        "\n" ..
-                        example.code:gsub("\n*$", "") ..
-                        "\n" ..
-                        fence ..
-                        "\n"
-                )
-            end
-            markdown = markdown:sub(1, insertion - 1) ..
-                table.concat(blocks) ..
-                markdown:sub(insertion)
-        end
-    end
-
-    local module_anchor = '<a id="' .. page.api .. '"></a>'
-    local _, ending = markdown:find(module_anchor, 1, true)
-    if ending then
-        markdown = markdown:sub(ending + 1)
-    end
-    if page.public and page.public ~= page.api then
-        markdown = markdown:gsub(
-            page.api:gsub("([^%w])", "%%%1"),
-            page.public
-        )
-    end
-
-    markdown = "\n" .. markdown
-    markdown = markdown:gsub("\n(##+) ", function(level: string): string
-        return "\n#" .. level .. " "
-    end)
-    return markdown:sub(2)
-end
-
-local function api_item_text(
-    item: tealdoc.Item,
-    env: tealdoc.Env
-): string
-    if item.text and item.text ~= "" then
-        return item.text
-    end
-    for _, child_path in ipairs(item.children or {}) do
-        local child = env.registry[child_path]
-        if child and child.text and child.text ~= "" then
-            return child.text
-        end
-    end
-    return ""
-end
-
-local function api_item_summary(
-    item: tealdoc.Item,
-    env: tealdoc.Env
-): string
-    local text = api_item_text(item, env)
-    if text == "" then
-        return "—"
-    end
-    text = text:gsub("```[%s%S]-```", " ")
-    text = text:gsub("%[([^%]]+)%]%([^%)]+%)", "%1")
-    text = text:gsub("`([^`]*)`", "%1")
-    text = text:gsub("<[^>]+>", " ")
-    text = text:gsub("[%*~]", "")
-    text = text:gsub("^%s*#+%s*", "")
-    text = text:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-
-    for index = 1, #text do
-        local character = text:sub(index, index)
-        local following = text:sub(index + 1, index + 1)
-        if (character == "." or character == "!" or character == "?")
-            and (following == "" or following:match("%s"))
-        then
-            text = text:sub(1, index)
-            break
-        end
-    end
-
-    local maximum = 120
-    if #text > maximum then
-        local shortened = text:sub(1, maximum - 3)
-        shortened = shortened:match("^(.*)%s+%S*$") or shortened
-        text = shortened:gsub("%s+$", "") .. "..."
-    end
-    return (text:gsub("\\", "\\\\"):gsub("|", "\\|"))
-end
-
-local function api_summary_markdown(
-    page: SiteGenerator.Page,
-    env: tealdoc.Env,
-    resolver: MarkdownGenerator.URLResolver
-): string
-    if not page.api then
-        return ""
-    end
-    local module = env.registry[page.api]
-    if not module or not module.children then
-        return ""
-    end
-
-    local items: {tealdoc.Item} = {}
-    for _, path in ipairs(module.children) do
-        local item = env.registry[path]
-        if item and Generator.filter(item, env) then
-            table.insert(items, item)
-        end
-    end
-    table.sort(items, function(a: tealdoc.Item, b: tealdoc.Item): boolean
-        local left = a.name:lower()
-        local right = b.name:lower()
-        if left == right then
-            return a.path < b.path
-        end
-        return left < right
-    end)
-    if #items == 0 then
-        return ""
-    end
-
-    local output: {string} = {
-        "| API | Kind | Description |\n",
-        "| --- | --- | --- |\n",
-    }
-    for _, item in ipairs(items) do
-        local url = resolver(item.path) or "#" .. item.path
-        local kind = Generator.item_kind(item, env)
-        table.insert(
-            output,
-            "| [`" ..
-                item.name ..
-                "`](" ..
-                url ..
-                ') | <span class="tealdoc-kind-badge tealdoc-kind-' ..
-                kind ..
-                '">' ..
-                kind ..
-                "</span> | " ..
-                api_item_summary(item, env) ..
-                " |\n"
-        )
-    end
-    return table.concat(output)
-end
-
-local admonition_kinds: {string: string} = {
-    ["danger"] = "Danger",
-    ["info"] = "Info",
-    ["note"] = "Note",
-    ["tip"] = "Tip",
-    ["warning"] = "Warning",
-}
-
-local function site_div(
-    content: any,
-    attributes: {string: string}
-): any
-    local classes = attributes and attributes.class or ""
-    local kind: string
-    local title: string
-    kind, title = classes:match("^([%w_-]+)%s*(.-)%s*$")
-    if kind == "details" then
-        if title == "" then
-            title = "Details"
-        end
-        return {
-            '<details class="tealdoc-details"><summary>' ..
-                escape_html(title) ..
-                '</summary><div class="tealdoc-details-content">',
-            content,
-            "</div></details>",
-        }
-    elseif kind == "code-group" then
-        return {
-            '<div class="tealdoc-code-group" role="group">',
-            content,
-            "</div>",
-        }
-    elseif kind == "tealdoc-code-label" then
-        return {
-            '<figure class="tealdoc-labeled-code"><figcaption>' ..
-                escape_html(title) ..
-                "</figcaption>",
-            content,
-            "</figure>",
-        }
-    end
-    if kind and admonition_kinds[kind] then
-        if title == "" then
-            title = admonition_kinds[kind]
-        end
-        if kind == "info" then
-            kind = "note"
-        end
-        return {
-            '<aside class="tealdoc-admonition tealdoc-admonition-' ..
-                escape_html(kind) ..
-                '" role="note"><p class="tealdoc-admonition-title">' ..
-                escape_html(title) ..
-                "</p>",
-            content,
-            "</aside>",
-        }
-    end
-
-    local class_attribute = classes ~= ""
-        and ' class="' .. escape_html(classes) .. '"'
-        or ""
-    local id_attribute = attributes
-        and attributes.id
-        and ' id="' .. escape_html(attributes.id) .. '"'
-        or ""
-    return {"<div" .. id_attribute .. class_attribute .. ">", content, "</div>"}
-end
-
-local github_admonition_kinds: {string: string} = {
-    ["CAUTION"] = "danger",
-    ["IMPORTANT"] = "important",
-    ["NOTE"] = "note",
-    ["TIP"] = "tip",
-    ["WARNING"] = "warning",
-}
-
-local function rope_to_string(rope: any): string
-    local output: {string} = {}
-    local walk: function(any)
-    walk = function(value: any)
-        local value_type = type(value)
-        if value_type == "table" then
-            for _, child in ipairs(value as {any}) do
-                walk(child)
-            end
-        elseif value_type == "function" then
-            local callback = value as function(): any
-            local ok: boolean
-            local result: any
-            ok, result = pcall(callback)
-            if ok then
-                walk(result)
-            end
-        elseif value ~= nil then
-            table.insert(output, tostring(value))
-        end
-    end
-    walk(rope)
-    return table.concat(output)
-end
-
-local function site_blockquote(content: any): any
-    local rendered = rope_to_string(content)
-    local marker: string
-    local body: string
-    marker, body = rendered:match("^%s*%[!([A-Z]+)%]%s*(.*)$")
-    if not marker then
-        local paragraph: string
-        local following: string
-        marker, paragraph, following = rendered:match(
-            "^%s*<p>%s*%[!([A-Z]+)%]%s*(.-)</p>(.*)$"
-        )
-        if marker then
-            body = paragraph .. following
-        end
-    end
-    local kind = marker and github_admonition_kinds[marker]
-    if not kind then
-        return {"<blockquote>", content, "</blockquote>"}
-    end
-    local title = marker:sub(1, 1) .. marker:sub(2):lower()
-    return {
-        '<aside class="tealdoc-admonition tealdoc-admonition-' ..
-            kind ..
-            '" role="note"><p class="tealdoc-admonition-title">' ..
-            title ..
-            "</p>",
-        body,
-        "</aside>",
-    }
-end
-
-local function mark_inline_code_spacing(rendered: string): string
-    local output: {string} = {}
-    local position = 1
-    while true do
-        local opening_start, opening_end = rendered:find(
-            "<code>",
-            position,
-            true
-        )
-        if not opening_start then
-            table.insert(output, rendered:sub(position))
-            break
-        end
-        local closing_start, closing_end = rendered:find(
-            "</code>",
-            opening_end + 1,
-            true
-        )
-        if not closing_start then
-            table.insert(output, rendered:sub(position))
-            break
-        end
-
-        table.insert(output, rendered:sub(position, opening_start - 1))
-        local classes: {string} = {}
-        if strip_tags(rendered:sub(1, opening_start - 1)):match("%S") then
-            table.insert(classes, "tealdoc-inline-code-before")
-        end
-        if strip_tags(rendered:sub(closing_end + 1)):match("%S") then
-            table.insert(classes, "tealdoc-inline-code-after")
-        end
-        if #classes > 0 then
-            table.insert(
-                output,
-                '<code class="' .. table.concat(classes, " ") .. '">'
-            )
-        else
-            table.insert(output, "<code>")
-        end
-        table.insert(
-            output,
-            rendered:sub(opening_end + 1, closing_end)
-        )
-        position = closing_end + 1
-    end
-    return table.concat(output)
-end
-
-local function site_paragraph(content: any): any
-    return {
-        "<p>",
-        mark_inline_code_spacing(rope_to_string(content)),
-        "</p>",
-    }
-end
-
-local function markdown_html(
-    markdown: string,
-    type_links: Highlighter.Links
-): string
-    local prepared: {string} = {}
-    local fence: string
-    local labeled_fence = false
-    for line in (markdown .. "\n"):gmatch("(.-)\n") do
-        if fence then
-            table.insert(prepared, line)
-            if line:match("^%s*" .. fence .. "%s*$") then
-                fence = nil
-                if labeled_fence then
-                    table.insert(prepared, "::::")
-                    labeled_fence = false
-                end
-            end
-        else
-            local indentation, opening, language, label = line:match(
-                "^(%s*)(`+)([%w_+%-]+)%s+%[([^%]]+)%]%s*$"
-            )
-            if opening and #opening >= 3 then
-                table.insert(
-                    prepared,
-                    indentation ..
-                        ":::: tealdoc-code-label " ..
-                        label
-                )
-                table.insert(prepared, indentation .. opening .. language)
-                fence = opening
-                labeled_fence = true
-            else
-                local plain_fence = line:match("^%s*(```+)")
-                if plain_fence then
-                    fence = plain_fence
-                end
-                table.insert(prepared, line)
-            end
-        end
-    end
-    markdown = table.concat(prepared, "\n")
-
-    local builder = HTMLBuilder.init({
-        fenced_divs = true,
-        blockquote = site_blockquote,
-        div = site_div,
-        paragraph = site_paragraph,
-    })
-    builder:md(markdown)
-    local html = builder:build()
-    local function highlight_code(
-        language: string,
-        links?: Highlighter.Links
-    )
-        html = html:gsub(
-            '<pre><code class="language%-' .. language .. '">(.-)</code></pre>',
-            function(code: string): string
-                code = code:gsub("&lt;", "<")
-                    :gsub("&gt;", ">")
-                    :gsub("&quot;", '"')
-                    :gsub("&#39;", "'")
-                    :gsub("&amp;", "&")
-                return '<pre class="language-' ..
-                    language ..
-                    '"><code class="language-' ..
-                    language ..
-                    '">' ..
-                    Highlighter.highlight(code, links) ..
-                    "</code></pre>"
-            end
-        )
-    end
-    highlight_code("teal", type_links)
-    highlight_code("lua")
-    return html
 end
 
 local function headings(html: string): string, string, {Heading}
@@ -2427,7 +1090,7 @@ local function home_hero(
                 "<h2>" ..
                     escape_html(feature.title) ..
                     '</h2><div class="tealdoc-feature-details">' ..
-                    markdown_html(feature.details or "", type_links) ..
+                    SiteMarkdown.render(feature.details or "", type_links) ..
                     "</div></section>"
             )
         end
@@ -2440,18 +1103,20 @@ end
 local function render_page(
     page: SiteGenerator.Page,
     context: SiteGenerator.Context,
-    resolver: MarkdownGenerator.URLResolver
+    resolver: MarkdownGenerator.URLResolver,
+    attached_examples: {string: {PreparedExample}},
+    used_examples: {string: boolean}
 ): string, {SearchEntry}, string
-    local markdown = source_markdown(page)
-    local api = api_markdown(
+    local markdown = SiteApi.source_markdown(page)
+    local api = SiteApi.markdown(
         page,
         context.env,
         resolver,
-        context.attached_examples,
-        context.attached_examples_used
+        attached_examples,
+        used_examples
     )
     if api ~= "" then
-        local summary = api_summary_markdown(
+        local summary = SiteApi.summary(
             page,
             context.env,
             resolver
@@ -2472,8 +1137,8 @@ local function render_page(
             api
     end
 
-    local type_links = type_links_for_page(page, context.env, resolver)
-    local content = markdown_html(markdown, type_links)
+    local type_links = SiteApi.type_links(page, context.env, resolver)
+    local content = SiteMarkdown.render(markdown, type_links)
     local outline: string
     local page_headings: {Heading}
     content, outline, page_headings = headings(content)
@@ -2624,144 +1289,6 @@ local function redirect_html(target: string): string
         "</a>.</p>\n</body>\n</html>\n"
 end
 
-local function normalized_relative_path(
-    directory: string,
-    path: string
-): string
-    local parts: {string} = {}
-    local combined = path:sub(1, 1) == "/" and path:sub(2)
-        or directory .. path
-    for part in combined:gmatch("[^/]+") do
-        if part == ".." then
-            if #parts == 0 then
-                return nil
-            end
-            table.remove(parts)
-        elseif part ~= "." and part ~= "" then
-            table.insert(parts, part)
-        end
-    end
-    return table.concat(parts, "/")
-end
-
-local function validate_site_links(
-    output: string,
-    base: string,
-    files: {string}
-)
-    local root = base or "/"
-    if root:sub(1, 1) ~= "/" then
-        root = "/" .. root
-    end
-    if root:sub(-1) ~= "/" then
-        root = root .. "/"
-    end
-
-    local anchors: {string: {string: boolean}} = {}
-    local function anchors_for(path: string): {string: boolean}
-        if anchors[path] then
-            return anchors[path]
-        end
-        local found: {string: boolean} = {}
-        local file = io.open(output .. "/" .. path, "r")
-        if file then
-            local html = file:read("*a")
-            file:close()
-            for id in html:gmatch('%sid="([^"]+)"') do
-                found[id] = true
-            end
-            for id in html:gmatch("%sid='([^']+)'") do
-                found[id] = true
-            end
-        end
-        anchors[path] = found
-        return found
-    end
-
-    local errors: {string} = {}
-    for _, source_path in ipairs(files) do
-        if source_path:match("%.html$") then
-            local source = source_path:sub(#output + 2)
-            local html = read_file(source_path)
-            local source_directory = source:match("^(.*[/])") or ""
-            local function check(href: string)
-                href = href:gsub("&amp;", "&")
-                if href == ""
-                    or href:sub(1, 2) == "//"
-                    or href:match("^[%a][%w+%.%-]*:")
-                then
-                    return
-                end
-
-                local without_query = href:gsub("%?[^#]*", "")
-                local path, fragment = without_query:match("^([^#]*)#?(.*)$")
-                local absolute = path:sub(1, 1) == "/"
-                if absolute then
-                    if root ~= "/" and path:sub(1, #root) ~= root then
-                        table.insert(
-                            errors,
-                            source .. ": link escapes configured base: " .. href
-                        )
-                        return
-                    end
-                    path = root == "/" and path:sub(2)
-                        or path:sub(#root + 1)
-                end
-                local normalized: string
-                if path == "" then
-                    normalized = absolute and "index.html" or source
-                else
-                    normalized = normalized_relative_path(
-                        absolute and "" or source_directory,
-                        path
-                    )
-                end
-                if not normalized then
-                    table.insert(errors, source .. ": unsafe link: " .. href)
-                    return
-                end
-                if path ~= "" and path:sub(-1) == "/" then
-                    normalized = normalized == ""
-                        and "index.html"
-                        or normalized .. "/index.html"
-                elseif not normalized:match("%.[^/]+$") then
-                    normalized = normalized .. "/index.html"
-                end
-
-                local target = io.open(output .. "/" .. normalized, "r")
-                if not target then
-                    table.insert(
-                        errors,
-                        source .. ": missing link target " .. href
-                    )
-                    return
-                end
-                target:close()
-                if fragment ~= ""
-                    and normalized:match("%.html$")
-                    and not anchors_for(normalized)[fragment]
-                then
-                    table.insert(
-                        errors,
-                        source .. ": missing anchor " .. href
-                    )
-                end
-            end
-            for href in html:gmatch('href="([^"]*)"') do
-                check(href)
-            end
-            for href in html:gmatch("href='([^']*)'") do
-                check(href)
-            end
-        end
-    end
-    table.sort(errors)
-    assert(
-        #errors == 0,
-        "site link validation failed:\n" .. table.concat(errors, "\n")
-    )
-end
-
 local function sitemap_xml(
     settings: SiteGenerator.Settings,
     pages: {SiteGenerator.Page}
@@ -2849,19 +1376,18 @@ function SiteGenerator.build(
     raw_settings: SiteGenerator.Settings,
     config_directory?: string
 )
-    local settings = configured_settings(raw_settings, config_directory)
+    local settings = SiteConfig.configure(raw_settings, config_directory)
     local pages: {SiteGenerator.Page}
     local attached_examples: {string: {PreparedExample}}
-    pages, attached_examples = pages_with_examples(settings, env)
+    pages, attached_examples = SiteExamples.prepare(settings, env)
     settings.redirects = validated_redirects(pages, settings.redirects)
 
+    local used_examples: {string: boolean} = {}
     local context: SiteGenerator.Context = {
         output = output,
         env = env,
         settings = settings,
         pages = pages,
-        attached_examples = attached_examples,
-        attached_examples_used = {},
         files = {},
     }
     if settings.before_build then
@@ -2908,7 +1434,13 @@ function SiteGenerator.build(
         local html: string
         local page_entries: {SearchEntry}
         local markdown: string
-        html, page_entries, markdown = render_page(page, context, resolver)
+        html, page_entries, markdown = render_page(
+            page,
+            context,
+            resolver,
+            attached_examples,
+            used_examples
+        )
         write_file(path, html)
         table.insert(context.files, path)
         local markdown_path = output .. "/index.md"
@@ -2928,9 +1460,9 @@ function SiteGenerator.build(
         end
     end
 
-    for item_path in pairs(context.attached_examples) do
+    for item_path in pairs(attached_examples) do
         assert(
-            context.attached_examples_used[item_path],
+            used_examples[item_path],
             "example attach_to is not a public API item: " .. item_path
         )
     end
@@ -2962,7 +1494,9 @@ function SiteGenerator.build(
         html, _, markdown = render_page(
             missing,
             context,
-            resolver
+            resolver,
+            attached_examples,
+            used_examples
         )
         local html_path = output .. "/404.html"
         write_file(html_path, html)
@@ -3012,7 +1546,7 @@ function SiteGenerator.build(
         settings.after_build(context)
     end
     if settings.validate_links ~= false then
-        validate_site_links(output, settings.base, context.files)
+        SiteValidator.validate(output, settings.base, context.files)
     end
 end
 

@@ -295,30 +295,18 @@ function DefaultEnv.init(): tealdoc.Env
         ctx: Generator.Phase.Context,
         level: integer,
         attribute: Generator.Attribute,
-        title: string,
-        kind?: string
+        title: string
     )
-        local function badge(builder: Generator.Builder)
-            if kind then
-                builder:rawtext(
-                    ' <span class="tealdoc-kind-badge tealdoc-kind-' ..
-                        kind ..
-                        '">',
-                    kind,
-                    "</span>"
-                )
-            end
-        end
         if level == 2 then
-            ctx.builder:h2(attribute, title, badge)
+            ctx.builder:h2(attribute, title)
         elseif level == 3 then
-            ctx.builder:h3(attribute, title, badge)
+            ctx.builder:h3(attribute, title)
         elseif level == 4 then
-            ctx.builder:h4(attribute, title, badge)
+            ctx.builder:h4(attribute, title)
         elseif level == 5 then
-            ctx.builder:h5(attribute, title, badge)
+            ctx.builder:h5(attribute, title)
         else
-            ctx.builder:h6(attribute, title, badge)
+            ctx.builder:h6(attribute, title)
         end
     end
 
@@ -332,24 +320,21 @@ function DefaultEnv.init(): tealdoc.Env
                         ctx,
                         markdown_item_level(ctx, parent),
                         attr("path"),
-                        display_path(ctx, parent),
-                        "function"
+                        display_path(ctx, parent)
                     )
                 end
                 markdown_heading(
                     ctx,
                     markdown_item_level(ctx, item),
                     attr("header"),
-                    "Function",
-                    "overload"
+                    "Function"
                 )
             else
                 markdown_heading(
                     ctx,
                     markdown_item_level(ctx, item),
                     attr("path"),
-                    display_path(ctx, item),
-                    Generator.item_kind(item, ctx.env)
+                    display_path(ctx, item)
                 )
             end
         end
