@@ -10,7 +10,6 @@ local SiteMarkdown = {}
 
 
 local escape_html = Text.escape_html
-local strip_tags = Text.strip_tags
 
 local admonition_kinds = {
    ["danger"] = "Danger",
@@ -143,59 +142,6 @@ local function site_blockquote(content)
       "</p>",
       body,
       "</aside>",
-   }
-end
-
-local function mark_inline_code_spacing(rendered)
-   local output = {}
-   local position = 1
-   while true do
-      local opening_start, opening_end = rendered:find(
-      "<code>",
-      position,
-      true)
-
-      if not opening_start then
-         table.insert(output, rendered:sub(position))
-         break
-      end
-      local closing_start, closing_end = rendered:find(
-      "</code>",
-      opening_end + 1,
-      true)
-
-      if not closing_start then
-         table.insert(output, rendered:sub(position))
-         break
-      end
-
-      table.insert(output, rendered:sub(position, opening_start - 1))
-      local classes = {}
-      if strip_tags(rendered:sub(1, opening_start - 1)):match("%S") then
-         table.insert(classes, "tealdoc-inline-code-before")
-      end
-      if strip_tags(rendered:sub(closing_end + 1)):match("%S") then
-         table.insert(classes, "tealdoc-inline-code-after")
-      end
-      if #classes > 0 then
-         table.insert(
-         output,
-         '<code class="' .. table.concat(classes, " ") .. '">')
-
-      else
-         table.insert(output, "<code>")
-      end
-      table.insert(output, rendered:sub(opening_end + 1, closing_end))
-      position = closing_end + 1
-   end
-   return table.concat(output)
-end
-
-local function site_paragraph(content)
-   return {
-      "<p>",
-      mark_inline_code_spacing(rope_to_string(content)),
-      "</p>",
    }
 end
 
@@ -333,10 +279,12 @@ function SiteMarkdown.render(
             ">",
          }
       end,
-      paragraph = site_paragraph,
    })
    builder:md(markdown)
    local html = builder:build()
+
+
+   html = html:gsub("\n+(</code></pre>)", "%1")
    local function highlight_code(
       language,
       links)

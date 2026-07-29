@@ -65,10 +65,17 @@ return [[
     margin-bottom: 0;
 }
 
+/* Pico lays a [role="group"] out as an inline flex row, which is right for a
+ * button group and wrong for a stack of labelled code blocks, so the display
+ * is stated here rather than left to the classless sheet. */
 .tealdoc-code-group {
+    display: block;
+    overflow: hidden;
     margin: 1.25rem 0;
     border: 1px solid var(--tealdoc-border);
+    border-radius: var(--tealdoc-code-block-radius);
     background: var(--tealdoc-code-background);
+    box-shadow: none;
 }
 
 .tealdoc-labeled-code {
@@ -96,6 +103,11 @@ return [[
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
+}
+
+.tealdoc-code-group > .tealdoc-labeled-code pre {
+    border: 0;
+    border-radius: 0;
 }
 
 .tealdoc-page-nav {

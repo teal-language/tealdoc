@@ -657,7 +657,8 @@ print(value)
         attached_example_file:close()
         local custom_css = os.tmpname()
         local custom_css_file = assert(io.open(custom_css, "w"))
-        custom_css_file:write([[@import url("https://example.test/font.css");
+        custom_css_file:write([[/* A comment, which CSS lets stand before an import. */
+@import url("https://example.test/font.css");
 
 .project-rule {
     color: rebeccapurple;
@@ -924,20 +925,17 @@ print(value)
         assert.is_truthy(home:find('class="tealdoc-feature"', 1, true))
         assert.is_truthy(home:find("<strong>source</strong>", 1, true))
         assert.is_truthy(home:find(
-            '<p><code class="tealdoc-inline-code-after">' ..
-                "leading</code> text.</p>",
+            "<p><code>leading</code> text.</p>",
             1,
             true
         ))
         assert.is_truthy(home:find(
-            '<p>Text <code class="tealdoc-inline-code-before ' ..
-                'tealdoc-inline-code-after">middle</code> text.</p>',
+            "<p>Text <code>middle</code> text.</p>",
             1,
             true
         ))
         assert.is_truthy(home:find(
-            '<p>Text <code class="tealdoc-inline-code-before">' ..
-                "trailing</code></p>",
+            "<p>Text <code>trailing</code></p>",
             1,
             true
         ))
@@ -1075,8 +1073,7 @@ print(value)
         assert.is_falsy(api:find("Public APIs in", 1, true))
         assert.is_truthy(window_html:find("window Reference", 1, true))
         assert.is_truthy(window_html:find(
-            'Public APIs in <code class="tealdoc-inline-code-before ' ..
-                'tealdoc-inline-code-after">window</code>.',
+            "Public APIs in <code>window</code>.",
             1,
             true
         ))
@@ -1112,7 +1109,11 @@ print(value)
             1,
             true
         ), api)
-        assert.is_truthy(api:find(">↳ messageBox</a>", 1, true), api)
+        -- Every entry under a reference section drops the namespace its
+        -- siblings share, the one that opens the section included.
+        assert.is_truthy(api:find(">Options</a>", 1, true), api)
+        assert.is_truthy(api:find(">messageBox</a>", 1, true), api)
+        assert.is_falsy(api:find("↳", 1, true))
         assert.is_truthy(api:find(
             '<a class="tealdoc-code-link" href="/modules/window/"><span class="token class-name tealdoc-token-type">Window</span></a>',
             1,
@@ -1247,7 +1248,8 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            '@import url("https://example.test/font.css");\n\n:root {',
+            "/* A comment, which CSS lets stand before an import. */\n\n" ..
+                '@import url("https://example.test/font.css");\n\n:root {',
             1,
             true
         ))
@@ -1294,27 +1296,16 @@ print(value)
         ))
         assert.is_truthy(css:find(
             ".tealdoc-content :not(pre) > code {\n" ..
-                "    padding: 0;\n" ..
-                "    background: transparent;\n" ..
+                "    padding: var(--tealdoc-inline-code-padding);\n" ..
+                "    border-radius: var(--tealdoc-inline-code-radius);\n" ..
+                "    background: var(--tealdoc-inline-code-background);\n" ..
                 "    font-size: var(--tealdoc-inline-code-font-size);\n" ..
                 "    font-weight: 550;",
             1,
             true
         ))
-        assert.is_truthy(css:find(
-            "> code.tealdoc-inline-code-before {\n" ..
-                "    padding-inline-start: " ..
-                "var(--tealdoc-inline-code-padding);",
-            1,
-            true
-        ))
-        assert.is_truthy(css:find(
-            "> code.tealdoc-inline-code-after {\n" ..
-                "    padding-inline-end: " ..
-                "var(--tealdoc-inline-code-padding);",
-            1,
-            true
-        ))
+        assert.is_falsy(css:find("tealdoc-inline-code-before", 1, true))
+        assert.is_falsy(css:find("tealdoc-inline-code-after", 1, true))
         assert.is_truthy(css:find(
             '.tealdoc-content code[class*="language-"] {\n' ..
                 "    color: var(--tealdoc-syntax-foreground);\n" ..
@@ -1327,7 +1318,7 @@ print(value)
         assert.is_truthy(css:find(
             ".tealdoc-content pre {\n" ..
                 "    overflow: auto;\n" ..
-                "    padding: 0.5rem 0.6rem;\n" ..
+                "    padding: var(--tealdoc-code-block-padding);\n" ..
                 "    border: 1px solid var(--tealdoc-border);\n" ..
                 "    border-radius: var(--tealdoc-code-block-radius);",
             1,
@@ -1397,6 +1388,7 @@ print(value)
                 "    padding: var(--tealdoc-sidebar-item-padding);\n" ..
                 "    color: var(--tealdoc-sidebar-item-color);\n" ..
                 "    border-radius: 6px;\n" ..
+                "    font-family: var(--tealdoc-sidebar-font-family);\n" ..
                 "    font-size: var(--tealdoc-sidebar-font-size);\n" ..
                 "    font-weight: var(--tealdoc-sidebar-font-weight);",
             1,
@@ -1428,7 +1420,7 @@ print(value)
         assert.is_truthy(css:find(
             "--tealdoc-sidebar-item-color: var(--tealdoc-text-muted);\n" ..
                 "    --tealdoc-sidebar-heading-color: var(--tealdoc-text);\n" ..
-                "    --tealdoc-sidebar-heading-font-size: 0.66rem;\n" ..
+                "    --tealdoc-sidebar-heading-font-size: 0.7rem;\n" ..
                 "    --tealdoc-sidebar-heading-font-weight: 700;\n" ..
                 "    --tealdoc-sidebar-section-border: var(--tealdoc-border);",
             1,
@@ -1437,7 +1429,8 @@ print(value)
         assert.is_truthy(css:find(
             ".tealdoc-sidebar-section ul {\n" ..
                 "    margin: 0;\n" ..
-                "    padding: var(--tealdoc-sidebar-nested-top-padding) 0 0;\n" ..
+                "    padding: var(--tealdoc-sidebar-nested-top-padding) 0 0\n" ..
+                "        var(--tealdoc-sidebar-nested-indent);\n" ..
                 "    border-left: 0;",
             1,
             true
@@ -1449,7 +1442,7 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            "--tealdoc-outline-font-size: 0.64rem",
+            "--tealdoc-outline-font-size: 0.66rem",
             1,
             true
         ))
@@ -1464,14 +1457,16 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            ".tealdoc-outline .level-3 a {\n    padding-left: 0.75rem;\n    color: var(--tealdoc-text-faint);\n    font-size: 0.61rem;",
+            ".tealdoc-outline .level-3 a {\n    padding-left: 0.75rem;\n" ..
+                "    color: var(--tealdoc-text-faint);\n" ..
+                "    font-size: var(--tealdoc-outline-nested-font-size);",
             1,
             true
         ))
         assert.is_truthy(css:find("text-overflow: ellipsis", 1, true))
         assert.is_truthy(api:find('title="api Reference"', 1, true), api)
         assert.is_truthy(css:find(
-            "box-shadow: -100vw 0 0 100vw var(--tealdoc-background-alt)",
+            "box-shadow: -100vw 0 0 100vw var(--tealdoc-sidebar-background)",
             1,
             true
         ))

@@ -23,13 +23,14 @@ return [[
 .tealdoc-sidebar {
     padding: 1.25rem 1rem 2rem;
     border-right: 1px solid var(--tealdoc-border);
-    background: var(--tealdoc-background-alt);
-    box-shadow: -100vw 0 0 100vw var(--tealdoc-background-alt);
+    background: var(--tealdoc-sidebar-background);
+    box-shadow: -100vw 0 0 100vw var(--tealdoc-sidebar-background);
 }
 
 .tealdoc-outline-title {
     margin: 0 0 0.75rem;
     color: var(--tealdoc-text-muted);
+    font-family: var(--tealdoc-outline-font-family);
     font-size: 0.66rem;
     font-weight: 600;
 }
@@ -51,6 +52,7 @@ return [[
     padding: var(--tealdoc-sidebar-item-padding);
     color: var(--tealdoc-sidebar-item-color);
     border-radius: 6px;
+    font-family: var(--tealdoc-sidebar-font-family);
     font-size: var(--tealdoc-sidebar-font-size);
     font-weight: var(--tealdoc-sidebar-font-weight);
     line-height: 1.3;
@@ -65,13 +67,21 @@ return [[
 .tealdoc-sidebar a[aria-current="page"] {
     color: var(--tealdoc-accent);
     background: transparent;
-    font-weight: var(--tealdoc-sidebar-font-weight);
+    font-weight: var(--tealdoc-sidebar-active-font-weight);
 }
 
 .tealdoc-sidebar li.tealdoc-sidebar-section {
     margin-top: var(--tealdoc-sidebar-section-gap) !important;
     padding-top: var(--tealdoc-sidebar-section-padding);
     border-top: 1px solid var(--tealdoc-sidebar-section-border);
+}
+
+/* The first section opens the sidebar, so it carries neither the rule that
+ * separates one group from the last nor the space that rule needs. */
+.tealdoc-sidebar li.tealdoc-sidebar-section:first-child {
+    margin-top: 0 !important;
+    padding-top: 0;
+    border-top: 0;
 }
 
 .tealdoc-sidebar-section details {
@@ -87,6 +97,7 @@ return [[
     padding: 0.22rem 1.2rem 0 0.55rem;
     color: var(--tealdoc-sidebar-heading-color);
     cursor: pointer;
+    font-family: var(--tealdoc-sidebar-font-family);
     font-size: var(--tealdoc-sidebar-heading-font-size);
     font-weight: var(--tealdoc-sidebar-heading-font-weight);
     list-style: none;
@@ -117,7 +128,8 @@ return [[
 
 .tealdoc-sidebar-section ul {
     margin: 0;
-    padding: var(--tealdoc-sidebar-nested-top-padding) 0 0;
+    padding: var(--tealdoc-sidebar-nested-top-padding) 0 0
+        var(--tealdoc-sidebar-nested-indent);
     border-left: 0;
 }
 
@@ -140,19 +152,24 @@ return [[
     padding: 0;
 }
 
+/* A heading that does not fit wraps rather than being cut off: the outline is
+ * a reader's map of the page, and half a title is not one. Two lines is the
+ * limit, after which the rest is elided. */
 .tealdoc-outline a {
     position: relative;
-    display: block;
+    display: -webkit-box;
     overflow: hidden;
     padding: var(--tealdoc-outline-item-padding);
     color: var(--tealdoc-text-muted);
+    font-family: var(--tealdoc-outline-font-family);
     font-size: var(--tealdoc-outline-font-size);
     font-weight: var(--tealdoc-outline-font-weight);
-    line-height: 1.25;
+    line-height: 1.3;
     text-decoration: none;
     text-overflow: ellipsis;
     transition: color 120ms ease;
-    white-space: nowrap;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .tealdoc-outline a:hover,
@@ -174,7 +191,7 @@ return [[
 .tealdoc-outline .level-3 a {
     padding-left: 0.75rem;
     color: var(--tealdoc-text-faint);
-    font-size: 0.61rem;
+    font-size: var(--tealdoc-outline-nested-font-size);
 }
 
 .tealdoc-outline .level-3 a:hover,

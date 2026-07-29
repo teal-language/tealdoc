@@ -170,7 +170,7 @@ return [[
     }
 
     .tealdoc-hero-copy h1 {
-        font-size: clamp(2.8rem, 14vw, 4.5rem);
+        font-size: var(--tealdoc-hero-name-size-narrow);
     }
 
     .tealdoc-hero-image {

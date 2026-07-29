@@ -15,6 +15,7 @@ return [[
     --tealdoc-light-text: var(--vp-c-text-1, #213547);
     --tealdoc-light-text-muted: var(--vp-c-text-2, #67676c);
     --tealdoc-light-text-faint: var(--vp-c-text-3, #929295);
+    --tealdoc-light-sidebar-background: var(--tealdoc-light-background-alt);
     --tealdoc-dark-accent: var(--vp-c-brand-1, #5ad9e0);
     --tealdoc-dark-accent-contrast: #102f33;
     --tealdoc-dark-accent-hover: var(--vp-c-brand-2, #7ce4e9);
@@ -29,6 +30,7 @@ return [[
     --tealdoc-dark-text: var(--vp-c-text-1, #dfdfd6);
     --tealdoc-dark-text-muted: var(--vp-c-text-2, #a8a8a3);
     --tealdoc-dark-text-faint: var(--vp-c-text-3, #6a6a71);
+    --tealdoc-dark-sidebar-background: var(--tealdoc-dark-background-alt);
     --tealdoc-accent: var(--tealdoc-light-accent);
     --tealdoc-accent-contrast: var(--tealdoc-light-accent-contrast);
     --tealdoc-accent-hover: var(--tealdoc-light-accent-hover);
@@ -47,8 +49,11 @@ return [[
     --tealdoc-code-background: var(--tealdoc-light-code-background);
     --tealdoc-code-block-font-size: 0.8rem;
     --tealdoc-code-block-radius: 8px;
+    --tealdoc-code-block-padding: 0.8rem 0.9rem;
     --tealdoc-inline-code-font-size: 0.91em;
-    --tealdoc-inline-code-padding: 0.12rem;
+    --tealdoc-inline-code-padding: 0.1em 0.35em;
+    --tealdoc-inline-code-radius: 4px;
+    --tealdoc-inline-code-background: var(--tealdoc-code-background);
     --tealdoc-content-font-size: 0.8rem;
     --tealdoc-content-gutter: 5rem;
     --tealdoc-content-padding-top: 1.25rem;
@@ -89,29 +94,47 @@ return [[
         monospace
     );
     --tealdoc-header-height: var(--vp-nav-height, 64px);
+    --tealdoc-header-background: color-mix(
+        in srgb,
+        var(--tealdoc-background) 92%,
+        transparent
+    );
+    --tealdoc-header-color: var(--tealdoc-text);
+    --tealdoc-header-muted-color: var(--tealdoc-text-muted);
+    --tealdoc-header-border: var(--tealdoc-border);
+    --tealdoc-header-control-background: var(--tealdoc-background-alt);
+    --tealdoc-sidebar-background: var(--tealdoc-light-sidebar-background);
+    --tealdoc-sidebar-font-family: var(--tealdoc-font);
+    --tealdoc-outline-font-family: var(--tealdoc-font);
     --tealdoc-layout-max-width: var(--vp-layout-max-width, 1480px);
     --tealdoc-content-width: var(--vp-content-width, 688px);
     --tealdoc-sidebar-width: var(--vp-sidebar-width, 272px);
     --tealdoc-outline-width: var(--vp-aside-width, 256px);
-    --tealdoc-sidebar-font-size: 0.64rem;
-    --tealdoc-sidebar-font-weight: 700;
-    --tealdoc-sidebar-item-padding: 0.22rem 0.55rem;
+    --tealdoc-sidebar-font-size: 0.7rem;
+    --tealdoc-sidebar-font-weight: 500;
+    --tealdoc-sidebar-active-font-weight: 600;
+    --tealdoc-sidebar-item-padding: 0.24rem 0.55rem;
     --tealdoc-sidebar-item-color: var(--tealdoc-text-muted);
     --tealdoc-sidebar-heading-color: var(--tealdoc-text);
-    --tealdoc-sidebar-heading-font-size: 0.66rem;
+    --tealdoc-sidebar-heading-font-size: 0.7rem;
     --tealdoc-sidebar-heading-font-weight: 700;
     --tealdoc-sidebar-section-border: var(--tealdoc-border);
-    --tealdoc-sidebar-section-gap: 1.9rem;
-    --tealdoc-sidebar-section-padding: 2.3rem;
-    --tealdoc-sidebar-nested-top-padding: 6px;
-    --tealdoc-outline-font-size: 0.64rem;
+    --tealdoc-sidebar-section-gap: 1.1rem;
+    --tealdoc-sidebar-section-padding: 1.1rem;
+    --tealdoc-sidebar-nested-top-padding: 4px;
+    --tealdoc-sidebar-nested-indent: 0.5rem;
+    --tealdoc-outline-font-size: 0.66rem;
     --tealdoc-outline-font-weight: 600;
     --tealdoc-outline-item-padding: 0.16rem 0;
+    --tealdoc-outline-nested-font-size: 0.61rem;
     --tealdoc-hero-glow-color: var(--tealdoc-accent);
     --tealdoc-hero-glow-size: min(46vw, 520px);
     --tealdoc-hero-glow-blur: 24px;
     --tealdoc-hero-glow-opacity: 0.68;
     --tealdoc-hero-features-gap: 2rem;
+    --tealdoc-hero-name-size: clamp(3rem, 7vw, 5.5rem);
+    --tealdoc-hero-text-size: clamp(1.3rem, 2.5vw, 2rem);
+    --tealdoc-hero-name-size-narrow: clamp(2.8rem, 14vw, 4.5rem);
     --tealdoc-home-width: 1152px;
     --tealdoc-home-gutter: 2rem;
     --tealdoc-button-brand-background: var(--tealdoc-accent);
@@ -164,6 +187,7 @@ return [[
         );
         --tealdoc-background: var(--tealdoc-dark-background);
         --tealdoc-background-alt: var(--tealdoc-dark-background-alt);
+        --tealdoc-sidebar-background: var(--tealdoc-dark-sidebar-background);
         --tealdoc-background-elv: var(--tealdoc-dark-background-elv);
         --tealdoc-border: var(--tealdoc-dark-border);
         --tealdoc-code-background: var(--tealdoc-dark-code-background);
@@ -201,6 +225,7 @@ return [[
     );
     --tealdoc-background: var(--tealdoc-dark-background);
     --tealdoc-background-alt: var(--tealdoc-dark-background-alt);
+    --tealdoc-sidebar-background: var(--tealdoc-dark-sidebar-background);
     --tealdoc-background-elv: var(--tealdoc-dark-background-elv);
     --tealdoc-border: var(--tealdoc-dark-border);
     --tealdoc-code-background: var(--tealdoc-dark-code-background);
@@ -238,6 +263,7 @@ return [[
         );
         --tealdoc-background: var(--tealdoc-light-background);
         --tealdoc-background-alt: var(--tealdoc-light-background-alt);
+        --tealdoc-sidebar-background: var(--tealdoc-light-sidebar-background);
         --tealdoc-background-elv: var(--tealdoc-light-background-elv);
         --tealdoc-border: var(--tealdoc-light-border);
         --tealdoc-code-background: var(--tealdoc-light-code-background);
