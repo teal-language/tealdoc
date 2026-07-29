@@ -3,10 +3,13 @@ return [[
     margin: 0 0 4rem;
 }
 
+/* The row is as tall as what is in it, and the copy is anchored to the top of
+ * it. Centering the copy inside a row with a floor put space above the heading
+ * whenever the copy came up short of that floor, and the narrower the window
+ * the shorter the copy and the more of it there was. */
 .tealdoc-hero-main {
     display: grid;
-    min-height: 360px;
-    align-items: center;
+    align-items: start;
     gap: 3rem;
     grid-template-columns: minmax(0, 1fr);
 }
@@ -19,6 +22,7 @@ return [[
     position: relative;
     z-index: 1;
 }
+
 
 .tealdoc-hero-copy h1 {
     max-width: 720px;
@@ -79,10 +83,12 @@ return [[
     background: var(--tealdoc-button-alt-hover-background);
 }
 
+/* The image is the one thing that centers, against whichever column is taller. */
 .tealdoc-hero-image {
     position: relative;
     display: grid;
     min-height: 340px;
+    align-self: center;
     place-items: center;
     transform: translateY(-12px);
 }

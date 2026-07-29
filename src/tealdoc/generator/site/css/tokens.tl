@@ -128,13 +128,19 @@ return [[
     --tealdoc-outline-item-padding: 0.16rem 0;
     --tealdoc-outline-nested-font-size: 0.61rem;
     --tealdoc-hero-glow-color: var(--tealdoc-accent);
-    --tealdoc-hero-glow-size: min(46vw, 520px);
+    --tealdoc-hero-glow-size: 520px;
     --tealdoc-hero-glow-blur: 24px;
     --tealdoc-hero-glow-opacity: 0.68;
     --tealdoc-hero-features-gap: 2rem;
-    --tealdoc-hero-name-size: clamp(3rem, 7vw, 5.5rem);
-    --tealdoc-hero-text-size: clamp(1.3rem, 2.5vw, 2rem);
-    --tealdoc-hero-name-size-narrow: clamp(2.8rem, 14vw, 4.5rem);
+    /* The hero is sized in rem and steps at the breakpoints below, rather than
+     * sliding with `vw`. Browser zoom is a change in the viewport, so a `vw`
+     * size resizes against the zoom instead of with it: the reader asks for a
+     * larger page and the heading and the line under it come apart. A rem
+     * scales by exactly the zoom factor, which is what was asked for. */
+    --tealdoc-hero-name-size: 5.5rem;
+    --tealdoc-hero-text-size: 2rem;
+    --tealdoc-hero-name-size-narrow: 4rem;
+    --tealdoc-hero-text-size-narrow: 1.5rem;
     --tealdoc-home-width: 1152px;
     --tealdoc-home-gutter: 2rem;
     --tealdoc-button-brand-background: var(--tealdoc-accent);
