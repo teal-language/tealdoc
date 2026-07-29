@@ -120,6 +120,13 @@ return [[
     color: var(--tealdoc-sidebar-heading-color);
 }
 
+/* A group nested inside another is one row among the rows it sits with, so it
+ * reads in their color. The heading color belongs to the top level, which is
+ * what the rule and the space above it already divide. */
+.tealdoc-sidebar-section .tealdoc-sidebar-section > details > summary:not([role]) {
+    color: var(--tealdoc-sidebar-item-color);
+}
+
 .tealdoc-sidebar-section details[open] > summary {
     margin-bottom: 0;
 }
