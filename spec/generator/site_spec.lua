@@ -385,11 +385,71 @@ describe("Site generator", function()
         -- reaches the page if the row it was written into kept it out of the way.
         assert.is_truthy(html:find("<th>Name</th>", 1, true), html)
         assert.is_truthy(html:find(
+            "<td><code>name</code></td>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
             "<td><code>string | nil</code></td>",
             1,
             true
         ), html)
 
+        remove_tree(output)
+    end)
+
+    it("marks projected const variables in module summaries", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            --- Returns the build identifier.
+            global Build <const>: string = "dev"
+            return Build
+        ]], "Build.tl", env)
+        tealdoc.process_text([[
+            --- Returns the current status.
+            global Status: string = "ready"
+            return Status
+        ]], "Status.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Constants",
+            pages = {
+                {path = "", title = "Home"},
+                {
+                    path = "constants",
+                    title = "Constants",
+                    api = {"Build", "Status"},
+                    public = "api",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/constants.md")
+        assert.is_truthy(markdown:find("## Module contents", 1, true), markdown)
+        assert.is_truthy(markdown:find(
+            "| [`Build`](/constants/#api.Build) | " ..
+                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
+                "variable</span> | `<const>` Returns the build identifier. |",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "| [`Status`](/constants/#api.Status) | " ..
+                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
+                "variable</span> | Returns the current status. |",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "| [`Status`](/constants/#api.Status) | " ..
+                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
+                "variable</span> | `<const>`",
+            1,
+            true
+        ))
         remove_tree(output)
     end)
 
@@ -660,29 +720,54 @@ describe("Site generator", function()
 
             return Window
         ]], "window.tl", env)
-        tealdoc.process_text([[
-            local type Window = require("window")
-            local record api
-                record Options
-                    window: Window
-                end
+        tealdoc.process_text([==[--[=[
+Opens windows and reports display changes.
 
-                --- Opens a window.
-                --- @param options Window options.
-                open: function(options: Options)
+# Display changes
 
-                --- Shows a [`Window`](tealdoc:Window).
-                --- @param window Parent window.
-                messageBox: function(window: Window)
+It keeps wrapped prose
+on adjacent source lines.
 
-                --- Resets this API after clearing every cached value, pending
-                --- operation, registered listener, and retained handle so a
-                --- caller can start again from a completely clean state.
-                reset: function(self: api)
-            end
+```teal
+# This remains example code.
+local options = {}
+local window = api.open(options)
+```
+]=]
 
-            return api
-        ]], "api.tl", env)
+local type Window = require("window")
+local record api
+    --- Read-only. Reports the number of windows awaiting an event.
+    pending: integer
+
+    record Options
+        window: Window
+    end
+
+    --- Opens a window.
+    ---
+    --- ## Window lifetime
+    ---
+    --- The caller owns the returned window.
+    ---
+    --- ```teal
+    --- # This remains example code.
+    --- ```
+    --- @param options Window options.
+    open: function(options: Options)
+
+    --- Shows a [`Window`](tealdoc:Window).
+    --- @param window Parent window.
+    messageBox: function(window: Window)
+
+    --- Resets this API after clearing every cached value, pending
+    --- operation, registered listener, and retained handle so a
+    --- caller can start again from a completely clean state.
+    reset: function(self: api)
+end
+
+return api
+]==], "api.tl", env)
 
         local output = os.tmpname()
         os.remove(output)
@@ -909,6 +994,7 @@ print(value)
         local llms_full = read_file(output .. "/llms-full.txt")
         local manifest = read_file(output .. "/.tealdoc-manifest")
         local window_html = read_file(output .. "/modules/window/index.html")
+        local window_markdown = read_file(output .. "/modules/window.md")
         local redirect = read_file(output .. "/old-api.html")
         local example_html = read_file(output .. "/examples/answer/index.html")
         local not_found = read_file(output .. "/404.html")
@@ -1105,10 +1191,87 @@ print(value)
         ))
         assert.is_truthy(api:find("<h3", 1, true))
         assert.is_truthy(api:find("<h4", 1, true))
+        assert.is_truthy(markdown:find("## Module contents", 1, true))
         assert.is_falsy(api:find("Public APIs in", 1, true))
         assert.is_falsy(api:find("Every public item", 1, true))
         assert.is_truthy(api:find("<th>Function</th>", 1, true), api)
-        assert.is_truthy(markdown:find("### Functions", 1, true), markdown)
+        assert.is_truthy(markdown:find("**Functions**", 1, true), markdown)
+        assert.is_truthy(markdown:find(
+            "Read-only. Reports the number of windows awaiting an event.",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "| [`pending`](/modules/api/#api.pending) | " ..
+                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
+                "variable</span> | `<const>`",
+            1,
+            true
+        ))
+        local introduction_at = assert(markdown:find(
+            "Opens windows and reports display changes.",
+            1,
+            true
+        ))
+        local type_summary_at = assert(markdown:find("**Types**", 1, true))
+        local function_summary_at = assert(markdown:find(
+            "**Functions**",
+            1,
+            true
+        ))
+        local types_at = assert(markdown:find("## Types", type_summary_at, true))
+        local functions_at = assert(markdown:find(
+            "## Functions",
+            function_summary_at,
+            true
+        ))
+        assert.is_true(introduction_at < types_at)
+        assert.is_true(introduction_at < functions_at)
+        assert.is_true(type_summary_at < types_at)
+        assert.is_true(function_summary_at < functions_at)
+        assert.is_truthy(markdown:find("\n## Display changes\n", 1, true))
+        assert.is_truthy(
+            markdown:find("\n#### Window lifetime\n", 1, true),
+            markdown
+        )
+        assert.is_truthy(markdown:find(
+            "\n### api.Options ",
+            types_at,
+            true
+        ))
+        assert.is_truthy(markdown:find(
+            "\n### api.open ",
+            functions_at,
+            true
+        ))
+        assert.is_truthy(markdown:find(
+            "\n## Values\n",
+            functions_at,
+            true
+        ))
+        assert.is_truthy(markdown:find(
+            "\n### api.pending ",
+            functions_at,
+            true
+        ))
+        assert.is_falsy(markdown:find("\n### Types\n", 1, true))
+        assert.is_falsy(markdown:find("\n### Functions\n", 1, true))
+        assert.is_truthy(markdown:find(
+            "It keeps wrapped prose\non adjacent source lines.",
+            introduction_at,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\n# This remains example code.\n" ..
+                "local options = {}\nlocal window = api.open(options)\n```",
+            introduction_at,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\n# This remains example code.\n```",
+            functions_at,
+            true
+        ), markdown)
         -- The functions table carries no kind column, so a row goes straight
         -- from the name to the description.
         assert.is_truthy(markdown:find(
@@ -1157,7 +1320,8 @@ print(value)
             1,
             true
         ))
-        assert.is_truthy(api:find("api Reference", 1, true))
+        assert.is_falsy(api:find("api Reference", 1, true))
+        assert.are.equal(1, select(2, api:gsub("<h1[%s>]", "")))
         assert.is_truthy(api:find("Open a checked value", 1, true), api)
         assert.is_truthy(api:find(
             'tealdoc-token-string">&quot;checked&quot;</span>',
@@ -1166,12 +1330,15 @@ print(value)
         ), api)
         assert.is_falsy(api:find("#region", 1, true), api)
         assert.is_falsy(api:find("Public APIs in", 1, true))
-        assert.is_truthy(window_html:find("window Reference", 1, true))
+        assert.is_falsy(window_html:find("window Reference", 1, true))
+        assert.is_falsy(window_markdown:find("## Module contents", 1, true))
         assert.is_truthy(window_html:find(
-            "Public APIs in <code>window</code>.",
+            '<h1 id="window"',
             1,
             true
-        ))
+        ), window_html)
+        assert.are.equal(1, select(2, window_html:gsub("<h1[%s>]", "")))
+        assert.is_truthy(window_markdown:match("^# window\n"))
         assert.is_truthy(api:find(
             '<a class="tealdoc-footer-llms" href="/modules/api/llms.txt">llms.txt</a>',
             1,
@@ -1562,7 +1729,7 @@ print(value)
             true
         ))
         assert.is_truthy(css:find("text-overflow: ellipsis", 1, true))
-        assert.is_truthy(api:find('title="api Reference"', 1, true), api)
+        assert.is_falsy(api:find('title="api Reference"', 1, true), api)
         assert.is_truthy(css:find(
             "box-shadow: -100vw 0 0 100vw var(--tealdoc-sidebar-background)",
             1,
@@ -1660,7 +1827,7 @@ print(value)
         assert.is_truthy(llms_full:find("## Home", 1, true), llms_full)
         assert.is_truthy(llms_full:find("One thread", 1, true), llms_full)
         assert.is_truthy(llms_full:find("## API", 1, true), llms_full)
-        assert.is_truthy(llms_full:find("api Reference", 1, true), llms_full)
+        assert.is_falsy(llms_full:find("api Reference", 1, true), llms_full)
         assert.is_truthy(manifest:find(
             "tealdoc-manifest-v1\n",
             1,

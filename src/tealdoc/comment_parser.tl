@@ -7,8 +7,8 @@ end
 
 function CommentParser.parse_text(text: string, item: tealdoc.Item, env: tealdoc.Env)
     local lines = {}
-    for line in text:gmatch("[^\n]*") do
-        table.insert(lines, line)
+    for line in (text .. "\n"):gmatch("(.-)\n") do
+        table.insert(lines, (line:gsub("\r$", "")))
     end
     CommentParser.parse_lines(lines, item, env)
 end

@@ -89,6 +89,46 @@ describe("teal support in tealdoc: variables", function()
         })
     end)
 
+    it("records const attributes on local and global variables", function()
+        util.check_registry([[
+            --- Local constant.
+            local localValue <const>: integer = 42
+            --- Global constant.
+            global GLOBAL_VALUE <const>: integer = 43
+        ]], {
+            ["$test~localValue"] = {
+                kind = "variable",
+                typename = "integer",
+                is_const = true,
+                name = "localValue",
+                text = "Local constant.",
+                visibility = "local",
+                parent = "$test",
+                path = "$test~localValue",
+                location = {
+                    filename = "test.tl",
+                    y = 2,
+                    x = 7,
+                },
+            },
+            ["$test~GLOBAL_VALUE"] = {
+                kind = "variable",
+                typename = "integer",
+                is_const = true,
+                name = "GLOBAL_VALUE",
+                text = "Global constant.",
+                visibility = "global",
+                parent = "$test",
+                path = "$test~GLOBAL_VALUE",
+                location = {
+                    filename = "test.tl",
+                    y = 4,
+                    x = 8,
+                },
+            },
+        })
+    end)
+
     it("should parse multiple variables in a single declaration", function()
         util.check_registry([[
             --- my variables

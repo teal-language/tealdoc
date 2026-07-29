@@ -1589,7 +1589,7 @@ local function submodule_summary(
    end)
 
    local output = {
-      "### Submodules\n\n",
+      "**Submodules**\n\n",
       "| Submodule | Description |\n",
       "| --- | --- |\n",
    }
@@ -1618,26 +1618,29 @@ local function render_page(
    used_examples)
 
    local markdown = SiteApi.source_markdown(page)
-   local api = SiteApi.markdown(
+   local api, module_introduction = SiteApi.markdown(
    view,
    resolver,
    attached_examples,
    used_examples)
 
-   if api ~= "" then
+   if view then
       local summary = submodule_summary(page, context, context.settings.base) ..
       SiteApi.summary(view, resolver)
-      local introduction = ""
+      if summary ~= "" then
+         summary = "## Module contents\n\n" .. summary
+      end
       local public_name = view.public
       if not markdown:match("%S") then
-         introduction = "\n\nPublic APIs in `" .. public_name .. "`."
+         markdown = "# " .. public_name
       end
       markdown = markdown ..
-      "\n\n## " ..
-      public_name ..
-      " Reference" ..
-      introduction ..
       "\n\n" ..
+      (
+      module_introduction ~= "" and
+      module_introduction .. "\n\n" or
+      "") ..
+
       summary ..
       "\n" ..
       api
