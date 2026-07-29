@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local Text = require("tealdoc.generator.text")
 local default_css = require("tealdoc.generator.site.default_css")
@@ -47,6 +47,13 @@ local SiteGenerator = {}
 
 
 
+
+
+
+
+local MANIFEST_PATH = ".tealdoc-manifest"
+local MANIFEST_HEADER = "tealdoc-manifest-v1\n"
+
 local function read_file(path)
    local file = assert(io.open(path, "rb"), "Could not open " .. path)
    local contents = assert(file:read("*a"), "Could not read " .. path)
@@ -92,9 +99,34 @@ local function mkdir_p(path)
    end
 end
 
-local function copy_public_directory(
+local function safe_relative_path(path, name)
+   assert(path ~= "", name .. " must not be empty")
+   assert(
+   path:sub(1, 1) ~= "/" and
+   not path:match("^%a:") and
+   not path:find("\\", 1, true),
+   name .. " must be a relative path using '/' separators: " .. path)
+
+   assert(
+   not path:find("[%z\1-\31\127]"),
+   name .. " must not contain control characters: " .. path)
+
+   assert(
+   path:sub(-1) ~= "/" and not path:find("//", 1, true),
+   name .. " is not normalized: " .. path)
+
+   for segment in path:gmatch("[^/]+") do
+      assert(
+      segment ~= "." and segment ~= "..",
+      name .. " contains an unsafe path segment: " .. path)
+
+   end
+   return path
+end
+
+local function collect_public_directory(
    source,
-   destination,
+   prefix,
    files)
 
    local attributes = assert(
@@ -116,7 +148,8 @@ local function copy_public_directory(
 
    for _, entry in ipairs(entries) do
       local source_path = source .. "/" .. entry
-      local destination_path = destination .. "/" .. entry
+      local relative_path = prefix == "" and entry or prefix .. "/" .. entry
+      safe_relative_path(relative_path, "public asset path")
       local entry_attributes = assert(
       lfs.symlinkattributes(source_path),
       "Could not read public path " .. source_path)
@@ -126,14 +159,31 @@ local function copy_public_directory(
       "public assets may not contain symbolic links: " .. source_path)
 
       if entry_attributes.mode == "directory" then
-         mkdir_p(destination_path)
-         copy_public_directory(source_path, destination_path, files)
+         collect_public_directory(source_path, relative_path, files)
       elseif entry_attributes.mode == "file" then
-         write_file(destination_path, read_file(source_path))
-         table.insert(files, destination_path)
+         table.insert(files, {
+            source = source_path,
+            path = relative_path,
+         })
       else
          error("unsupported public asset: " .. source_path)
       end
+   end
+end
+
+local function copy_public_files(
+   output,
+   public_files,
+   files)
+
+   for _, public_file in ipairs(public_files) do
+      local parent = public_file.path:match("^(.*)/[^/]+$")
+      if parent then
+         mkdir_p(output .. "/" .. parent)
+      end
+      local destination = output .. "/" .. public_file.path
+      write_file(destination, read_file(public_file.source))
+      table.insert(files, destination)
    end
 end
 
@@ -266,13 +316,15 @@ local function validated_redirects(
    return normalized_redirects
 end
 
-local function validate_output_routes(
+local function planned_output_paths(
+   settings,
    pages,
    redirects,
-   has_not_found)
+   public_files)
 
    local outputs = {}
    local function claim(path, owner)
+      safe_relative_path(path, owner .. " output path")
       assert(
       outputs[path] == nil,
       owner ..
@@ -281,14 +333,51 @@ local function validate_output_routes(
       " at output path " ..
       path)
 
+      for claimed_path, claimed_owner in pairs(outputs) do
+         local conflict
+         if path:sub(1, #claimed_path + 1) == claimed_path .. "/" then
+            conflict = claimed_path
+         elseif claimed_path:sub(1, #path + 1) == path .. "/" then
+            conflict = path
+         end
+         assert(
+         conflict == nil,
+         owner ..
+         " conflicts with " ..
+         claimed_owner ..
+         " at output path " ..
+         tostring(conflict))
+
+      end
       outputs[path] = owner
+   end
+   claim(MANIFEST_PATH, "Tealdoc manifest")
+   claim("assets/tealdoc.css", "Tealdoc stylesheet")
+   claim("assets/pico.classless.min.css", "Pico stylesheet")
+   claim("assets/tealdoc.js", "Tealdoc script")
+   claim("assets/search-index.js", "search index")
+   claim("llms.txt", "site LLM index")
+   claim("llms-full.txt", "full LLM documentation")
+   if settings.cname then
+      claim("CNAME", "CNAME")
+   end
+   if settings.site_url and
+      settings.site_url ~= "" and
+      settings.sitemap ~= false then
+
+      claim("sitemap.xml", "sitemap")
+   end
+   if settings.robots ~= false then
+      claim("robots.txt", "robots file")
    end
    for _, page in ipairs(pages) do
       local route = page.path or ""
       local owner = route == "" and "home page" or "page " .. route
       claim(route == "" and "index.html" or route .. "/index.html", owner)
       claim(route == "" and "index.md" or route .. ".md", owner)
-      claim(route == "" and "llms.txt" or route .. "/llms.txt", owner)
+      if route ~= "" then
+         claim(route .. "/llms.txt", owner)
+      end
    end
    for route in pairs(redirects or {}) do
       local path = route:match("%.html$") and
@@ -296,11 +385,185 @@ local function validate_output_routes(
       route .. "/index.html"
       claim(path, "redirect " .. route)
    end
-   if has_not_found then
+   if settings.not_found then
       claim("404.html", "custom 404 page")
       claim("404.md", "custom 404 page")
       claim("404/llms.txt", "custom 404 page")
    end
+   for _, public_file in ipairs(public_files) do
+      claim(public_file.path, "public asset " .. public_file.path)
+   end
+   return outputs
+end
+
+local function read_manifest(output)
+   local path = output .. "/" .. MANIFEST_PATH
+   local attributes = lfs.symlinkattributes(path)
+   if not attributes then
+      return {}
+   end
+   assert(
+   attributes.mode == "file",
+   "Tealdoc manifest must be a regular file: " .. path)
+
+   local contents = read_file(path)
+   assert(
+   contents:sub(1, #MANIFEST_HEADER) == MANIFEST_HEADER,
+   "invalid Tealdoc manifest header: " .. path)
+
+   local owned = {}
+   local body = contents:sub(#MANIFEST_HEADER + 1)
+   for entry in (body .. "\n"):gmatch("(.-)\n") do
+      if entry ~= "" then
+         safe_relative_path(entry, "Tealdoc manifest entry")
+         assert(
+         entry ~= MANIFEST_PATH,
+         "Tealdoc manifest may not own itself")
+
+         assert(
+         not owned[entry],
+         "duplicate Tealdoc manifest entry: " .. entry)
+
+         owned[entry] = true
+      end
+   end
+   return owned
+end
+
+local function remove_empty_parents(output, relative_path)
+   local parent = relative_path:match("^(.*)/[^/]+$")
+   while parent and parent ~= "" do
+      if not lfs.rmdir(output .. "/" .. parent) then
+         return
+      end
+      parent = parent:match("^(.*)/[^/]+$")
+   end
+end
+
+local function prune_previous_outputs(
+   output,
+   previous,
+   current)
+
+   local stale = {}
+   for path in pairs(previous) do
+      if not current[path] then
+         table.insert(stale, path)
+      end
+   end
+   table.sort(stale)
+   for _, path in ipairs(stale) do
+      local destination = output .. "/" .. path
+      local attributes = lfs.symlinkattributes(destination)
+      if attributes then
+         assert(
+         attributes.mode == "file" or attributes.mode == "link",
+         "refusing to prune non-file manifest entry: " .. path)
+
+         assert(os.remove(destination), "Could not remove " .. destination)
+      end
+      remove_empty_parents(output, path)
+   end
+end
+
+local function validate_output_destinations(
+   output,
+   current,
+   previous)
+
+   for path, owner in pairs(current) do
+      if path ~= MANIFEST_PATH then
+         local parent = ""
+         for segment in path:gmatch("[^/]+") do
+            local candidate = parent == "" and segment or
+            parent .. "/" .. segment
+            local attributes = lfs.symlinkattributes(
+            output .. "/" .. candidate)
+
+            if candidate == path then
+               if attributes then
+                  assert(
+                  previous[path] and
+                  attributes.mode == "file",
+                  owner ..
+                  " would overwrite an unowned output path: " ..
+                  path)
+
+               end
+            elseif attributes then
+               assert(
+               attributes.mode == "directory",
+               owner ..
+               " cannot create output beneath non-directory path: " ..
+               candidate)
+
+            end
+            parent = candidate
+         end
+      end
+   end
+end
+
+local function recorded_output_paths(
+   output,
+   files,
+   planned)
+
+   local prefix = output .. "/"
+   local owned = {}
+   for path in pairs(planned) do
+      if path ~= MANIFEST_PATH then
+         local absolute = prefix .. path
+         local attributes = lfs.symlinkattributes(absolute)
+         assert(
+         attributes and attributes.mode == "file",
+         "planned output is not a regular file: " .. absolute)
+
+         owned[path] = true
+      end
+   end
+   for _, path in ipairs(files) do
+      assert(
+      path:sub(1, #prefix) == prefix,
+      "generated file is outside the site output: " .. path)
+
+      local relative = safe_relative_path(
+      path:sub(#prefix + 1):gsub("\\", "/"),
+      "generated file path")
+
+      assert(
+      relative ~= MANIFEST_PATH,
+      "after_build may not claim the Tealdoc manifest")
+
+      local attributes = lfs.symlinkattributes(path)
+      assert(
+      attributes and attributes.mode == "file",
+      "generated file must be a regular file: " .. path)
+
+      owned[relative] = true
+   end
+   local relative_paths = {}
+   local absolute_paths = {}
+   for path in pairs(owned) do
+      table.insert(relative_paths, path)
+   end
+   table.sort(relative_paths)
+   for _, path in ipairs(relative_paths) do
+      table.insert(absolute_paths, prefix .. path)
+   end
+   return owned, absolute_paths
+end
+
+local function write_manifest(output, paths)
+   local sorted = {}
+   for path in pairs(paths) do
+      table.insert(sorted, path)
+   end
+   table.sort(sorted)
+   write_file(
+   output .. "/" .. MANIFEST_PATH,
+   MANIFEST_HEADER .. table.concat(sorted, "\n") .. "\n")
+
 end
 
 local function discover_source(path, files)
@@ -1034,11 +1297,19 @@ local function footer_items(
       "</a>")
 
    end
+   local llms_url = page_url(settings.base, page.path) .. "llms.txt"
+   local llms_label = "llms.txt"
+   if not page.path or page.path == "" then
+      llms_url = markdown_url(settings.base, "")
+      llms_label = "index.md"
+   end
    table.insert(
    parts,
    '<a class="tealdoc-footer-llms" href="' ..
-   escape_html(page_url(settings.base, page.path) .. "llms.txt") ..
-   '">llms.txt</a>')
+   escape_html(llms_url) ..
+   '">' ..
+   llms_label ..
+   "</a>")
 
    table.insert(
    parts,
@@ -1445,6 +1716,58 @@ local function robots_txt(settings)
    return output
 end
 
+local function llms_index_txt(
+   settings,
+   pages)
+
+   local name = settings.name ~= "" and settings.name or settings.title
+   local output = { "# " .. name .. "\n" }
+   if settings.description and settings.description ~= "" then
+      table.insert(output, "\n> " .. settings.description .. "\n")
+   end
+   table.insert(output, "\n## Documentation\n")
+   for _, page in ipairs(pages) do
+      local target = page.path and page.path ~= "" and
+      page_url(settings.base, page.path) .. "llms.txt" or
+      markdown_url(settings.base, "")
+      local line = "\n- [" .. page.title .. "](" .. target .. ")"
+      if page.description and page.description ~= "" then
+         line = line .. ": " .. page.description
+      end
+      table.insert(output, line)
+   end
+   table.insert(
+   output,
+   "\n\n- [Complete documentation](" ..
+   root_file_url(settings.base, "llms-full.txt") ..
+   ")\n")
+
+   return table.concat(output)
+end
+
+local function llms_full_txt(
+   settings,
+   pages,
+   markdown)
+
+   local name = settings.name ~= "" and settings.name or settings.title
+   local output = { "# " .. name .. "\n" }
+   if settings.description and settings.description ~= "" then
+      table.insert(output, "\n> " .. settings.description .. "\n")
+   end
+   for index, page in ipairs(pages) do
+      table.insert(
+      output,
+      "\n---\n\n## " ..
+      page.title ..
+      "\n\n" ..
+      (markdown[index] or ""):gsub("^%s+", ""):gsub("%s+$", "") ..
+      "\n")
+
+   end
+   return table.concat(output)
+end
+
 local function not_found_page(
    configured)
 
@@ -1507,17 +1830,34 @@ function SiteGenerator.build(
       settings.before_build(context)
    end
    settings.redirects = validated_redirects(context.pages, settings.redirects)
-   validate_output_routes(
+   if settings.cname then
+      assert(
+      valid_cname(settings.cname),
+      "tealdoc.site.cname must be a bare DNS name")
+
+   end
+   local public_files = {}
+   if settings.public then
+      collect_public_directory(settings.public, "", public_files)
+   end
+   local planned = planned_output_paths(
+   settings,
    context.pages,
    settings.redirects,
-   settings.not_found ~= nil)
+   public_files)
 
+   local output_attributes = lfs.symlinkattributes(output)
+   assert(
+   not output_attributes or output_attributes.mode == "directory",
+   "site output must be a directory and may not be a symbolic link")
+
+   local previous = read_manifest(output)
+   prune_previous_outputs(output, previous, planned)
+   validate_output_destinations(output, planned, previous)
    mkdir_p(output)
    mkdir_p(output .. "/assets")
 
-   if settings.public then
-      copy_public_directory(settings.public, output, context.files)
-   end
+   copy_public_files(output, public_files, context.files)
 
    local css = default_css
    if settings.custom_css then
@@ -1543,6 +1883,7 @@ function SiteGenerator.build(
    end
    local resolver = routes_for_pages(context.pages, views, settings.base)
    local search_entries = {}
+   local page_markdown = {}
    for _, page in ipairs(context.pages) do
       local directory = output
       if page.path and page.path ~= "" then
@@ -1572,13 +1913,29 @@ function SiteGenerator.build(
       end
       write_file(markdown_path, markdown)
       table.insert(context.files, markdown_path)
-      local llms_path = directory .. "/llms.txt"
-      write_file(llms_path, markdown)
-      table.insert(context.files, llms_path)
+      table.insert(page_markdown, markdown)
+      if page.path and page.path ~= "" then
+         local llms_path = directory .. "/llms.txt"
+         write_file(llms_path, markdown)
+         table.insert(context.files, llms_path)
+      end
       for _, entry in ipairs(page_entries) do
          table.insert(search_entries, entry)
       end
    end
+
+   local llms_index_path = output .. "/llms.txt"
+   write_file(
+   llms_index_path,
+   llms_index_txt(settings, context.pages))
+
+   table.insert(context.files, llms_index_path)
+   local llms_full_path = output .. "/llms-full.txt"
+   write_file(
+   llms_full_path,
+   llms_full_txt(settings, context.pages, page_markdown))
+
+   table.insert(context.files, llms_full_path)
 
    for item_path in pairs(attached_examples) do
       assert(
@@ -1631,10 +1988,6 @@ function SiteGenerator.build(
    end
 
    if settings.cname then
-      assert(
-      valid_cname(settings.cname),
-      "tealdoc.site.cname must be a bare DNS name")
-
       local cname_path = output .. "/CNAME"
       write_file(cname_path, settings.cname .. "\n")
       table.insert(context.files, cname_path)
@@ -1666,9 +2019,17 @@ function SiteGenerator.build(
    if settings.after_build then
       settings.after_build(context)
    end
+   local owned
+   local validation_files
+   owned, validation_files = recorded_output_paths(
+   output,
+   context.files,
+   planned)
+
    if settings.validate_links ~= false then
-      SiteValidator.validate(output, settings.base, context.files)
+      SiteValidator.validate(output, settings.base, validation_files)
    end
+   write_manifest(output, owned)
 end
 
 return SiteGenerator

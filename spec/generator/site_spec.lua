@@ -35,6 +35,23 @@ local function write_file(path, contents)
     file:close()
 end
 
+local function write_nested_file(root, path, contents)
+    local current = root
+    local parent = path:match("^(.*)/[^/]+$")
+    if parent then
+        for segment in parent:gmatch("[^/]+") do
+            current = current .. "/" .. segment
+            local attributes = lfs.attributes(current)
+            if not attributes then
+                assert(lfs.mkdir(current))
+            else
+                assert.are.equal("directory", attributes.mode)
+            end
+        end
+    end
+    write_file(root .. "/" .. path, contents)
+end
+
 describe("Site generator", function()
     it("requires every page template value", function()
         assert.has_error(function()
@@ -743,6 +760,9 @@ print(value)
         local search = read_file(output .. "/assets/search-index.js")
         local markdown = read_file(output .. "/modules/api.md")
         local llms = read_file(output .. "/modules/api/llms.txt")
+        local llms_index = read_file(output .. "/llms.txt")
+        local llms_full = read_file(output .. "/llms-full.txt")
+        local manifest = read_file(output .. "/.tealdoc-manifest")
         local window_html = read_file(output .. "/modules/window/index.html")
         local redirect = read_file(output .. "/old-api.html")
         local example_html = read_file(output .. "/examples/answer/index.html")
@@ -771,6 +791,11 @@ print(value)
         ))
         assert.is_truthy(home:find(
             '<link rel="alternate" type="text/markdown" href="https://docs.example.test/index.md"',
+            1,
+            true
+        ))
+        assert.is_truthy(home:find(
+            '<a class="tealdoc-footer-llms" href="/index.md">index.md</a>',
             1,
             true
         ))
@@ -1466,6 +1491,43 @@ print(value)
         assert.is_truthy(search:find("Generated from source.", 1, true), search)
         assert.is_truthy(markdown:find("```teal", 1, true))
         assert.are.equal(markdown, llms)
+        assert.is_truthy(llms_index:find(
+            "- [Home](/index.md): Home page",
+            1,
+            true
+        ), llms_index)
+        assert.is_truthy(llms_index:find(
+            "- [API](/modules/api/llms.txt): API page",
+            1,
+            true
+        ), llms_index)
+        assert.is_truthy(llms_index:find(
+            "- [Complete documentation](/llms-full.txt)",
+            1,
+            true
+        ), llms_index)
+        assert.is_falsy(llms_index:find("One thread", 1, true))
+        assert.is_truthy(llms_full:find("## Home", 1, true), llms_full)
+        assert.is_truthy(llms_full:find("One thread", 1, true), llms_full)
+        assert.is_truthy(llms_full:find("## API", 1, true), llms_full)
+        assert.is_truthy(llms_full:find("api Reference", 1, true), llms_full)
+        assert.is_truthy(manifest:find(
+            "tealdoc-manifest-v1\n",
+            1,
+            true
+        ))
+        assert.is_truthy(manifest:find(
+            "\nassets/search-index.js\n",
+            1,
+            true
+        ))
+        assert.is_truthy(manifest:find("\nllms-full.txt\n", 1, true))
+        assert.is_truthy(manifest:find(
+            "\nmodules/api/llms.txt\n",
+            1,
+            true
+        ))
+        assert.is_falsy(manifest:find(output, 1, true))
         assert.is_truthy(redirect:find(
             '<meta http-equiv="refresh" content="0; url=/modules/api/">',
             1,
@@ -1665,6 +1727,228 @@ print(value)
         assert.is_nil(lfs.attributes(output))
     end)
 
+    it("claims every generated and public output before writing", function()
+        local reserved = {
+            ".tealdoc-manifest",
+            "assets/tealdoc.css",
+            "assets/pico.classless.min.css",
+            "assets/tealdoc.js",
+            "assets/search-index.js",
+            "robots.txt",
+            "sitemap.xml",
+            "CNAME",
+            "index.html",
+            "index.md",
+            "llms.txt",
+            "llms-full.txt",
+            "guide",
+            "guide/index.html",
+            "guide.md",
+            "guide/llms.txt",
+            "old/index.html",
+            "404.html",
+            "404.md",
+            "404/llms.txt",
+        }
+        for _, path in ipairs(reserved) do
+            local public = os.tmpname()
+            os.remove(public)
+            assert(lfs.mkdir(public))
+            write_nested_file(public, path, "public\n")
+            local output = os.tmpname()
+            os.remove(output)
+            assert.has_error(function()
+                SiteGenerator.build(output, DefaultEnv.init(), {
+                    title = "Reserved outputs",
+                    site_url = "https://example.test",
+                    cname = "docs.example.test",
+                    public = public,
+                    not_found = {},
+                    redirects = {old = "guide"},
+                    pages = {
+                        {path = "", title = "Home"},
+                        {path = "guide", title = "Guide"},
+                    },
+                })
+            end)
+            assert.is_nil(
+                lfs.attributes(output),
+                "created output before rejecting " .. path
+            )
+            remove_tree(public)
+        end
+
+        local output = os.tmpname()
+        os.remove(output)
+        assert(lfs.mkdir(output))
+        write_file(output .. "/robots.txt", "keep me\n")
+        assert.has_error(function()
+            SiteGenerator.build(output, DefaultEnv.init(), {
+                title = "Unowned output",
+                pages = {{path = "", title = "Home"}},
+            })
+        end, "robots file would overwrite an unowned output path: robots.txt")
+        assert.are.equal("keep me\n", read_file(output .. "/robots.txt"))
+        assert.is_nil(lfs.attributes(output .. "/index.html"))
+        remove_tree(output)
+    end)
+
+    it("prunes only stale manifested files and records hook output", function()
+        local output = os.tmpname()
+        os.remove(output)
+        local first_public = os.tmpname()
+        os.remove(first_public)
+        assert(lfs.mkdir(first_public))
+        write_file(first_public .. "/retired.txt", "retired\n")
+
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "First site",
+            site_url = "https://example.test",
+            cname = "docs.example.test",
+            public = first_public,
+            pages = {
+                {path = "", title = "Home"},
+                {path = "old", title = "Old"},
+                {path = "empty", title = "Empty"},
+                {path = "gone", title = "Gone"},
+            },
+            after_build = function(context)
+                assert(lfs.mkdir(context.output .. "/hook"))
+                local path = context.output .. "/hook/first.txt"
+                write_file(path, "first hook\n")
+                table.insert(context.files, path)
+            end,
+        })
+        local first_manifest = read_file(output .. "/.tealdoc-manifest")
+        assert.is_truthy(first_manifest:find(
+            "\nhook/first.txt\n",
+            1,
+            true
+        ))
+        write_file(output .. "/keep.txt", "untracked root\n")
+        write_file(output .. "/old/keep.txt", "untracked nested\n")
+
+        local second_public = os.tmpname()
+        os.remove(second_public)
+        assert(lfs.mkdir(second_public))
+        write_file(second_public .. "/current.txt", "current\n")
+        write_file(second_public .. "/empty", "replaced directory\n")
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Second site",
+            public = second_public,
+            robots = false,
+            pages = {
+                {path = "", title = "Home"},
+                {path = "new", title = "New"},
+            },
+            after_build = function(context)
+                assert(lfs.mkdir(context.output .. "/hook"))
+                local path = context.output .. "/hook/second.txt"
+                write_file(path, "second hook\n")
+                table.insert(context.files, path)
+            end,
+        })
+
+        for _, path in ipairs({
+            "CNAME",
+            "sitemap.xml",
+            "robots.txt",
+            "retired.txt",
+            "old.md",
+            "old/index.html",
+            "old/llms.txt",
+            "empty.md",
+            "empty/index.html",
+            "empty/llms.txt",
+            "gone.md",
+            "gone/index.html",
+            "gone/llms.txt",
+            "hook/first.txt",
+        }) do
+            assert.is_nil(
+                lfs.symlinkattributes(output .. "/" .. path),
+                "did not prune " .. path
+            )
+        end
+        assert.is_nil(lfs.attributes(output .. "/gone"))
+        assert.are.equal(
+            "replaced directory\n",
+            read_file(output .. "/empty")
+        )
+        assert.are.equal("untracked root\n", read_file(output .. "/keep.txt"))
+        assert.are.equal(
+            "untracked nested\n",
+            read_file(output .. "/old/keep.txt")
+        )
+        assert.are.equal("current\n", read_file(output .. "/current.txt"))
+        assert.are.equal(
+            "second hook\n",
+            read_file(output .. "/hook/second.txt")
+        )
+        local manifest = read_file(output .. "/.tealdoc-manifest")
+        assert.is_truthy(manifest:find("\ncurrent.txt\n", 1, true))
+        assert.is_truthy(manifest:find("\nhook/second.txt\n", 1, true))
+        assert.is_truthy(manifest:find("\nnew/llms.txt\n", 1, true))
+        assert.is_falsy(manifest:find("keep.txt", 1, true))
+        assert.is_falsy(manifest:find("retired.txt", 1, true))
+        assert.is_falsy(manifest:find("hook/first.txt", 1, true))
+
+        remove_tree(output)
+        remove_tree(first_public)
+        remove_tree(second_public)
+    end)
+
+    it("publishes a safe manifest only after successful validation", function()
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Valid site",
+            pages = {
+                {path = "", title = "Home"},
+                {path = "old", title = "Old"},
+            },
+        })
+        local manifest = read_file(output .. "/.tealdoc-manifest")
+        local bad_source = os.tmpname()
+        write_file(bad_source, "# Home\n\n[Missing](/missing/)\n")
+        assert.has_error(function()
+            SiteGenerator.build(output, DefaultEnv.init(), {
+                title = "Invalid site",
+                pages = {
+                    {
+                        path = "",
+                        title = "Home",
+                        source = bad_source,
+                    },
+                },
+            })
+        end)
+        assert.are.equal(
+            manifest,
+            read_file(output .. "/.tealdoc-manifest")
+        )
+        assert.is_nil(lfs.attributes(output .. "/old/index.html"))
+
+        remove_tree(output)
+        os.remove(bad_source)
+
+        local unsafe = os.tmpname()
+        os.remove(unsafe)
+        assert(lfs.mkdir(unsafe))
+        write_file(
+            unsafe .. "/.tealdoc-manifest",
+            "tealdoc-manifest-v1\n../outside.txt\n"
+        )
+        assert.has_error(function()
+            SiteGenerator.build(unsafe, DefaultEnv.init(), {
+                title = "Unsafe manifest",
+                pages = {{path = "", title = "Home"}},
+            })
+        end, "Tealdoc manifest entry contains an unsafe path segment: ../outside.txt")
+        assert.is_nil(lfs.attributes(unsafe .. "/index.html"))
+        remove_tree(unsafe)
+    end)
+
     it("rejects unknown settings and requires a site title", function()
         local output = os.tmpname()
         os.remove(output)
@@ -1750,6 +2034,7 @@ print(value)
         os.remove(output .. "/index.html")
         os.remove(output .. "/index.md")
         os.remove(output .. "/llms.txt")
+        os.remove(output .. "/llms-full.txt")
         os.remove(output .. "/guide/index.html")
         os.remove(output .. "/guide.md")
         os.remove(output .. "/guide/llms.txt")
