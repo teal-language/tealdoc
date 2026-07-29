@@ -176,10 +176,6 @@ return [[
         font-size: var(--tealdoc-hero-text-size-narrow);
     }
 
-    .tealdoc-hero-image {
-        min-height: 280px;
-    }
-
     .tealdoc-hero-starburst {
         width: min(78vw, 340px);
     }
