@@ -116,12 +116,28 @@ return [[
     display: flex;
     width: 100%;
     max-width: var(--tealdoc-layout-max-width);
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.35rem 0.75rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
     margin: 0 auto;
     padding: 1rem 1.5rem 1rem calc(var(--tealdoc-sidebar-width) + 1.5rem);
     text-align: center;
+}
+
+/* A group is a row, and wraps within itself when it has to. The column above
+ * puts one group under the last, which is the break a reader expects. */
+.tealdoc-footer-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 0.75rem;
+}
+
+/* What built the page is the smallest claim in here, and reads as a footnote
+ * under the two rows that are about the work itself. */
+.tealdoc-footer-meta {
+    color: var(--tealdoc-text-faint);
+    font-size: 0.92em;
 }
 
 .tealdoc-footer-inner::before {
