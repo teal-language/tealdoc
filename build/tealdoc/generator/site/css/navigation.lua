@@ -100,11 +100,16 @@ return [[
 }
 
 /* A group's own row is a row like any other, so it takes the item padding and
- * the inherited line box rather than a set of its own: the two differed by
- * seven pixels, and the rows of a sidebar holding both read as unevenly
- * spaced. The right side is wider than the token asks for, because the marker
- * sits there. `line-height` is claimed back from Pico, which sets 1rem on
- * every `summary` and so shortened only the rows that are groups. */
+ * the same line box, rather than a set of its own: the two differed by seven
+ * pixels, and the rows of a sidebar holding both read as unevenly spaced. The
+ * right side is wider than the token asks for, because the marker sits there.
+ *
+ * The line height is the literal `.tealdoc-sidebar a` uses and not `inherit`.
+ * Pico sets `1rem` on every `summary`, which has to be overridden or only the
+ * group rows are short; but inheriting instead takes the document's own line
+ * height, which is taller than the links beside it, and the row comes out too
+ * tall by exactly the difference. Matching the link is the only value that
+ * makes the two the same height. */
 .tealdoc-sidebar-section summary {
     position: relative;
     margin: 0;
@@ -114,7 +119,7 @@ return [[
     font-family: var(--tealdoc-sidebar-font-family);
     font-size: var(--tealdoc-sidebar-heading-font-size);
     font-weight: var(--tealdoc-sidebar-heading-font-weight);
-    line-height: inherit;
+    line-height: 1.3;
     list-style: none;
 }
 
