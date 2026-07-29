@@ -779,7 +779,22 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            "--tealdoc-content-width: var(--vp-content-width, 1000px)",
+            "--tealdoc-content-width: var(--vp-content-width, 688px)",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-content {\n" ..
+                "    width: min(\n" ..
+                "        100% - calc(2 * var(--tealdoc-content-gutter)),\n" ..
+                "        var(--tealdoc-content-width)\n" ..
+                "    );",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            "    .tealdoc-content {\n" ..
+                "        width: min(100% - 2rem, var(--tealdoc-content-width));",
             1,
             true
         ))
