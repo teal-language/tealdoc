@@ -27,12 +27,15 @@ return [[
     box-shadow: -100vw 0 0 100vw var(--tealdoc-sidebar-background);
 }
 
+/* The weight is a token because the family is one: a site that puts its own
+ * face here may have only the one weight, and a browser asked for a heavier
+ * one it does not have synthesizes it by smearing the outlines. */
 .tealdoc-outline-title {
     margin: 0 0 0.75rem;
     color: var(--tealdoc-text-muted);
     font-family: var(--tealdoc-outline-font-family);
-    font-size: 0.66rem;
-    font-weight: 600;
+    font-size: var(--tealdoc-outline-title-font-size);
+    font-weight: var(--tealdoc-outline-title-font-weight);
 }
 
 .tealdoc-sidebar ul,
@@ -70,7 +73,12 @@ return [[
     font-weight: var(--tealdoc-sidebar-active-font-weight);
 }
 
-.tealdoc-sidebar li.tealdoc-sidebar-section {
+/* The rule and the space around it divide the top level, and only the top
+ * level. A nested group is already inside the one above it, indented under a
+ * heading that names it, so a second divider inside that space says the same
+ * thing twice and reads as a break between peers rather than a group within a
+ * group. */
+.tealdoc-sidebar > ul > li.tealdoc-sidebar-section {
     margin-top: var(--tealdoc-sidebar-section-gap) !important;
     padding-top: var(--tealdoc-sidebar-section-padding);
     border-top: 1px solid var(--tealdoc-sidebar-section-border);
@@ -78,7 +86,7 @@ return [[
 
 /* The first section opens the sidebar, so it carries neither the rule that
  * separates one group from the last nor the space that rule needs. */
-.tealdoc-sidebar li.tealdoc-sidebar-section:first-child {
+.tealdoc-sidebar > ul > li.tealdoc-sidebar-section:first-child {
     margin-top: 0 !important;
     padding-top: 0;
     border-top: 0;

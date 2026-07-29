@@ -127,6 +127,8 @@ return [[
     --tealdoc-outline-font-weight: 600;
     --tealdoc-outline-item-padding: 0.16rem 0;
     --tealdoc-outline-nested-font-size: 0.61rem;
+    --tealdoc-outline-title-font-size: 0.66rem;
+    --tealdoc-outline-title-font-weight: 600;
     --tealdoc-hero-glow-color: var(--tealdoc-accent);
     --tealdoc-hero-glow-size: 520px;
     --tealdoc-hero-glow-blur: 24px;
