@@ -35,6 +35,37 @@ Tealdoc reads its project settings from the `tealdoc` table in the nearest
 Teal. The namespace lets Tealdoc add settings without colliding with compiler
 or other tool settings.
 
+`tealdoc.doc_precedence` controls duplicate function documentation across
+ordinary and record functions. It accepts `"declaration"`, `"definition"`, or
+`"error"` and defaults to `"declaration"`:
+
+```lua
+return {
+    tealdoc = {
+        doc_precedence = "declaration",
+    },
+}
+```
+
+When both a function declaration and its definition have Tealdoc comments,
+`"declaration"` retains the declaration comment and `"definition"` retains the
+definition comment. Both modes warn with the canonical item path and the
+comment retained. `"error"` stops generation with the item path instead of
+choosing one. A declaration remains documented when only its comment exists,
+and a definition remains documented when only its comment exists.
+
+Programmatic users set the same policy on an environment before processing
+source:
+
+```lua
+local env = tealdoc.Env.init()
+env.doc_precedence = "definition"
+```
+
+`Env.init()` defaults to `"declaration"`. The CLI reads `tlconfig.lua` only
+after handling `--version`, so version reporting never executes project
+configuration.
+
 For Markdown output, `markdown.type_links` can map canonical Tealdoc path
 prefixes to URL prefixes:
 

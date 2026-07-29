@@ -70,6 +70,7 @@ local CLI = { Command = {} }
 
 
 
+
 function CLI:add_default_commands()
    local dump_command = {
       name = "dump",
@@ -107,7 +108,7 @@ function CLI:add_default_commands()
          end
 
          local resolver
-         local settings = Config.load().values
+         local settings = self._config.values
          local tealdoc_config = settings["tealdoc"]
          local markdown_config = tealdoc_config and
          tealdoc_config["markdown"]
@@ -157,7 +158,7 @@ function CLI:add_default_commands()
          if args["no_warn_missing"] then
             self._env.no_warnings_on_missing = true
          end
-         local loaded = Config.load()
+         local loaded = self._config
          local values = loaded.values
          local tealdoc_config = values["tealdoc"]
          local site_config = tealdoc_config and
@@ -220,6 +221,22 @@ function CLI:_run(argv)
    if args["version"] then
       print("tealdoc " .. tealdoc.version)
       return
+   end
+   self._config = Config.load()
+   local settings = self._config.values
+   local tealdoc_config = settings["tealdoc"]
+   local doc_precedence = tealdoc_config and
+   tealdoc_config["doc_precedence"]
+   if doc_precedence ~= nil then
+      assert(
+      doc_precedence == "declaration" or
+      doc_precedence == "definition" or
+      doc_precedence == "error",
+      "tealdoc.doc_precedence must be 'declaration', " ..
+      "'definition', or 'error'")
+
+      self._env.doc_precedence =
+      doc_precedence
    end
    local command_name = args["command"]
 

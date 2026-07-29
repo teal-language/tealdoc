@@ -313,6 +313,23 @@ local tealdoc = { Location = {}, Env = {}, Typearg = {}, TypeReference = {}, Fun
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 tealdoc.version = "0.3+dev"
 
 function tealdoc.Env.init()
@@ -321,6 +338,8 @@ function tealdoc.Env.init()
       tag_registry = {},
       registry = {},
       modules = {},
+      doc_precedence = "declaration",
+      documented_items = {},
       add_parser = tealdoc.Env.add_parser,
       add_tag = tealdoc.Env.add_tag,
    }

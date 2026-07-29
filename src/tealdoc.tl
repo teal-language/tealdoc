@@ -125,6 +125,17 @@ local record tealdoc
     --- You can use this environment to add new parsers or tag handlers.
     --- You can also use it to access the registry of items.
     record Env
+        --- Selects which doc comment wins when both a function declaration
+        --- and its definition are documented.
+        enum DocPrecedence
+            --- Retain documentation from the function declaration.
+            "declaration"
+            --- Retain documentation from the function definition.
+            "definition"
+            --- Reject functions whose declaration and definition are documented.
+            "error"
+        end
+
         --- The registry of items, which is a table mapping paths to items.
         --- This is used to store all the items that are processed by Tealdoc.
         --- The keys are the paths of the items, and the values are the items themselves.
@@ -143,6 +154,10 @@ local record tealdoc
         --- Whether to skip warnings about missing items.
         --- If this is true, Tealdoc will not log warnings about missing items.
         no_warnings_on_missing: boolean
+
+        --- Which function comment to retain when both the declaration and
+        --- definition have documentation.
+        doc_precedence: DocPrecedence
 
         --- Add a parser to the environment.
         --- This function registers a parser that can handle specific file extensions.
@@ -165,6 +180,8 @@ local record tealdoc
         parser_registry: {string: Parser} -- file extension to parser
         --- @local
         tag_registry: {string: Tag} -- tag name to handler
+        --- @local
+        documented_items: {any: boolean}
     end
 
     --- This record represents a type argument for a function or type.
@@ -321,6 +338,8 @@ function tealdoc.Env.init(): tealdoc.Env
         tag_registry = {},
         registry = {},
         modules = {},
+        doc_precedence = "declaration",
+        documented_items = {},
         add_parser = tealdoc.Env.add_parser,
         add_tag = tealdoc.Env.add_tag,
     }
