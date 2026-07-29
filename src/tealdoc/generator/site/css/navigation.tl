@@ -99,14 +99,22 @@ return [[
     background: transparent;
 }
 
+/* A group's own row is a row like any other, so it takes the item padding and
+ * the inherited line box rather than a set of its own: the two differed by
+ * seven pixels, and the rows of a sidebar holding both read as unevenly
+ * spaced. The right side is wider than the token asks for, because the marker
+ * sits there. `line-height` is claimed back from Pico, which sets 1rem on
+ * every `summary` and so shortened only the rows that are groups. */
 .tealdoc-sidebar-section summary {
     position: relative;
     margin: 0;
-    padding: 0.22rem 1.2rem 0 0.55rem;
+    padding: var(--tealdoc-sidebar-item-padding);
+    padding-right: 1.2rem;
     cursor: pointer;
     font-family: var(--tealdoc-sidebar-font-family);
     font-size: var(--tealdoc-sidebar-heading-font-size);
     font-weight: var(--tealdoc-sidebar-heading-font-weight);
+    line-height: inherit;
     list-style: none;
 }
 
@@ -131,9 +139,11 @@ return [[
     margin-bottom: 0;
 }
 
+/* The marker centers against the row rather than sitting a fixed distance
+ * from its top, so it stays put whatever the item padding is set to. */
 .tealdoc-sidebar-section summary::after {
     position: absolute;
-    top: 0.35rem;
+    top: 50%;
     right: 0.35rem;
     color: var(--tealdoc-text-faint);
     width: auto;
@@ -142,12 +152,13 @@ return [[
     background-image: none !important;
     content: "›";
     font-size: 1rem;
-    transform: rotate(90deg);
+    line-height: 1;
+    transform: translateY(-50%) rotate(90deg);
     transition: transform 120ms ease;
 }
 
 .tealdoc-sidebar-section details:not([open]) summary::after {
-    transform: rotate(0);
+    transform: translateY(-50%) rotate(0);
 }
 
 .tealdoc-sidebar-section ul {
