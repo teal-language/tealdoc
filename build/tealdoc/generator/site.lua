@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local Text = require("tealdoc.generator.text")
 local default_css = require("tealdoc.generator.site.default_css")
@@ -637,10 +637,29 @@ local function routes_for_pages(
 
    local routes = {}
    local owners = {}
-   local function add(path, url, owner)
+   local priorities = {}
+   local function add(
+      path,
+      url,
+      owner,
+      priority)
+
       if routes[path] then
+         if routes[path] == url then
+            priorities[path] = math.max(priorities[path], priority)
+            return
+         end
+         if priority > priorities[path] then
+            routes[path] = url
+            owners[path] = owner
+            priorities[path] = priority
+            return
+         end
+         if priority < priorities[path] then
+            return
+         end
          assert(
-         routes[path] == url,
+         false,
          "public API path " ..
          path ..
          " is rendered by both " ..
@@ -648,24 +667,25 @@ local function routes_for_pages(
          " and " ..
          owner)
 
-         return
       end
       routes[path] = url
       owners[path] = owner
+      priorities[path] = priority
    end
 
    for _, page in ipairs(pages) do
       local view = views[page.path]
       if view then
          local page_root = page_url(base, page.path)
-         add(view.public, page_root, page.path)
+         local priority = #view.public
+         add(view.public, page_root, page.path, priority)
          for source_path, public_path in pairs(view.source_to_public) do
             local url = page_root
             if public_path ~= view.public then
                url = url .. "#" .. public_path
             end
-            add(source_path, url, page.path)
-            add(public_path, url, page.path)
+            add(source_path, url, page.path, priority)
+            add(public_path, url, page.path, priority)
          end
       end
    end

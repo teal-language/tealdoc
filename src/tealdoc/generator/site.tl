@@ -637,10 +637,29 @@ local function routes_for_pages(
 ): MarkdownGenerator.URLResolver
     local routes: {string: string} = {}
     local owners: {string: string} = {}
-    local function add(path: string, url: string, owner: string)
+    local priorities: {string: integer} = {}
+    local function add(
+        path: string,
+        url: string,
+        owner: string,
+        priority: integer
+    )
         if routes[path] then
+            if routes[path] == url then
+                priorities[path] = math.max(priorities[path], priority)
+                return
+            end
+            if priority > priorities[path] then
+                routes[path] = url
+                owners[path] = owner
+                priorities[path] = priority
+                return
+            end
+            if priority < priorities[path] then
+                return
+            end
             assert(
-                routes[path] == url,
+                false,
                 "public API path " ..
                     path ..
                     " is rendered by both " ..
@@ -648,24 +667,25 @@ local function routes_for_pages(
                     " and " ..
                     owner
             )
-            return
         end
         routes[path] = url
         owners[path] = owner
+        priorities[path] = priority
     end
 
     for _, page in ipairs(pages) do
         local view = views[page.path]
         if view then
             local page_root = page_url(base, page.path)
-            add(view.public, page_root, page.path)
+            local priority = #view.public
+            add(view.public, page_root, page.path, priority)
             for source_path, public_path in pairs(view.source_to_public) do
                 local url = page_root
                 if public_path ~= view.public then
                     url = url .. "#" .. public_path
                 end
-                add(source_path, url, page.path)
-                add(public_path, url, page.path)
+                add(source_path, url, page.path, priority)
+                add(public_path, url, page.path, priority)
             end
         end
     end
