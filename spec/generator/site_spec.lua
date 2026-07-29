@@ -1185,18 +1185,25 @@ print(value)
             1,
             true
         ), home)
+        -- A labelled group is a tab strip: a radio, its label and its panel
+        -- in that order, so one CSS rule shows the panel and styles the tab.
         assert.is_truthy(home:find(
-            '<div class="tealdoc-code-group" role="group">',
+            '<div class="tealdoc-code-group" role="radiogroup"',
             1,
             true
         ), home)
         assert.is_truthy(home:find(
-            '<figcaption>Components</figcaption>',
+            '<label class="tealdoc-code-tab" for=',
             1,
             true
         ), home)
+        assert.is_truthy(home:find('>Components</label>', 1, true), home)
+        assert.is_truthy(home:find('>Lua</label>', 1, true), home)
+        -- Only the first is checked, so a group opens on one panel.
+        local _, checked = home:gsub('type="radio"[^>]* checked>', '')
+        assert.are.equal(1, checked, home)
         assert.is_truthy(home:find(
-            '<figcaption>Lua</figcaption>',
+            '<figure class="tealdoc-code-panel">',
             1,
             true
         ), home)

@@ -68,14 +68,92 @@ return [[
 /* Pico lays a [role="group"] out as an inline flex row, which is right for a
  * button group and wrong for a stack of labelled code blocks, so the display
  * is stated here rather than left to the classless sheet. */
+/* One flex container holding input, label and panel triples in that order.
+ * The labels are pulled to the first row, so the strip forms itself without
+ * being an element of its own, and the panels are full width so each starts a
+ * line. Interleaving is what lets one adjacent-sibling rule do everything. */
 .tealdoc-code-group {
-    display: block;
+    position: relative;
+    display: flex;
     overflow: hidden;
+    flex-wrap: wrap;
     margin: 1.25rem 0;
     border: 1px solid var(--tealdoc-border);
     border-radius: var(--tealdoc-code-block-radius);
     background: var(--tealdoc-code-background);
     box-shadow: none;
+}
+
+/* A real radio, kept off the page but not out of it: the arrow keys, the
+ * single tab stop and the exclusivity are the browser's.
+ *
+ * `appearance` has to be said here. Pico turns it off for most controls but
+ * exempts radios, so a radio keeps drawing its native dot, and a native
+ * control paints at its own size whatever box it is given: in Safari the dot
+ * appeared next to every tab. Taking it out of flow rather than shrinking it
+ * to a pixel also keeps it from perturbing the strip it sits in, and costs
+ * nothing, because a sibling selector reads the document and not the layout. */
+.tealdoc-code-tab-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    appearance: none;
+    clip-path: inset(50%);
+    pointer-events: none;
+    -webkit-appearance: none;
+}
+
+.tealdoc-code-tab {
+    order: -1;
+    padding: var(--tealdoc-code-tab-padding);
+    border-bottom: 2px solid transparent;
+    color: var(--tealdoc-code-tab-text);
+    cursor: pointer;
+    font-family: var(--tealdoc-font);
+    font-size: var(--tealdoc-code-tab-font-size);
+    font-weight: var(--tealdoc-code-tab-font-weight);
+}
+
+.tealdoc-code-tab:hover {
+    color: var(--tealdoc-code-tab-hover-text);
+}
+
+.tealdoc-code-panel {
+    display: none;
+    width: 100%;
+    margin: 0;
+    border-top: 1px solid var(--tealdoc-code-tab-divider);
+}
+
+/* The whole mechanism. */
+.tealdoc-code-tab-input:checked + .tealdoc-code-tab + .tealdoc-code-panel {
+    display: block;
+}
+
+.tealdoc-code-tab-input:checked + .tealdoc-code-tab {
+    border-bottom-color: var(--tealdoc-code-tab-active-bar);
+    color: var(--tealdoc-code-tab-active-text);
+}
+
+.tealdoc-code-tab-input:focus-visible + .tealdoc-code-tab {
+    outline: 2px solid var(--tealdoc-accent);
+    outline-offset: -2px;
+}
+
+.tealdoc-code-group > .tealdoc-code-panel pre {
+    border: 0;
+    border-radius: 0;
+}
+
+/* Paper has no tabs, so it gets all of them. */
+@media print {
+    .tealdoc-code-panel {
+        display: block;
+    }
 }
 
 .tealdoc-labeled-code {

@@ -50,6 +50,14 @@ return [[
     --tealdoc-code-block-font-size: 0.8rem;
     --tealdoc-code-block-radius: 8px;
     --tealdoc-code-block-padding: 0.8rem 0.9rem;
+    --tealdoc-code-tab-text: var(--tealdoc-text-muted);
+    --tealdoc-code-tab-hover-text: var(--tealdoc-text);
+    --tealdoc-code-tab-active-text: var(--tealdoc-text);
+    --tealdoc-code-tab-active-bar: var(--tealdoc-accent);
+    --tealdoc-code-tab-divider: var(--tealdoc-border);
+    --tealdoc-code-tab-font-size: 0.72rem;
+    --tealdoc-code-tab-font-weight: 600;
+    --tealdoc-code-tab-padding: 0.45rem 0.75rem;
     --tealdoc-code-lang-color: var(--tealdoc-text-faint);
     --tealdoc-code-lang-font-size: 0.68rem;
     --tealdoc-code-lang-top: 0.55rem;

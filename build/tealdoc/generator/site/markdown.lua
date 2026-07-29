@@ -20,6 +20,36 @@ local admonition_kinds = {
    ["warning"] = "Warning",
 }
 
+local function rope_to_string(rope)
+   local output = {}
+   local walk
+   walk = function(value)
+      local value_type = type(value)
+      if value_type == "table" then
+         for _, child in ipairs(value) do
+            walk(child)
+         end
+      elseif value_type == "function" then
+         local callback = value
+         local ok
+         local result
+         ok, result = pcall(callback)
+         if ok then
+            walk(result)
+         end
+      elseif value ~= nil then
+         table.insert(output, tostring(value))
+      end
+   end
+   walk(rope)
+   return table.concat(output)
+end
+
+
+
+
+local group_index = 0
+
 local function site_div(
    content,
    attributes)
@@ -40,9 +70,53 @@ local function site_div(
          "</div></details>",
       }
    elseif kind == "code-group" then
+
+
+
+
+
+
+
+      local rendered = rope_to_string(content)
+      local tabs = {}
+      local count = 0
+      group_index = group_index + 1
+      local name = "tealdoc-code-group-" .. tostring(group_index)
+      for caption, body in rendered:gmatch(
+         '<figure class="tealdoc%-labeled%-code"><figcaption>(.-)</figcaption>(.-)</figure>') do
+
+         count = count + 1
+         local id = name .. "-" .. tostring(count)
+         table.insert(
+         tabs,
+         '<input class="tealdoc-code-tab-input" type="radio" name="' ..
+         name ..
+         '" id="' ..
+         id ..
+         '"' ..
+         (count == 1 and " checked" or "") ..
+         '><label class="tealdoc-code-tab" for="' ..
+         id ..
+         '">' ..
+         caption ..
+         '</label><figure class="tealdoc-code-panel">' ..
+         body ..
+         "</figure>")
+
+      end
+
+
+      if count == 0 then
+         return {
+            '<div class="tealdoc-code-group" role="group">',
+            content,
+            "</div>",
+         }
+      end
       return {
-         '<div class="tealdoc-code-group" role="group">',
-         content,
+         '<div class="tealdoc-code-group" role="radiogroup"' ..
+         ' aria-label="Code examples">' ..
+         table.concat(tabs) ..
          "</div>",
       }
    elseif kind == "tealdoc-code-label" then
@@ -89,31 +163,6 @@ local github_admonition_kinds = {
    ["TIP"] = "tip",
    ["WARNING"] = "warning",
 }
-
-local function rope_to_string(rope)
-   local output = {}
-   local walk
-   walk = function(value)
-      local value_type = type(value)
-      if value_type == "table" then
-         for _, child in ipairs(value) do
-            walk(child)
-         end
-      elseif value_type == "function" then
-         local callback = value
-         local ok
-         local result
-         ok, result = pcall(callback)
-         if ok then
-            walk(result)
-         end
-      elseif value ~= nil then
-         table.insert(output, tostring(value))
-      end
-   end
-   walk(rope)
-   return table.concat(output)
-end
 
 local function site_blockquote(content)
    local rendered = rope_to_string(content)

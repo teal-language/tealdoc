@@ -20,6 +20,36 @@ local admonition_kinds: {string: string} = {
     ["warning"] = "Warning",
 }
 
+local function rope_to_string(rope: any): string
+    local output: {string} = {}
+    local walk: function(any)
+    walk = function(value: any)
+        local value_type = type(value)
+        if value_type == "table" then
+            for _, child in ipairs(value as {any}) do
+                walk(child)
+            end
+        elseif value_type == "function" then
+            local callback = value as function(): any
+            local ok: boolean
+            local result: any
+            ok, result = pcall(callback)
+            if ok then
+                walk(result)
+            end
+        elseif value ~= nil then
+            table.insert(output, tostring(value))
+        end
+    end
+    walk(rope)
+    return table.concat(output)
+end
+
+-- Each group gets a name of its own, so two on a page do not share a
+-- selection. Monotonic across the build, which is enough: it only has to be
+-- unique within a page.
+local group_index = 0
+
 local function site_div(
     content: any,
     attributes: {string: string}
@@ -40,10 +70,54 @@ local function site_div(
             "</div></details>",
         }
     elseif kind == "code-group" then
+        -- A tab strip, out of the labelled blocks the pre-pass already made.
+        -- The input, its label and its panel are siblings in that order, so
+        -- one adjacent-sibling rule shows the panel and styles the tab, for
+        -- any number of tabs and with no script. Keeping them interleaved is
+        -- what buys that: with the labels gathered into a strip of their own
+        -- no selector reaches from a checked input to its label, which is the
+        -- reason the implementations that do that need JavaScript.
+        local rendered = rope_to_string(content)
+        local tabs: {string} = {}
+        local count = 0
+        group_index = group_index + 1
+        local name = "tealdoc-code-group-" .. tostring(group_index)
+        for caption, body in rendered:gmatch(
+            '<figure class="tealdoc%-labeled%-code"><figcaption>(.-)</figcaption>(.-)</figure>'
+        ) do
+            count = count + 1
+            local id = name .. "-" .. tostring(count)
+            table.insert(
+                tabs,
+                '<input class="tealdoc-code-tab-input" type="radio" name="' ..
+                    name ..
+                    '" id="' ..
+                    id ..
+                    '"' ..
+                    (count == 1 and " checked" or "") ..
+                    '><label class="tealdoc-code-tab" for="' ..
+                    id ..
+                    '">' ..
+                    caption ..
+                    '</label><figure class="tealdoc-code-panel">' ..
+                    body ..
+                    "</figure>"
+            )
+        end
+        -- A group of unlabelled fences has nothing to put on a tab, so it
+        -- stays the stack it was.
+        if count == 0 then
+            return {
+                '<div class="tealdoc-code-group" role="group">',
+                content,
+                "</div>",
+            }
+        end
         return {
-            '<div class="tealdoc-code-group" role="group">',
-            content,
-            "</div>",
+            '<div class="tealdoc-code-group" role="radiogroup"' ..
+                ' aria-label="Code examples">' ..
+                table.concat(tabs) ..
+                "</div>",
         }
     elseif kind == "tealdoc-code-label" then
         return {
@@ -89,31 +163,6 @@ local github_admonition_kinds: {string: string} = {
     ["TIP"] = "tip",
     ["WARNING"] = "warning",
 }
-
-local function rope_to_string(rope: any): string
-    local output: {string} = {}
-    local walk: function(any)
-    walk = function(value: any)
-        local value_type = type(value)
-        if value_type == "table" then
-            for _, child in ipairs(value as {any}) do
-                walk(child)
-            end
-        elseif value_type == "function" then
-            local callback = value as function(): any
-            local ok: boolean
-            local result: any
-            ok, result = pcall(callback)
-            if ok then
-                walk(result)
-            end
-        elseif value ~= nil then
-            table.insert(output, tostring(value))
-        end
-    end
-    walk(rope)
-    return table.concat(output)
-end
 
 local function site_blockquote(content: any): any
     local rendered = rope_to_string(content)
