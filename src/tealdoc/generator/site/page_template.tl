@@ -71,10 +71,35 @@ local function indent_block(block: string, indent: string): string
             line = block:sub(position)
         end
         table.insert(output, in_pre and line or indent .. line)
-        if line:find("<pre[%s>]") then
-            in_pre = true
+        -- Whether the line leaves us inside a `pre` is decided by whichever
+        -- of the two came last on it, not by which was looked for last. A
+        -- line can hold several code blocks -- a tab strip puts a whole group
+        -- on one -- and then it both closes one `pre` and opens another, so
+        -- testing for the close after the open reported the wrong state and
+        -- the next line of code was indented into the block.
+        local last_open: integer = nil
+        local last_close: integer = nil
+        local position_open = 1
+        while true do
+            local found = line:find("<pre[%s>]", position_open)
+            if not found then
+                break
+            end
+            last_open = found
+            position_open = found + 1
         end
-        if line:find("</pre>", 1, true) then
+        local position_close = 1
+        while true do
+            local found = line:find("</pre>", position_close, true)
+            if not found then
+                break
+            end
+            last_close = found
+            position_close = found + 1
+        end
+        if last_open and (not last_close or last_open > last_close) then
+            in_pre = true
+        elseif last_close and (not last_open or last_close > last_open) then
             in_pre = false
         end
         if not newline then
