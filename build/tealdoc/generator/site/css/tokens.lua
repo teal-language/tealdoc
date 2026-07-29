@@ -216,7 +216,15 @@ return [[
     }
 }
 
-.tealdoc-theme-input:checked ~ .tealdoc-site {
+/* The toggle repaints the root, not the tree under it, because a custom
+ * property resolves where it is declared. Half the tokens above are declared
+ * here as indirections onto the theme colors, so a repaint applied to a
+ * descendant reaches the ones a rule reads directly and none of the ones read
+ * through an indirection: those keep whatever the root resolved them to, and
+ * the theme the reader asked for arrives in pieces. Repainting the root itself
+ * resolves them all at once, and a site's own `:root` values still cascade
+ * against the primitives the same way. */
+:root:has(.tealdoc-theme-input:checked) {
     color-scheme: dark;
     --tealdoc-accent: var(--tealdoc-dark-accent);
     --tealdoc-accent-contrast: var(--tealdoc-dark-accent-contrast);
@@ -254,7 +262,7 @@ return [[
 }
 
 @media (prefers-color-scheme: dark) {
-    .tealdoc-theme-input:checked ~ .tealdoc-site {
+    :root:has(.tealdoc-theme-input:checked) {
         color-scheme: light;
         --tealdoc-accent: var(--tealdoc-light-accent);
         --tealdoc-accent-contrast: var(--tealdoc-light-accent-contrast);
