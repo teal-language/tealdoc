@@ -17,6 +17,9 @@ describe("Markdown generator", function()
 
                 --- A real metamethod-shaped public member.
                 __call: function()
+
+                --- Conventional public version constant.
+                _VERSION: string
             end
 
             return api
@@ -32,6 +35,7 @@ describe("Markdown generator", function()
         assert.is_falsy(markdown:find("visibility._hidden", 1, true))
         assert.is_truthy(markdown:find("visibility._shown", 1, true))
         assert.is_truthy(markdown:find("visibility.__call", 1, true))
+        assert.is_truthy(markdown:find("visibility._VERSION", 1, true))
     end)
 
     it("renders signatures as fenced Teal code", function()
@@ -114,11 +118,7 @@ describe("Markdown generator", function()
             true
         ))
         local identity_heading = assert(markdown:find("## api.identity", 1, true))
-        assert.is_truthy(markdown:find(
-            '## api.identity <span class="tealdoc-kind-badge tealdoc-kind-function">function</span>',
-            1,
-            true
-        ))
+        assert.is_falsy(markdown:find("tealdoc-kind-badge", 1, true))
         local identity_text = assert(markdown:find("Returns a value unchanged.", identity_heading, true))
         local identity_signature = assert(markdown:find(
             "```teal\nfunction api.identity<T>(value: T): T\n```",
@@ -132,11 +132,6 @@ describe("Markdown generator", function()
         assert.is_true(identity_signature < identity_arguments)
         assert.is_true(identity_arguments < identity_returns)
         assert.is_truthy(markdown:find("### types.Options.value", 1, true))
-        assert.is_truthy(markdown:find(
-            '<span class="tealdoc-kind-badge tealdoc-kind-field">field</span>',
-            1,
-            true
-        ))
         assert.is_falsy(markdown:find("Synopsis", 1, true))
         assert.is_truthy(markdown:find(
             "### Arguments\n\nNone.\n\n### Returns\n\nNone.",

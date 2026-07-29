@@ -425,6 +425,8 @@ print(value)
             },
             before_build = function(context)
                 before_ran = context.output == output
+                    and context.attached_examples == nil
+                    and context.attached_examples_used == nil
             end,
             after_build = function(context)
                 local generated = {}
@@ -1530,6 +1532,82 @@ print(value)
         ))
         remove_tree(output)
         remove_tree(public)
+    end)
+
+    it("extracts nested example regions with CRLF and trailing spaces", function()
+        local source = os.tmpname()
+        write_file(
+            source,
+            "-- #region selected   \r\n" ..
+                "local keep1 = 1\r\n" ..
+                "-- #region nested\r\n" ..
+                "local nested = 2\r\n" ..
+                "-- #endregion   \r\n" ..
+                "local keep2 = 3\r\n" ..
+                "-- #endregion selected   \r\n"
+        )
+        local output = os.tmpname()
+        os.remove(output)
+
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Examples",
+            validate_links = false,
+            examples = {
+                {
+                    path = "nested",
+                    title = "Nested regions",
+                    source = source,
+                    region = "selected",
+                    language = "lua",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/nested.md")
+        assert.is_truthy(markdown:find("local keep1 = 1", 1, true), markdown)
+        assert.is_truthy(markdown:find("local nested = 2", 1, true), markdown)
+        assert.is_truthy(markdown:find("local keep2 = 3", 1, true), markdown)
+        assert.is_falsy(markdown:find("#region", 1, true), markdown)
+        remove_tree(output)
+        os.remove(source)
+    end)
+
+    it("caps demoted API headings at level six", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Outer
+                    record Middle
+                        record Inner
+                            --- Runs deeply nested work.
+                            run: function()
+                        end
+                    end
+                end
+            end
+
+            return api
+        ]], "deep.tl", env)
+        local output = os.tmpname()
+        os.remove(output)
+
+        SiteGenerator.build(output, env, {
+            title = "Deep API",
+            validate_links = false,
+            pages = {
+                {
+                    path = "deep",
+                    title = "Deep",
+                    api = "deep",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/deep.md")
+        assert.is_falsy(markdown:find("\n####### ", 1, true), markdown)
+        assert.is_truthy(markdown:find("\n###### Arguments", 1, true), markdown)
+        remove_tree(output)
     end)
 
     it("rejects executable custom head entries", function()

@@ -96,6 +96,12 @@ local function is_local(item: tealdoc.Item): boolean
     return item is tealdoc.DeclarationItem and item.visibility == "local"
 end
 
+local function is_private_name(name: string): boolean
+    return name ~= "_VERSION"
+        and name:sub(1, 1) == "_"
+        and name:sub(2, 2) ~= "_"
+end
+
 local function filter(item: tealdoc.Item, env: tealdoc.Env): boolean
     local is_module_record = env.registry["$"..item.path] ~= nil
 
@@ -103,8 +109,7 @@ local function filter(item: tealdoc.Item, env: tealdoc.Env): boolean
         if is_local(item) and not is_module_record then
             return false
         end
-        local private_by_name = item.name
-            and item.name:match("^_[^_]")
+        local private_by_name = item.name and is_private_name(item.name)
         local explicitly_public = item.attributes
             and item.attributes["public"]
         if private_by_name and not explicitly_public then

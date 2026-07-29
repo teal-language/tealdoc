@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local argparse = require("argparse")
 local Config = require("tealdoc.config")
 local DumpTool = require("tealdoc.dump")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
@@ -51,6 +51,7 @@ local function type_url_resolver(config)
 end
 
 local CLI = { Command = {} }
+
 
 
 
@@ -196,6 +197,9 @@ end
 function CLI:init(env, skip_default_commands)
    self._parser = argparse("tealdoc", nil, nil)
    self._parser:option("--plugin", "plugin to load", nil, nil, nil, "*")
+   self._parser:flag("-V --version", "show version and exit"):
+   target("version")
+   self._parser:require_command(false)
    self._parser:command_target("command")
    self._commands = {}
    self._env = env
@@ -211,8 +215,12 @@ function CLI:add_command(command)
    self._commands[command.name] = command.handler
 end
 
-function CLI:run()
-   local args = self._parser:parse(nil)
+function CLI:_run(argv)
+   local args = self._parser:parse(argv)
+   if args["version"] then
+      print("tealdoc " .. tealdoc.version)
+      return
+   end
    local command_name = args["command"]
 
    tl.loader()
@@ -236,6 +244,24 @@ function CLI:run()
    local handler = self._commands[command_name]
    assert(handler)
    handler(args)
+end
+
+local function error_message(value)
+   local message = tostring(value)
+   message = message:gsub("^.-:%d+:%s*", "", 1)
+   return message
+end
+
+function CLI:run(argv)
+   local ok, result = pcall(function()
+      self:_run(argv)
+      return true
+   end)
+   if not ok then
+      io.stderr:write("tealdoc: " .. error_message(result) .. "\n")
+      return false
+   end
+   return true
 end
 
 return CLI

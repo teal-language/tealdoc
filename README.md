@@ -226,7 +226,8 @@ By default, Tealdoc includes all of the module's contents and all global functio
 *   To **exclude** an item, add the `@local` tag to its documentation comment.
 *   A member whose name starts with one underscore, such as `_cache`, is
     private by convention and excluded. Add `@public` to opt that member into
-    the documentation. Double-underscore names such as `__call` are not hidden.
+    the documentation. Double-underscore names such as `__call` and the
+    conventional public `_VERSION` constant are not hidden.
 *   To **include** local items that would normally be excluded, use the `--all` command-line flag or set `env.include_all = true` when using the API.
 
 If there are multiple conflicting declarations (e.g., two global functions with the same name), the last one processed is chosen, and a warning is emitted if a Tealdoc comment from a previous declaration is ignored as a result.
@@ -274,6 +275,10 @@ tealdoc --help
 *   `--all`: Includes local definitions in the output.
 *   `--plugin <plugins>`: Plugins to load; plugin names are resolved the same way as lua requires.
 *   `--no-warn-missing`: Suppresses warnings about missing documentation for items.
+*   `-V, --version`: Prints the Tealdoc version and exits.
+
+Command and configuration errors are written as concise diagnostics without a
+Lua traceback, and the process exits with a nonzero status.
 
 ### Project Configuration
 
@@ -742,12 +747,15 @@ my.api.open(value)
 -- #endregion open-basic
 ```
 
-The markers are omitted from the rendered example. Tealdoc checks the selected
-region, not the surrounding file, with the project's configured Teal compiler
-environment; Lua regions receive a syntax check. The code a reader sees is the
-code Tealdoc checked. Set `check = false` only for an intentionally incomplete
-example. Examples are listed explicitly rather than discovered with globs, so
-the site configuration is also the list of examples the site publishes.
+The markers are omitted from the rendered example. Regions may be nested;
+Tealdoc tracks every open marker so an inner region cannot end an outer
+selection early. CRLF files and trailing whitespace on markers are accepted.
+Tealdoc checks the selected region, not the surrounding file, with the
+project's configured Teal compiler environment; Lua regions receive a syntax
+check. The code a reader sees is the code Tealdoc checked. Set `check = false`
+only for an intentionally incomplete example. Examples are listed explicitly
+rather than discovered with globs, so the site configuration is also the list
+of examples the site publishes.
 
 #### Markdown content
 
