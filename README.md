@@ -334,6 +334,8 @@ Returns sections.
 a responsive static site. It does not replace `tealdoc md`; site generation is
 an explicit command with its own `tealdoc.site` configuration:
 
+![Generated Tecs API documentation at tecs.future.Future.onSettle](docs/assets/tecs-future-onsettle.png)
+
 #### Quick start
 
 A site needs a title and at least one page or example. API sources are
