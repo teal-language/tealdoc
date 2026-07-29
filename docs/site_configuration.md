@@ -359,6 +359,11 @@ pages = {
             "my.components",
             "my.camera",
             "my.renderer",
+            {
+                module = "my.types",
+                public = "my",
+                include = { "World", "Query" },
+            },
         },
         public = "my.graphics",
     },
@@ -376,6 +381,11 @@ module's direct public children under that public namespace without changing
 the parsed registry. Compatible re-exports coalesce at the same public path;
 unrelated collisions fail the build. Type and alias links are emitted only for
 exact items rendered by a configured API page.
+
+An API source may be a table with `module`, `public`, and `include` fields.
+`public` overrides the page namespace for that source. `include` selects direct
+children by name. This lets one page document declarations that live together
+in source but occupy different public namespaces.
 
 Lowercase module basenames contribute their public children directly.
 Uppercase module basenames, conventionally record or class modules, retain that

@@ -1,6 +1,12 @@
 local tealdoc = require("tealdoc")
 
-local SiteTypes = { Link = {}, Feature = {}, HeadEntry = {}, Page = {}, SidebarItem = {}, Example = {}, Settings = {}, Context = {}, PreparedExample = {}, ApiView = {} }
+local SiteTypes = { ApiSource = {}, Link = {}, Feature = {}, HeadEntry = {}, Page = {}, SidebarItem = {}, Example = {}, Settings = {}, Context = {}, PreparedExample = {}, ApiView = {} }
+
+
+
+
+
+
 
 
 

@@ -131,6 +131,12 @@ local page_keys = {
    noindex = true,
 }
 
+local api_source_keys = {
+   module = true,
+   public = true,
+   include = true,
+}
+
 local example_keys = {
    path = true,
    attach_to = true,
@@ -420,7 +426,7 @@ function SiteConfig.configure(
       page["api"] == nil or
       type(page["api"]) == "string" or
       type(page["api"]) == "table",
-      name .. ".api must be a string or list of strings")
+      name .. ".api must be a string or list of API sources")
 
       if type(page["api"]) == "string" then
          assert(page["api"] ~= "", name .. ".api must not be empty")
@@ -432,21 +438,77 @@ function SiteConfig.configure(
          type(page["public"]) == "string" and page["public"] ~= "",
          name .. ".public is required when api contains several modules")
 
-         for module_index, module_name in ipairs(modules) do
-            assert(
-            type(module_name) == "string" and module_name ~= "",
-            name ..
+         for module_index, source_value in ipairs(modules) do
+            local source_name = name ..
             ".api[" ..
             tostring(module_index) ..
-            "] must be a non-empty string")
+            "]"
+            local module_name
+            local source_public = ""
+            if type(source_value) == "string" then
+               module_name = source_value
+               assert(
+               module_name ~= "",
+               source_name .. " must not be empty")
 
+            else
+               assert(
+               type(source_value) == "table",
+               source_name .. " must be a string or table")
+
+               validate_keys(
+               source_value,
+               api_source_keys,
+               source_name)
+
+               local source = source_value
+               assert(
+               type(source["module"]) == "string" and
+               source["module"] ~= "",
+               source_name .. ".module is required")
+
+               assert(
+               source["public"] == nil or
+               type(source["public"]) == "string" and
+               source["public"] ~= "",
+               source_name .. ".public must be a non-empty string")
+
+               assert(
+               source["include"] == nil or
+               type(source["include"]) == "table",
+               source_name .. ".include must be a list of names")
+
+               local names = {}
+               for include_index, include_name in ipairs(
+                  source["include"] or {}) do
+
+                  assert(
+                  type(include_name) == "string" and
+                  include_name ~= "",
+                  source_name ..
+                  ".include[" ..
+                  tostring(include_index) ..
+                  "] must be a non-empty string")
+
+                  assert(
+                  not names[include_name],
+                  source_name ..
+                  ".include contains duplicate name " ..
+                  tostring(include_name))
+
+                  names[include_name] = true
+               end
+               module_name = source["module"]
+               source_public = source["public"] or ""
+            end
+            local identity = module_name .. "\0" .. source_public
             assert(
-            not seen[module_name],
+            not seen[identity],
             name ..
-            ".api contains duplicate module " ..
+            ".api contains duplicate API source " ..
             tostring(module_name))
 
-            seen[module_name] = true
+            seen[identity] = true
          end
       end
       assert(

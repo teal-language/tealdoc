@@ -7,11 +7,27 @@ local record SiteView
     modules: function(page: SiteTypes.Page): {string}
 end
 
-function SiteView.modules(page: SiteTypes.Page): {string}
+local function sources(page: SiteTypes.Page): {SiteTypes.ApiSource}
     if type(page.api) == "string" then
-        return {page.api as string}
+        return {{module = page.api as string}}
     end
-    return page.api as {string} or {}
+    local output: {SiteTypes.ApiSource} = {}
+    for _, entry in ipairs(page.api as {string | SiteTypes.ApiSource} or {}) do
+        if type(entry) == "string" then
+            table.insert(output, {module = entry as string})
+        else
+            table.insert(output, entry as SiteTypes.ApiSource)
+        end
+    end
+    return output
+end
+
+function SiteView.modules(page: SiteTypes.Page): {string}
+    local output: {string} = {}
+    for _, source in ipairs(sources(page)) do
+        table.insert(output, source.module)
+    end
+    return output
 end
 
 local function copy_item(item: tealdoc.Item): tealdoc.Item
@@ -211,11 +227,12 @@ function SiteView.prepare(
     page: SiteTypes.Page,
     env: tealdoc.Env
 ): SiteTypes.ApiView
-    local modules = SiteView.modules(page)
-    if #modules == 0 then
+    local api_sources = sources(page)
+    if #api_sources == 0 then
         return nil
     end
-    local public = page.public or modules[1]
+    local modules = SiteView.modules(page)
+    local public = page.public or api_sources[1].public or modules[1]
     local projected = tealdoc.Env.init()
     for path, item in pairs(env.registry) do
         projected.registry[path] = item
@@ -320,44 +337,67 @@ function SiteView.prepare(
         return public_path
     end
 
-    for _, module_name in ipairs(modules) do
+    for _, source in ipairs(api_sources) do
+        local module_name = source.module
+        local source_public = source.public or public
         local module_item = assert(
             env.registry["$" .. module_name],
             "configured API module not found: " .. module_name
         )
-        if module_item.text and module_item.text ~= "" then
+        if #(source.include or {}) == 0
+            and module_item.text
+            and module_item.text ~= ""
+        then
             table.insert(module_texts, module_item.text)
         end
         local module_record = env.registry[module_name]
         local basename = module_name:match("([^.]+)$") or module_name
-        local public_basename = public:match("([^.]+)$") or public
+        local public_basename = source_public:match("([^.]+)$")
+            or source_public
         local mounts_as_child = module_record
-            and module_name ~= public
+            and module_name ~= source_public
             and basename ~= public_basename
             and basename:match("^[A-Z]") ~= nil
+        local included: {string: boolean} = {}
+        for _, name in ipairs(source.include or {}) do
+            included[name] = true
+        end
+        local function selected(child_path: string): boolean
+            if #(source.include or {}) == 0 then
+                return true
+            end
+            local child = assert(env.registry[child_path])
+            return included[child.name] == true
+        end
         if mounts_as_child then
-            local mounted = mount(
-                module_name,
-                module_name,
-                public .. "." .. basename,
-                public,
-                true
-            )
-            if mounted then
-                table.insert(root_children, mounted)
+            if selected(module_name) then
+                local mounted = mount(
+                    module_name,
+                    module_name,
+                    source_public .. "." .. basename,
+                    public,
+                    true
+                )
+                if mounted then
+                    table.insert(root_children, mounted)
+                end
             end
         else
-            source_to_public[module_name] = public
+            if #(source.include or {}) == 0 then
+                source_to_public[module_name] = source_public
+            end
             local exported = module_record and module_record.children
                 or module_item.children
                 or {}
             for _, child_path in ipairs(exported) do
-                if not module_record or child_path ~= module_name then
+                if (not module_record or child_path ~= module_name)
+                    and selected(child_path)
+                then
                     local child = assert(env.registry[child_path])
                     local mounted = mount(
                         child_path,
                         child_path,
-                        public .. "." .. child.name,
+                        source_public .. "." .. child.name,
                         public
                     )
                     if mounted then
