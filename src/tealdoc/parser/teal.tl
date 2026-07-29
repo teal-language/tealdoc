@@ -183,6 +183,23 @@ local function type_to_string(report: tl.TypeReport, typ: tl.Type): string
     return typeinfo_to_string(typeinfo_for_type(report, typ))
 end
 
+local function typearg_constraint_to_string(
+    report: tl.TypeReport,
+    constraint?: tl.Type
+): string
+    if not constraint then
+        return nil
+    end
+    local reported = type_to_string(report, constraint)
+    local direct = tostring(constraint)
+    if reported and reported:match("^function<")
+        and not direct:match("^table:")
+    then
+        return direct
+    end
+    return reported
+end
+
 local function type_references_for_type(typ: tl.Type, state: VisitState): {tealdoc.TypeReference}
     local references: {tealdoc.TypeReference} = {}
     local seen: {integer: boolean} = {}
@@ -473,6 +490,7 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
         location = location_for_type(t)
     }
 
+    local is_generic = t is tl.GenericType
     if t is tl.GenericType then
         local base = t.t
         assert(base is tl.FunctionType)
@@ -482,7 +500,10 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
             local normalized = typearg.typearg:gsub("@.*", "") -- ?
             item.typeargs[i] = {
                 name = normalized,
-                constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
+                constraint = typearg_constraint_to_string(
+                    state.type_report,
+                    typearg.constraint
+                )
             }
         end
 
@@ -494,7 +515,10 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
     if t.args and #t.args.tuple > 0 then
         item.params = {}
         for i, ar in ipairs(t.args.tuple) do
-            if t.is_method and i == 1 then
+            if i == 1
+                and owner
+                and (t.is_method or is_generic and ar.typename == "self")
+            then
                 -- The receiver carries no name of its own in a declaration.
                 -- Name it as a definition would, so both spellings of the same
                 -- method document the same parameters.
