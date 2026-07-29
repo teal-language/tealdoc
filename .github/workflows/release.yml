@@ -1,0 +1,73 @@
+name: Release
+
+# The generated Lua is not committed, so a release is the only place it is
+# produced for anybody but a contributor. Tagging builds it, packs it beside
+# the Teal it was compiled from, and attaches both to the release, so the
+# rockspec has a tarball to name.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, without the leading v"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and attach the release tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Lua
+        uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "5.4"
+
+      - name: Set up LuaRocks
+        uses: leafo/gh-actions-luarocks@v6
+
+      # The tag is the version, so a release cannot be cut under a number
+      # nobody asked for. `make dist` checks it against the one the program
+      # reports.
+      - name: Resolve the version
+        id: version
+        run: |
+          if [[ -n "${{ inputs.version }}" ]]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Build the tarball and its rockspec
+        run: make dist VERSION="${{ steps.version.outputs.version }}"
+
+      # Proves the thing being published installs, rather than only that it
+      # tars. The rockspec names a URL that does not exist yet, so the local
+      # copy is what is built here.
+      - name: Install from the tarball
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          mkdir -p verify
+          sed "s|url = \".*\"|url = \"file://$PWD/dist/tealdoc-$version.tar.gz\"|" \
+            "dist/tealdoc-$version-1.rockspec" \
+            > "verify/tealdoc-$version-1.rockspec"
+          cd verify
+          luarocks build --tree="$PWD/tree" "tealdoc-$version-1.rockspec"
+          ./tree/bin/tealdoc --version
+
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/tealdoc-${{ steps.version.outputs.version }}.tar.gz
+            dist/tealdoc-${{ steps.version.outputs.version }}-1.rockspec

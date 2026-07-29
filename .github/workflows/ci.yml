@@ -36,11 +36,5 @@ jobs:
       - name: Set up LuaRocks
         uses: leafo/gh-actions-luarocks@v6
 
-      - name: Check generated file pairs
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: make check-generated-diff BASE_REF="$BASE_REF" HEAD_REF="$HEAD_REF"
-
       - name: Check
         run: make check

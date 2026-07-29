@@ -7,7 +7,7 @@ BUSTED ?= busted
 TEALDOC ?= tealdoc
 HEAD_REF ?= HEAD
 
-.PHONY: all help deps build install test smoke check check-generated-diff
+.PHONY: all help deps build dist install test smoke check
 
 all: check
 
@@ -23,8 +23,7 @@ help:
 		'  test     Install tealdoc and run the Busted specs.' \
 		'  smoke    Generate docs from the LuaRocks Teal package.' \
 		'  check    Run the tests and documentation smoke test.' \
-		'  check-generated-diff' \
-		'           Require changed src/*.tl files to have build/*.lua changes.'
+		'  dist     Build the release tarball and its rockspec.'
 
 deps:
 	$(LUAROCKS_CMD) make --only-deps $(ROCKSPEC)
@@ -69,20 +68,45 @@ smoke: install
 
 check: test smoke
 
-check-generated-diff:
-	@if [[ -z "$(BASE_REF)" ]]; then \
-		echo 'BASE_REF is required.' >&2; \
-		exit 2; \
+# What a release is built from: the Teal the tree carries and the Lua it does
+# not. The rock installs both, so a project depending on tealdoc can run it and
+# type-check against it, and neither copy is committed for the other to drift
+# from.
+# What a release is built from. `make dist` stages the Teal the tree carries
+# and the Lua it does not into one directory, tars it, and writes the rockspec
+# that names the tarball. The rock installs both, so a project depending on
+# tealdoc can run it and type-check against it, and neither copy is committed
+# for the other to drift from.
+#
+# VERSION is read from the source rather than repeated here, so a release
+# cannot be cut under a number the program does not report. A tagged build
+# passes REVISION to distinguish a re-release of the same version.
+# The `+dev` a working tree carries is not a LuaRocks version, so it is cut.
+# A tagged build passes VERSION explicitly and this default is not consulted.
+VERSION ?= $(shell sed -n 's/^tealdoc\.version = "\([^+"]*\).*"$$/\1/p' src/tealdoc.tl)
+REVISION ?= 1
+DIST ?= dist
+STAGE := $(DIST)/tealdoc-$(VERSION)
+TARBALL := $(DIST)/tealdoc-$(VERSION).tar.gz
+RELEASE_ROCKSPEC := $(DIST)/tealdoc-$(VERSION)-$(REVISION).rockspec
+TARBALL_URL ?= https://github.com/teal-language/tealdoc/releases/download/v$(VERSION)/tealdoc-$(VERSION).tar.gz
+
+dist: build
+	@set -eu; \
+	declared="$$(sed -n 's/^tealdoc\.version = "\([^+"]*\).*"$$/\1/p' src/tealdoc.tl)"; \
+	if [[ "$(VERSION)" != "$$declared" ]]; then \
+		printf 'version %s does not match tealdoc.version %s\n' \
+			"$(VERSION)" "$$declared" >&2; \
+		exit 1; \
 	fi; \
-	changed="$$(git diff --name-only --no-renames "$(BASE_REF)" "$(HEAD_REF)")"; \
-	missing=0; \
-	while IFS= read -r source; do \
-		[[ "$$source" == src/*.tl ]] || continue; \
-		mirror="build/$${source#src/}"; \
-		mirror="$${mirror%.tl}.lua"; \
-		if ! grep -Fqx -- "$$mirror" <<< "$$changed"; then \
-			echo "Missing generated change: $$mirror (for $$source)" >&2; \
-			missing=1; \
-		fi; \
-	done <<< "$$changed"; \
-	exit "$$missing"
+	rm -rf "$(STAGE)" "$(TARBALL)" "$(RELEASE_ROCKSPEC)"; \
+	mkdir -p "$(STAGE)"; \
+	cp -R src build bin types "$(STAGE)/"; \
+	cp LICENSE README.md "$(STAGE)/"; \
+	tar -czf "$(TARBALL)" -C "$(DIST)" "tealdoc-$(VERSION)"; \
+	sed \
+		-e 's|^version = .*|version = "$(VERSION)-$(REVISION)"|' \
+		-e 's|^   url = .*|   url = "$(TARBALL_URL)",|' \
+		-e 's|^   branch = .*|   dir = "tealdoc-$(VERSION)"|' \
+		$(ROCKSPEC) > "$(RELEASE_ROCKSPEC)"; \
+	printf 'wrote %s\n%s\n' "$(TARBALL)" "$(RELEASE_ROCKSPEC)"
