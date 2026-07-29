@@ -61,23 +61,40 @@ local function read_file(path: string): string
     return contents
 end
 
+-- A custom sheet is appended to the generated one, so its `@import` rules move
+-- to the front: an import that follows a style rule is dropped by the browser,
+-- and a web font asked for that way would silently never arrive. CSS lets a
+-- comment stand before an import, and a sheet worth reading opens with one, so
+-- the scan reads past comments rather than stopping at the first, and carries
+-- them along so the author keeps what they wrote.
 local function append_custom_css(css: string, custom: string): string
+    local preamble: {string} = {}
     local imports: {string} = {}
+    local body = custom
     while true do
-        local first, last, statement = custom:find(
-            "^%s*(@import%s+[^;]+;)"
-        )
-        if not first then
-            break
+        local remainder = body:gsub("^%s+", "")
+        local comment = remainder:match("^(/%*.-%*/)")
+        if comment then
+            table.insert(preamble, comment)
+            body = remainder:sub(#comment + 1)
+        else
+            local first, last, statement = remainder:find("^(@import%s+[^;]+;)")
+            if not first then
+                break
+            end
+            table.insert(imports, statement)
+            body = remainder:sub(last + 1)
         end
-        table.insert(imports, statement)
-        custom = custom:sub(last + 1)
     end
-    local prefix = ""
-    if #imports > 0 then
-        prefix = table.concat(imports, "\n") .. "\n\n"
+    if #imports == 0 then
+        return css .. "\n" .. custom:gsub("^%s+", "")
     end
-    return prefix .. css .. "\n" .. custom:gsub("^%s+", "")
+    local prefix = table.concat(preamble, "\n\n")
+    if prefix ~= "" then
+        prefix = prefix .. "\n\n"
+    end
+    prefix = prefix .. table.concat(imports, "\n") .. "\n\n"
+    return prefix .. css .. "\n" .. body:gsub("^%s+", "")
 end
 
 local function write_file(path: string, contents: string)
@@ -749,14 +766,21 @@ local function headings(html: string): string, string, {Heading}
                 local outline_title = title
                 if level == 2 then
                     outline_prefix = ""
-                elseif outline_prefix ~= ""
-                    and title:sub(1, #outline_prefix + 1)
-                        == outline_prefix .. "."
-                then
-                    outline_title = "↳ " ..
-                        title:sub(#outline_prefix + 2)
                 else
-                    outline_prefix = title:match("^(.*)%.") or ""
+                    -- Every entry under a section drops the namespace its
+                    -- siblings share, the first one included. The prefix comes
+                    -- from whichever entry opens the section, and applies to
+                    -- that entry too: abbreviating all but the first is what
+                    -- made the first read as the parent of the rest.
+                    if outline_prefix == "" then
+                        outline_prefix = title:match("^(.*)%.") or ""
+                    end
+                    if outline_prefix ~= ""
+                        and title:sub(1, #outline_prefix + 1)
+                            == outline_prefix .. "."
+                    then
+                        outline_title = title:sub(#outline_prefix + 2)
+                    end
                 end
                 table.insert(found, {
                     id = id,

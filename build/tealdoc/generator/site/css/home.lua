@@ -24,7 +24,7 @@ return [[
     max-width: 720px;
     margin: 0;
     color: var(--tealdoc-accent);
-    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-size: var(--tealdoc-hero-name-size);
     letter-spacing: -0.04em;
     line-height: 0.95;
 }
@@ -33,7 +33,7 @@ return [[
     max-width: 650px;
     margin: 1.5rem 0 0;
     color: var(--tealdoc-text-muted);
-    font-size: clamp(1.3rem, 2.5vw, 2rem);
+    font-size: var(--tealdoc-hero-text-size);
     line-height: 1.35;
 }
 

@@ -10,7 +10,7 @@ return [[
     border-radius: 0;
 }
 
-.tealdoc-content:not(.tealdoc-home-content) {
+.tealdoc-content {
     font-size: var(--tealdoc-content-font-size);
 }
 
@@ -163,12 +163,18 @@ return [[
 
 .tealdoc-content pre {
     overflow: auto;
-    padding: 0.5rem 0.6rem;
+    padding: var(--tealdoc-code-block-padding);
     border: 1px solid var(--tealdoc-border);
     border-radius: var(--tealdoc-code-block-radius);
     background: var(--tealdoc-code-background);
     font-family: var(--tealdoc-font-mono);
     line-height: 1.55;
+}
+
+/* The block's padding is the pre's, once. Pico pads the inner code as well,
+ * which doubles it and leaves the two halves impossible to tune apart. */
+.tealdoc-content pre > code {
+    padding: 0;
 }
 
 .tealdoc-content code[class*="language-"] {
@@ -180,22 +186,18 @@ return [[
 }
 
 .tealdoc-content :not(pre) > code {
-    padding: 0;
-    background: transparent;
+    padding: var(--tealdoc-inline-code-padding);
+    border-radius: var(--tealdoc-inline-code-radius);
+    background: var(--tealdoc-inline-code-background);
     font-size: var(--tealdoc-inline-code-font-size);
     font-weight: 550;
 }
 
-.tealdoc-content
-    :not(pre)
-    > code.tealdoc-inline-code-before {
-    padding-inline-start: var(--tealdoc-inline-code-padding);
-}
-
-.tealdoc-content
-    :not(pre)
-    > code.tealdoc-inline-code-after {
-    padding-inline-end: var(--tealdoc-inline-code-padding);
+.tealdoc-content :is(h1, h2, h3, h4, h5, h6) code {
+    padding: 0;
+    background: transparent;
+    font-size: 1em;
+    font-weight: inherit;
 }
 
 .tealdoc-content a > code {

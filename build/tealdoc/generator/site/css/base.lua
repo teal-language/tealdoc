@@ -61,8 +61,8 @@ input {
     min-height: var(--tealdoc-header-height);
     margin: 0;
     padding: 0;
-    border-bottom: 1px solid var(--tealdoc-border);
-    background: color-mix(in srgb, var(--tealdoc-background) 92%, transparent);
+    border-bottom: 1px solid var(--tealdoc-header-border);
+    background: var(--tealdoc-header-background);
     backdrop-filter: blur(12px);
 }
 
@@ -82,7 +82,7 @@ input {
     flex: none;
     align-items: center;
     gap: 0.6rem;
-    color: var(--tealdoc-text);
+    color: var(--tealdoc-header-color);
     font-size: 1rem;
     font-weight: 650;
     letter-spacing: -0.01em;
@@ -108,7 +108,7 @@ input {
 .tealdoc-top-nav a {
     position: relative;
     padding: 0.45rem 0.65rem;
-    color: var(--tealdoc-text-muted);
+    color: var(--tealdoc-header-muted-color);
     border-radius: 7px;
     font-size: 0.875rem;
     font-weight: 500;
@@ -116,8 +116,8 @@ input {
 }
 
 .tealdoc-top-nav a:hover {
-    color: var(--tealdoc-text);
-    background: var(--tealdoc-background-alt);
+    color: var(--tealdoc-header-color);
+    background: var(--tealdoc-header-control-background);
 }
 
 .tealdoc-top-nav a[aria-current="page"] {
@@ -145,18 +145,18 @@ input {
     gap: 0.45rem;
     margin: 0 0 0 1.75rem;
     padding: 0.35rem 0.65rem;
-    color: var(--tealdoc-text-muted);
-    border: 1px solid var(--tealdoc-border);
+    color: var(--tealdoc-header-muted-color);
+    border: 1px solid var(--tealdoc-header-border);
     border-radius: 8px;
-    background: var(--tealdoc-background-alt);
+    background: var(--tealdoc-header-control-background);
     box-shadow: none;
     font-size: 0.82rem;
 }
 
 .tealdoc-search-button:hover {
-    color: var(--tealdoc-text);
-    border-color: var(--tealdoc-text-faint);
-    background: var(--tealdoc-background-alt);
+    color: var(--tealdoc-header-color);
+    border-color: var(--tealdoc-header-muted-color);
+    background: var(--tealdoc-header-control-background);
 }
 
 .tealdoc-icon-link {
@@ -168,15 +168,15 @@ input {
     justify-content: center;
     margin: 0;
     padding: 0;
-    color: var(--tealdoc-text-muted);
+    color: var(--tealdoc-header-muted-color);
     border-radius: 7px;
     cursor: pointer;
     text-decoration: none;
 }
 
 .tealdoc-icon-link:hover {
-    color: var(--tealdoc-text);
-    background: var(--tealdoc-background-alt);
+    color: var(--tealdoc-header-color);
+    background: var(--tealdoc-header-control-background);
 }
 
 .tealdoc-theme-input:focus-visible ~ .tealdoc-site .tealdoc-theme-toggle {
@@ -222,10 +222,10 @@ input {
 .tealdoc-search-button kbd {
     margin-left: auto;
     padding: 0.1rem 0.35rem;
-    color: var(--tealdoc-text-faint);
-    border: 1px solid var(--tealdoc-border);
+    color: var(--tealdoc-header-muted-color);
+    border: 1px solid var(--tealdoc-header-border);
     border-radius: 4px;
-    background: var(--tealdoc-background);
+    background: transparent;
     box-shadow: none;
     font-size: 0.68rem;
 }
