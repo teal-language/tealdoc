@@ -245,6 +245,12 @@ local record MarkdownGenerator
         type_url_for_path?: URLResolver,
         allow_local_type_links?: boolean
     ): Generator.Base
+    --- Renders documentation and answers with it rather than writing a file.
+    render: function(
+        env: tealdoc.Env,
+        type_url_for_path?: URLResolver,
+        allow_local_type_links?: boolean
+    ): string
     resolve_type_url: function(
         env: tealdoc.Env,
         path: string,
@@ -286,11 +292,19 @@ function MarkdownGenerator.resolve_type_url(
     return nil
 end
 
-MarkdownGenerator.init = function(
-    output: string,
+--- Builds a generator and hands back the builder it writes into.
+---
+--- Shared by `init`, which writes the result to a file, and `render`, which
+--- answers with it. The two differ only in what happens once the walk is done.
+--- @param type_url_for_path Resolves a type's path to a URL, or nil to leave
+---     types unlinked.
+--- @param allow_local_type_links Whether a type may link to an anchor on the
+---     page being rendered.
+--- @return The generator, and the builder holding what it wrote.
+local function generator_for(
     type_url_for_path?: MarkdownGenerator.URLResolver,
     allow_local_type_links?: boolean
-): Generator.Base
+): Generator.Base, MarkdownBuilder
     local builder = MarkdownBuilder.init()
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
@@ -314,6 +328,22 @@ MarkdownGenerator.init = function(
             end
         end
     end
+    return base, builder
+end
+
+--- Renders documentation to a file.
+--- @param output The path written when the walk ends.
+--- @param type_url_for_path Resolves a type's path to a URL, or nil to leave
+---     types unlinked.
+--- @param allow_local_type_links Whether a type may link to an anchor on the
+---     page being rendered.
+--- @return A generator that writes `output` when it finishes.
+MarkdownGenerator.init = function(
+    output: string,
+    type_url_for_path?: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+): Generator.Base
+    local base, builder = generator_for(type_url_for_path, allow_local_type_links)
     base.on_end = function(_, _: tealdoc.Env)
         local file = io.open(output, "w")
         assert(file, "Could not open file for writing: " .. output)
@@ -322,6 +352,28 @@ MarkdownGenerator.init = function(
         log:info("Markdown documentation generated to " .. output)
     end
     return base
+end
+
+--- Renders documentation and answers with it.
+---
+--- The site generator composes a page from Markdown it renders here, so it
+--- wants the text rather than a file. Writing one to read it back costs a
+--- temporary file per API page, and the caller then has to remove it, which a
+--- raised error skips.
+--- @param env The environment to walk.
+--- @param type_url_for_path Resolves a type's path to a URL, or nil to leave
+---     types unlinked.
+--- @param allow_local_type_links Whether a type may link to an anchor on the
+---     page being rendered.
+--- @return The rendered Markdown.
+MarkdownGenerator.render = function(
+    env: tealdoc.Env,
+    type_url_for_path?: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+): string
+    local base, builder = generator_for(type_url_for_path, allow_local_type_links)
+    base:run(env)
+    return builder:build()
 end
 
 return MarkdownGenerator

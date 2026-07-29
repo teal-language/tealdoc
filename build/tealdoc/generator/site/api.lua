@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local tealdoc = require("tealdoc")
 local Generator = require("tealdoc.generator")
 local MarkdownGenerator = require("tealdoc.generator.markdown")
 local Highlighter = require("tealdoc.generator.site.highlighter")
@@ -185,11 +185,10 @@ function SiteApi.markdown(
 
    local page_env = view.env
 
-   local output = os.tmpname()
-   MarkdownGenerator.init(output, resolver, false):run(page_env)
-   local markdown = read_file(output)
-   os.remove(output)
-   markdown = add_kind_badges(markdown, page_env)
+   local markdown = add_kind_badges(
+   MarkdownGenerator.render(page_env, resolver, false),
+   page_env)
+
 
    for item_path, examples in pairs(attached_examples or {}) do
       local anchor = '<a id="' .. item_path .. '"></a>'
