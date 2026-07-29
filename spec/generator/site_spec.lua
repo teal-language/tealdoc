@@ -1240,7 +1240,7 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            ".tealdoc-sidebar li.tealdoc-sidebar-section",
+            ".tealdoc-sidebar > ul > li.tealdoc-sidebar-section",
             1,
             true
         ))
