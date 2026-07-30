@@ -1453,7 +1453,10 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
 end
 
 local function normalized_path(path: string): string
-    return path:gsub("\\", "/"):gsub("^%./+", ""):gsub("/+$", "")
+    local normalized = path:gsub("\\", "/")
+    normalized = normalized:gsub("^%./+", "")
+    normalized = normalized:gsub("/+$", "")
+    return normalized
 end
 
 local function project_dependency(path: string, source_dir: string): string
