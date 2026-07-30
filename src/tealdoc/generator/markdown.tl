@@ -270,6 +270,12 @@ local record MarkdownGenerator
         type_url_for_path: URLResolver,
         allow_local_type_links?: boolean
     ): string
+    private_alias_target: function(
+        env: tealdoc.Env,
+        item: tealdoc.TypeItem,
+        type_url_for_path: URLResolver,
+        allow_local_type_links?: boolean
+    ): tealdoc.TypeItem
     item_phases: {string: {Generator.Phase}}
 end
 
@@ -289,9 +295,13 @@ function MarkdownGenerator.resolve_type_url(
             return type_url_for_path(path)
         end
         if Generator.filter(item, env) then
-            return type_url_for_path(path)
-                or allow_local_type_links ~= false and "#" .. path
-                or nil
+            local url = type_url_for_path(path)
+            if url then
+                return url
+            end
+            if allow_local_type_links ~= false then
+                return "#" .. path
+            end
         end
         if item is tealdoc.TypeItem
             and item.type_kind == "type"
@@ -301,6 +311,50 @@ function MarkdownGenerator.resolve_type_url(
         else
             return nil
         end
+    end
+    return nil
+end
+
+--- Finds the concrete private alias whose type expression should replace a
+--- public alias's nominal right-hand side.
+---
+--- A target with a URL remains a nominal expression for the highlighter to
+--- link. Without one, following private aliases until the first structural
+--- expression lets a declaration say what the public name actually means.
+--- Records, interfaces and enums keep their nominal spelling: expanding one
+--- requires projecting its children, not replacing one expression.
+function MarkdownGenerator.private_alias_target(
+    env: tealdoc.Env,
+    item: tealdoc.TypeItem,
+    type_url_for_path: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+): tealdoc.TypeItem
+    if not item.alias_target
+        or MarkdownGenerator.resolve_type_url(
+            env,
+            item.alias_target,
+            type_url_for_path,
+            allow_local_type_links
+        )
+    then
+        return nil
+    end
+
+    local seen: {string: boolean} = {}
+    local path = item.alias_target
+    while path and not seen[path] do
+        seen[path] = true
+        local target = env.registry[path]
+        if not target
+            or not target is tealdoc.TypeItem
+            or target.type_kind ~= "type"
+        then
+            return nil
+        end
+        if not target.alias_target then
+            return target
+        end
+        path = target.alias_target
     end
     return nil
 end
@@ -336,6 +390,16 @@ local function generator_for(
                 return MarkdownGenerator.resolve_type_url(
                     env,
                     path,
+                    type_url_for_path,
+                    allow_local_type_links
+                )
+            end
+            ctx.private_alias_target = function(
+                item: tealdoc.TypeItem
+            ): tealdoc.TypeItem
+                return MarkdownGenerator.private_alias_target(
+                    env,
+                    item,
                     type_url_for_path,
                     allow_local_type_links
                 )

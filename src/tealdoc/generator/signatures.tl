@@ -97,12 +97,22 @@ end
 function signatures.for_type(ctx: Generator.Phase.Context, item: tealdoc.TypeItem)
     ctx.builder:text(attr("name"), visibility(item), item.type_kind, " ", function () ctx.builder:link(item.path, get_name(ctx, item)) end)
     if item.type_kind == "type" then
+        local private_target = ctx.private_alias_target
+            and ctx.private_alias_target(item)
+        local typename = private_target and private_target.typename
+            or item.typename
         ctx.builder:text(attr("type"), " = ", function()
-            local url = item.alias_target and ctx.url_for_path and ctx.url_for_path(item.alias_target)
+            local url = not private_target
+                and item.alias_target
+                and (
+                    ctx.url_for_type and ctx.url_for_type(item.alias_target)
+                    or ctx.url_for_path
+                        and ctx.url_for_path(item.alias_target)
+                )
             if url then
-                ctx.builder:link_url(url, item.typename)
+                ctx.builder:link_url(url, typename)
             else
-                ctx.builder:text(item.typename)
+                ctx.builder:text(typename)
             end
         end)
     elseif item.typeargs and #item.typeargs > 0 then
