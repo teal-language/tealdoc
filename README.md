@@ -636,6 +636,7 @@ settings document their complete nested table shape.
 | [`sources`](docs/site_configuration.md#sources) | `{}` | Teal source files and directories. |
 | [`pages`](docs/site_configuration.md#pages) | `{}` | Handwritten and API pages. |
 | [`sidebar`](docs/site_configuration.md#sidebar) | derived | Explicit recursively nested sidebar. |
+| [`sidebar_open`](docs/site_configuration.md#sidebar_open) | all | Sections initially open by path or text. |
 | [`examples`](docs/site_configuration.md#examples) | `{}` | Page and attached examples. |
 | [`validate_links`](docs/site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
 | [`format_generated_code`](docs/site_configuration.md#format_generated_code) | `false` | Format generated Teal with Cerulean. |
@@ -695,7 +696,11 @@ nav = {
 Set `sidebar` when route-derived grouping is not expressive enough. It is a
 recursive array of `{ text?, path?, items?, collapsed? }` tables. Page titles
 fill omitted text, every path must name a configured page, and groups with a
-path place that page inside the group as an `Overview` row.
+path link their section label directly to that page.
+Set `sidebar_open` to an array of group paths or texts to choose the sections
+that start open. Other sections start closed, while every section containing
+the current page opens automatically. An item’s explicit `collapsed` value
+takes precedence.
 
 Tealdoc emits the composed Markdown beside every HTML page and always links it
 from the header.

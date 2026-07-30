@@ -1142,11 +1142,11 @@ local authored  =  true
                 {path = "docs/ecs/components", title = "Components"},
                 {path = "docs/ecs/components/bundles", title = "Bundles"},
             },
+            sidebar_open = {"CLI"},
             sidebar = {
                 {
                     text = "CLI",
                     path = "docs/cli",
-                    collapsed = true,
                     items = {
                         {path = "docs/cli/config"},
                     },
@@ -1166,17 +1166,67 @@ local authored  =  true
             },
         })
 
+        local home = read_file(output .. "/index.html")
         local html = read_file(output .. "/docs/ecs/components/bundles/index.html")
-        assert.is_truthy(html:find("<summary>CLI</summary>", 1, true), html)
-        assert.is_truthy(html:find("<summary>tecs.ecs</summary>", 1, true), html)
-        assert.is_truthy(html:find("<summary>Components</summary>", 1, true), html)
-        assert.is_truthy(html:find(">Overview</a>", 1, true), html)
+        assert.is_truthy(home:find(
+            '<details open><summary><a href="/docs/cli/">CLI</a>' ..
+                "</summary>",
+            1,
+            true
+        ), home)
+        assert.is_truthy(home:find(
+            '<details><summary><a href="/docs/ecs/">tecs.ecs</a>' ..
+                "</summary>",
+            1,
+            true
+        ), home)
+        assert.is_truthy(html:find(
+            '<details open><summary><a href="/docs/ecs/">tecs.ecs</a>' ..
+                "</summary>",
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            '<details open><summary><a ' ..
+                'href="/docs/ecs/components/">Components</a></summary>',
+            1,
+            true
+        ), html)
+        assert.is_falsy(html:find(">Overview</a>", 1, true), html)
         assert.is_truthy(html:find(
             'href="/docs/ecs/components/bundles/" aria-current="page">Bundles</a>',
             1,
             true
         ), html)
         assert.is_falsy(html:find("<summary>Docs</summary>", 1, true))
+
+        remove_tree(output)
+    end)
+
+    it("selects route-derived sidebar sections to open", function()
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Navigation",
+            pages = {
+                {path = "", title = "Home"},
+                {path = "guide/start", title = "Start"},
+                {path = "api/reference", title = "Reference"},
+            },
+            sidebar_open = {"api"},
+        })
+
+        local home = read_file(output .. "/index.html")
+        assert.is_truthy(home:find(
+            "<details><summary>Guide</summary>",
+            1,
+            true
+        ), home)
+        assert.is_truthy(home:find(
+            "<details open><summary>Api</summary>",
+            1,
+            true
+        ), home)
 
         remove_tree(output)
     end)
@@ -2984,6 +3034,13 @@ print(value)
                 pages = {{path = "", title = "Home"}},
             })
         end, "tealdoc.site.format_generated_code must be a boolean")
+        assert.has_error(function()
+            SiteGenerator.build(output, env, {
+                title = "Navigation",
+                sidebar_open = {"Guide", false},
+                pages = {{path = "", title = "Home"}},
+            })
+        end, "tealdoc.site.sidebar_open[2] must be a non-empty string")
         assert.is_nil(lfs.attributes(output))
     end)
     it("validates internal links and anchors under a configured base", function()

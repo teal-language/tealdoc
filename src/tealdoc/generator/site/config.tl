@@ -105,6 +105,7 @@ local site_keys: {string: boolean} = {
     format_generated_code = true,
     pages = true,
     sidebar = true,
+    sidebar_open = true,
     nav = true,
     sources = true,
     before_build = true,
@@ -271,6 +272,7 @@ function SiteConfig.configure(
         "examples",
         "pages",
         "sidebar",
+        "sidebar_open",
         "nav",
         "sources",
         "head",
@@ -352,6 +354,7 @@ function SiteConfig.configure(
         format_generated_code = values["format_generated_code"] == true,
         pages = {},
         sidebar = {},
+        sidebar_open = nil,
         nav = {},
         sources = {},
         before_build = values["before_build"] as function(SiteTypes.Context),
@@ -363,6 +366,19 @@ function SiteConfig.configure(
         type(settings.description) == "string",
         "tealdoc.site.description must be a string"
     )
+    if values["sidebar_open"] ~= nil then
+        settings.sidebar_open = {}
+        local selectors = values["sidebar_open"] as {any}
+        for index, selector in ipairs(selectors) do
+            assert(
+                type(selector) == "string" and selector ~= "",
+                "tealdoc.site.sidebar_open[" ..
+                    tostring(index) ..
+                    "] must be a non-empty string"
+            )
+            settings.sidebar_open[selector as string] = true
+        end
+    end
     if settings.site_url and settings.site_url ~= "" then
         assert(
             settings.site_url:match("^https?://[^/%?#]+/?$"),
@@ -607,12 +623,21 @@ function SiteConfig.configure(
                 name .. ".path does not name a configured page: " .. path
             )
         end
+        local collapsed: boolean
+        if item["collapsed"] ~= nil then
+            collapsed = item["collapsed"] == true
+        elseif settings.sidebar_open then
+            collapsed = not (
+                path and settings.sidebar_open[path]
+                    or settings.sidebar_open[item["text"] as string]
+            )
+        end
         local normalized: SiteTypes.SidebarItem = {
             text = (item["text"]
                 or path and pages_by_path[path].title) as string,
             path = path,
             items = {},
-            collapsed = item["collapsed"] == true,
+            collapsed = collapsed,
         }
         for child_index, child in ipairs(item["items"] as {any} or {}) do
             table.insert(

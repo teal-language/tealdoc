@@ -96,6 +96,7 @@ local record SiteTypes
         format_generated_code: boolean
         pages: {Page}
         sidebar: {SidebarItem}
+        sidebar_open: {string: boolean}
         nav: {Link}
         sources: {string}
         before_build: function(Context)

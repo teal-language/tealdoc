@@ -1241,7 +1241,8 @@ local function sidebar(
     pages: {SiteGenerator.Page},
     current: string,
     base: string,
-    configured: {SiteTypes.SidebarItem}
+    configured: {SiteTypes.SidebarItem},
+    open_sections: {string: boolean}
 ): string
     if configured and #configured > 0 then
         local contains_current: function(SiteTypes.SidebarItem): boolean
@@ -1273,27 +1274,27 @@ local function sidebar(
             end
 
             local children: {string} = {}
-            if item.path then
-                local selected = item.path == current
-                    and ' aria-current="page"'
-                    or ""
-                table.insert(
-                    children,
-                    '<li><a href="' ..
-                        escape_html(page_url(base, item.path)) ..
-                        '"' ..
-                        selected ..
-                        ">Overview</a></li>"
-                )
-            end
             for _, child in ipairs(item.items) do
                 table.insert(children, render_item(child))
             end
             local open = not item.collapsed or contains_current(item)
+            local summary = escape_html(item.text)
+            if item.path then
+                local selected = item.path == current
+                    and ' aria-current="page"'
+                    or ""
+                summary = '<a href="' ..
+                    escape_html(page_url(base, item.path)) ..
+                    '"' ..
+                    selected ..
+                    ">" ..
+                    summary ..
+                    "</a>"
+            end
             return '<li class="tealdoc-sidebar-section"><details' ..
                 (open and " open" or "") ..
                 "><summary>" ..
-                escape_html(item.text) ..
+                summary ..
                 "</summary><ul>" ..
                 table.concat(children, "\n") ..
                 "</ul></details></li>"
@@ -1328,9 +1329,15 @@ local function sidebar(
         for _, page in ipairs(groups[group]) do
             table.insert(children, sidebar_page(page, current, base))
         end
+        local open = not open_sections
+            or open_sections[group]
+            or open_sections[group_title(group)]
+            or current:match("^([^/]+)/") == group
         table.insert(
             output,
-            '<li class="tealdoc-sidebar-section"><details open><summary>' ..
+            '<li class="tealdoc-sidebar-section"><details' ..
+                (open and " open" or "") ..
+                "><summary>" ..
                 escape_html(group_title(group)) ..
                 "</summary><ul>" ..
                 table.concat(children, "\n") ..
@@ -2064,7 +2071,8 @@ local function render_page(
         context.pages,
         page.path,
         settings.base,
-        settings.sidebar
+        settings.sidebar,
+        settings.sidebar_open
     )
     local shell_class = "tealdoc-shell"
     local content_class = "tealdoc-content"

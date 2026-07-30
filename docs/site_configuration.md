@@ -399,8 +399,8 @@ page's summary item.
 Optional recursively nested array. When omitted, Tealdoc derives its sidebar
 from page routes. Each explicit item accepts `text`, `path`, nested `items`,
 and `collapsed`. A page item may omit `text`, in which case its configured page
-title is used. A group may omit `path`; a group with a path renders that page
-as its first `Overview` row.
+title is used. A group may omit `path`; when it has one, its section label
+links directly to that page.
 
 ```lua
 sidebar = {
@@ -429,6 +429,21 @@ sidebar = {
 
 Every `path` must name a configured page. The group containing the current
 page opens even when `collapsed = true`.
+
+## sidebar_open
+
+Optional array selecting the sidebar sections that start open. Omit it to keep
+all sections open by default. Select an explicit group by its `path`, or by its
+`text` when it has no path. Route-derived groups accept their first route
+segment or displayed title. Sections containing the current page always open,
+and an explicit item’s `collapsed` value takes precedence.
+
+```lua
+sidebar_open = {
+    "Introduction",
+    "modules/ecs",
+}
+```
 
 Each page writes composed Markdown beside its HTML route. Non-home pages also
 write a page-local `llms.txt`; the home page uses `index.md`. Root `llms.txt`

@@ -144,6 +144,14 @@ return [[
     margin-bottom: 0;
 }
 
+.tealdoc-sidebar-section summary > a {
+    display: inline;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+}
+
 /* The marker is drawn from two borders rather than set as a glyph, and it
  * centers against the row rather than sitting a fixed distance from its top.
  * A glyph carries its own ink offset inside the line box, so rotating one
