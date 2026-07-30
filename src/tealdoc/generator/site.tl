@@ -56,6 +56,11 @@ local MANIFEST_PATH = ".tealdoc-manifest"
 local MANIFEST_HEADER = "tealdoc-manifest-v1\n"
 local CERULEAN_WRAPPER = "-- tealdoc:generated-declaration-end"
 
+--- Quotes a literal so it matches only itself.
+local function escape_pattern(text: string): string
+    return (text:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
+end
+
 local function cerulean_formatter(): function(string): string
     local function load_module(name: string): any
         return require(name)
@@ -118,15 +123,99 @@ local function cerulean_formatter(): function(string): string
         return "unknown formatter failure"
     end
 
-    local function complete_declarations(code: string): string, integer
+    -- Generated declarations are not statements. They name what they declare
+    -- by its whole path -- `record tecs.Application.Config`, the field
+    -- `tecs.Application.Config.window: Window.Options`, a metamethod spelled
+    -- through `$meta` -- and none of that is something Teal accepts where a
+    -- declaration is written, so a formatter parsing whole units rejects
+    -- every one.
+    --
+    -- Each declaration borrows a name Teal will take and whatever keyword
+    -- makes the line a statement, and the pair is remembered. The whole
+    -- prefix goes back at once afterwards, so the borrowed keyword leaves
+    -- with the borrowed name and neither is left behind.
+    local function complete_declarations(
+        code: string
+    ): string, integer, {{string, string}}
         local output: {string} = {}
+        local restorations: {{string, string}} = {}
         local wrapper_count = 0
+        local placeholder_count = 0
         local normalized = code:gsub("\n*$", "")
+        local qualified = "[%a_][%w_]*[%.:][%w_%.:%$]*"
+
+        local function borrow(
+            indent: string,
+            keyword: string,
+            declared: string,
+            rest: string
+        ): string
+            placeholder_count = placeholder_count + 1
+            local borrowed = indent ..
+                keyword ..
+                "TealdocGenerated" ..
+                tostring(placeholder_count)
+            table.insert(restorations, {borrowed, indent .. declared})
+            return borrowed .. rest
+        end
+
         for line in (normalized .. "\n"):gmatch("(.-)\n") do
-            table.insert(output, line .. "\n")
-            local first_word, second_word = line:match(
-                "^%s*(%S+)%s*(%S*)"
+            local emitted = line
+            local indent, body = line:match("^(%s*)(.*)$")
+
+            local meta_name, meta_rest = body:match(
+                "^metamethod%s+(" .. qualified .. ")(%(.*)$"
             )
+            local kind, dotted, rest: string, string, string
+            if not meta_name then
+                for _, word in ipairs({"record", "interface", "enum"}) do
+                    if not kind then
+                        kind, dotted, rest = body:match(
+                            "^(" .. word .. "%s+)(" .. qualified .. ")(.*)$"
+                        )
+                    end
+                end
+                if not kind then
+                    kind, dotted, rest = body:match(
+                        "^(type%s+)(" .. qualified .. ")(%s*=.*)$"
+                    )
+                end
+            end
+
+            if meta_name then
+                emitted = borrow(
+                    indent,
+                    "local function ",
+                    "metamethod " .. meta_name,
+                    meta_rest
+                )
+            elseif kind then
+                emitted = borrow(indent, "local " .. kind, kind .. dotted, rest)
+            else
+                local scope, scoped_kind, scoped_dotted, scoped_rest =
+                    body:match(
+                        "^([%a]+%s+)([%a]+%s+)(" .. qualified .. ")(.*)$"
+                    )
+                if scope == "local " or scope == "global " then
+                    emitted = borrow(
+                        indent,
+                        scope .. scoped_kind,
+                        scope .. scoped_kind .. scoped_dotted,
+                        scoped_rest
+                    )
+                else
+                    local field, field_rest = body:match(
+                        "^(" .. qualified .. ")(%s*:.*)$"
+                    )
+                    if field then
+                        emitted = borrow(indent, "local ", field, field_rest)
+                    end
+                end
+            end
+
+            table.insert(output, emitted .. "\n")
+
+            local first_word, second_word = emitted:match("^%s*(%S+)%s*(%S*)")
             local needs_body = first_word == "function"
                 or first_word == "macroexp"
             if first_word == "local" or first_word == "global" then
@@ -138,7 +227,7 @@ local function cerulean_formatter(): function(string): string
                 table.insert(output, "end " .. CERULEAN_WRAPPER .. "\n")
             end
         end
-        return table.concat(output), wrapper_count
+        return table.concat(output), wrapper_count, restorations
     end
 
     return function(code: string): string
@@ -150,21 +239,36 @@ local function cerulean_formatter(): function(string): string
         -- API function signatures are declarations without bodies. Complete
         -- every one independently so later declarations cannot become part
         -- of an earlier function while Cerulean parses the generated block.
-        local input, wrapper_count = complete_declarations(code)
+        local input: string
+        local wrapper_count: integer
+        local restorations: {{string, string}}
+        input, wrapper_count, restorations = complete_declarations(code)
         local result = rewrite(
             input,
             "tealdoc-generated.tl",
             formatter_options
         ) as {string: any}
-        assert(
-            #result_errors(result) == 0 and result["status"] ~= "failed",
-            "Cerulean could not format Tealdoc-generated code: " ..
-                failure_message(result)
-        )
-        assert(
-            type(result["output"]) == "string",
-            "Cerulean returned no formatted output for Tealdoc-generated code"
-        )
+        -- A block the formatter cannot read is left as it was written.
+        --
+        -- Formatting a signature is a courtesy, and no courtesy is worth a
+        -- documentation build. Generated declarations are open-ended -- a
+        -- shape nobody anticipated arrives the day somebody writes one -- so
+        -- the failure a reader should get is a slightly less tidy signature,
+        -- not a site that does not exist. The reason is reported once so it
+        -- can be fixed rather than silently tolerated forever.
+        if #result_errors(result) > 0
+            or result["status"] == "failed"
+            or type(result["output"]) ~= "string"
+        then
+            io.stderr:write(
+                "tealdoc: Cerulean could not format a generated " ..
+                    "declaration, which is left unformatted: " ..
+                    failure_message(result) ..
+                    "\n"
+            )
+            formatted_cache[code] = code
+            return code
+        end
         local formatted = result["output"] as string
         if wrapper_count > 0 then
             local removed: integer
@@ -177,6 +281,19 @@ local function cerulean_formatter(): function(string): string
             assert(
                 removed == wrapper_count,
                 "Cerulean changed Tealdoc's temporary declaration wrappers"
+            )
+        end
+        for index = #restorations, 1, -1 do
+            local pair = restorations[index]
+            local found: integer
+            formatted, found = formatted:gsub(
+                escape_pattern(pair[1]),
+                function(): string return pair[2] end,
+                1
+            )
+            assert(
+                found == 1,
+                "Cerulean changed a name Tealdoc borrowed: " .. pair[1]
             )
         end
         formatted = formatted:gsub("\n*$", "") .. "\n"
