@@ -2341,7 +2341,13 @@ function SiteGenerator.build(
     local resolver = routes_for_pages(context.pages, views, settings.base)
     -- Built once for the whole site: it is the same table every time and
     -- walking the registry is not free.
-    local site_links = SiteApi.site_type_links(env, resolver)
+    local public_paths: {string: string} = {}
+    for _, view in pairs(views) do
+        for source_path, public_path in pairs(view.source_to_public) do
+            public_paths[source_path] = public_path
+        end
+    end
+    local site_links = SiteApi.site_type_links(env, resolver, public_paths)
     local search_entries: {SearchEntry} = {}
     local page_markdown: {string} = {}
     for _, page in ipairs(context.pages) do

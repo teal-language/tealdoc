@@ -15,7 +15,8 @@ local record SiteApi
     --- a page falls back to rather than what it starts from.
     site_type_links: function(
         env: tealdoc.Env,
-        resolver: MarkdownGenerator.URLResolver
+        resolver: MarkdownGenerator.URLResolver,
+        public_paths?: {string: string}
     ): Highlighter.Links
     markdown: function(
         view: SiteTypes.ApiView,
@@ -82,6 +83,40 @@ function SiteApi.source_markdown(page: SiteTypes.Page): string
     return text
 end
 
+--- One spelling against one type, and nothing against a spelling two types
+--- answer to. A highlighted token is looked up under the whole dotted
+--- expression it ends rather than its last segment, so what is registered here
+--- is what a code block may write and mean this type.
+local function add_spelling(
+    links: Highlighter.Links,
+    ambiguous: {string: boolean},
+    spelling: string,
+    url: string
+)
+    if not spelling or spelling == "" or not url then
+        return
+    end
+    if ambiguous[spelling] then
+        return
+    end
+    if links[spelling] and links[spelling] ~= url then
+        links[spelling] = nil
+        ambiguous[spelling] = true
+    else
+        links[spelling] = url
+    end
+end
+
+--- A qualified name and every shorter tail of it: `tecs.gfx.Camera` registers
+--- itself, `gfx.Camera` and `Camera`. Code inside a module writes a type under
+--- as much of its path as the enclosing scope leaves it needing, and a page is
+--- the scope its own names are relative to, so all three mean this one type
+--- there.
+---
+--- Site-wide this is not true, which is why the site's map registers exact
+--- names instead. `events.Event` is the ECS event on the page documenting it
+--- and the platform event on the page documenting that one, and a tail nobody
+--- qualified is a guess between them.
 local function add_type_link(
     links: Highlighter.Links,
     ambiguous: {string: boolean},
@@ -91,22 +126,17 @@ local function add_type_link(
     if not name or name == "" or not url then
         return
     end
-    local function add(candidate: string)
-        if ambiguous[candidate] then
-            return
+    add_spelling(links, ambiguous, name, url)
+    local tail = name
+    while true do
+        local shorter = tail:match("^[%w_]+%.(.+)$")
+        if not shorter then
+            break
         end
-        if links[candidate] and links[candidate] ~= url then
-            links[candidate] = nil
-            ambiguous[candidate] = true
-        else
-            links[candidate] = url
-        end
+        tail = shorter
+        add_spelling(links, ambiguous, tail, url)
     end
-    add(name)
-    local basename = name:match("([%w_]+)$")
-    if basename and basename ~= name then
-        add(basename)
-    end
+    add_spelling(links, ambiguous, name:match("([%w_]+)$"), url)
 end
 
 function SiteApi.type_links(
@@ -136,7 +166,11 @@ function SiteApi.type_links(
             and path ~= view.public
             and Generator.filter(item, env)
         then
+            -- A page's registry is keyed by public path, so `path` is the
+            -- spelling the documentation gives this type and the one a code
+            -- block writes it under.
             add_type_link(links, ambiguous, item.name, resolver(path))
+            add_type_link(links, ambiguous, path, resolver(path))
         elseif item and item is tealdoc.FunctionItem then
             for _, param in ipairs(item.params or {}) do
                 for _, reference in ipairs(param.type_references or {}) do
@@ -236,18 +270,38 @@ end
 --- pages are rendered from.
 ---
 --- A name two modules both declare resolves to neither. That is
---- `add_type_link`'s rule, and it matters more here than on a page, where a
+--- `add_spelling`'s rule, and it matters more here than on a page, where a
 --- name is usually unambiguous inside one module and only collides across the
 --- site: `Event` is three different records.
+---
+--- `public_paths` carries a source path to the path the site publishes it
+--- under, because this registry is the one the parser filled and its keys are
+--- where a type is declared rather than where a reader reaches it. The public
+--- path is the qualified spelling registered, and the source path is not: a
+--- route through internals is not something a page describes, and a reader
+--- who follows one arrives at a page that never mentions it.
+---
+--- Only the whole public path and the bare name, with nothing in between. A
+--- page carries the scope its own shorter spellings are relative to and
+--- `type_links` registers those; a page reaching another module's type has no
+--- such scope, and a tail like `Window.Options` names one type on the window
+--- page and is a coincidence anywhere else.
 function SiteApi.site_type_links(
     env: tealdoc.Env,
-    resolver: MarkdownGenerator.URLResolver
+    resolver: MarkdownGenerator.URLResolver,
+    public_paths?: {string: string}
 ): Highlighter.Links
     local links: Highlighter.Links = {}
     local ambiguous: {string: boolean} = {}
     for path, item in pairs(env.registry) do
         if item is tealdoc.TypeItem and Generator.filter(item, env) then
-            add_type_link(links, ambiguous, item.name, resolver(path))
+            add_spelling(links, ambiguous, item.name, resolver(path))
+            add_spelling(
+                links,
+                ambiguous,
+                public_paths and public_paths[path],
+                resolver(path)
+            )
         end
     end
     return links
