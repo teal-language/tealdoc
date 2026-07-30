@@ -2011,7 +2011,12 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            "--tealdoc-code-block-font-size: 0.8rem",
+            "--tealdoc-code-block-font-size: 0.72rem",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            "--tealdoc-inline-code-font-size: 0.91em",
             1,
             true
         ))

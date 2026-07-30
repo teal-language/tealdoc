@@ -47,7 +47,7 @@ return [[
     --tealdoc-background-elv: var(--tealdoc-light-background-elv);
     --tealdoc-border: var(--tealdoc-light-border);
     --tealdoc-code-background: var(--tealdoc-light-code-background);
-    --tealdoc-code-block-font-size: 0.8rem;
+    --tealdoc-code-block-font-size: 0.72rem;
     --tealdoc-code-block-radius: 8px;
     --tealdoc-code-block-padding: 0.8rem 0.9rem;
     --tealdoc-code-tab-text: var(--tealdoc-text-muted);
