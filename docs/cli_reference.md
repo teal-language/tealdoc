@@ -485,8 +485,8 @@ from the generated fence.
 
 Set `constructor_pattern = "^new"` to collect matching public functions under
 Constructors. Generated references order their groups as Constructors, Types,
-Functions, then Values. Methods, metamethods, and macros remain under
-Functions.
+Functions, Macros, then Values. Methods and metamethods remain under Functions;
+Teal macros appear under Macros.
 
 Documentation comments can cross-link public types with ordinary Markdown by
 using a `tealdoc:` destination:

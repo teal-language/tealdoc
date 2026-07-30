@@ -591,15 +591,18 @@ local function group_details(
         { "Constructors", {} },
         { "Types", {} },
         { "Functions", {} },
+        { "Macros", {} },
         { "Values", {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
-        local group = 4
+        local group = 5
         if is_constructor(item, env, constructor_pattern) then
             group = 1
         elseif item is tealdoc.TypeItem then
             group = 2
+        elseif kind == "macro" then
+            group = 4
         elseif FUNCTION_KINDS[kind] then
             group = 3
         end
@@ -884,21 +887,25 @@ function SiteApi.summary(
     -- column of every row to find out which of the two a name is.
     -- Types need their declaration kind. Values need their type: "variable"
     -- only repeats that the row is in Values and hides the useful fact.
-    -- Everything under Functions is called the same way whatever `item_kind`
-    -- names it, and the detail below carries the badge anyway.
+    -- Runtime callables share Functions whatever `item_kind` names them, and
+    -- the detail below carries the badge. Compile-time macros remain their own
+    -- vocabulary and therefore their own group.
     local groups: {{string, string, string, {tealdoc.Item}}} = {
         { "Constructors", "Constructor", "none", {} },
         { "Types", "Type", "kind", {} },
         { "Functions", "Function", "none", {} },
+        { "Macros", "Macro", "none", {} },
         { "Values", "Value", "type", {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
-        local group = 4
+        local group = 5
         if is_constructor(item, env, constructor_pattern) then
             group = 1
         elseif item is tealdoc.TypeItem then
             group = 2
+        elseif kind == "macro" then
+            group = 4
         elseif FUNCTION_KINDS[kind] then
             group = 3
         end

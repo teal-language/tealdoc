@@ -1494,6 +1494,91 @@ local preserved  =  true
         os.remove(source)
     end)
 
+    it("groups Teal macros after functions and before values", function()
+        local env = DefaultEnv.init()
+        env.include_all = true
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Options
+                end
+
+                --- Runs the API.
+                run: function()
+
+                --- Read-only. Number of pending operations.
+                pending: integer
+            end
+
+            return api
+        ]], "api.tl", env)
+        tealdoc.process_text([[
+            --- Expands an expression.
+            local macroexp expand(value: any): any
+                return value
+            end
+        ]], "macros.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Macro groups",
+            pages = {
+                {
+                    path = "",
+                    title = "Home",
+                },
+                {
+                    path = "api",
+                    title = "API",
+                    api = {"api", "macros"},
+                    public = "api",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/api.md")
+        local type_summary = assert(markdown:find("**Types**", 1, true))
+        local function_summary = assert(markdown:find(
+            "**Functions**",
+            type_summary,
+            true
+        ))
+        local macro_summary = assert(markdown:find(
+            "**Macros**",
+            function_summary,
+            true
+        ))
+        local value_summary = assert(markdown:find(
+            "**Values**",
+            macro_summary,
+            true
+        ))
+        local types = assert(markdown:find("## Types", value_summary, true))
+        local functions = assert(markdown:find(
+            "## Functions",
+            types,
+            true
+        ))
+        local macros = assert(markdown:find("## Macros", functions, true))
+        local values = assert(markdown:find("## Values", macros, true))
+
+        assert.is_true(type_summary < function_summary)
+        assert.is_true(function_summary < macro_summary)
+        assert.is_true(macro_summary < value_summary)
+        assert.is_true(types < functions)
+        assert.is_true(functions < macros)
+        assert.is_true(macros < values)
+        assert.is_truthy(markdown:find("| Macro | Description |", 1, true))
+        assert.is_truthy(markdown:find(
+            "\n### api.expand ",
+            macros,
+            true
+        ), markdown)
+
+        remove_tree(output)
+    end)
+
     it("composes source and API docs into a responsive static site", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

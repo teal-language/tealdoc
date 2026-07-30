@@ -880,8 +880,8 @@ from the generated fence.
 
 Set `constructor_pattern = "^new"` to collect matching public functions under
 Constructors. Generated references order their groups as Constructors, Types,
-Functions, then Values. Methods, metamethods, and macros remain under
-Functions.
+Functions, Macros, then Values. Methods and metamethods remain under Functions;
+Teal macros appear under Macros.
 
 ##### Cross-links in documentation comments
 
