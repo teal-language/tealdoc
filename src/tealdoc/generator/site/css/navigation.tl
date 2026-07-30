@@ -184,7 +184,7 @@ return [[
     padding: 1.25rem 1.35rem 2rem 1.25rem;
 }
 
-.tealdoc-outline ol {
+.tealdoc-outline > ol {
     position: relative;
     padding-left: 1.55rem;
     border-left: 1px solid var(--tealdoc-border);
@@ -195,12 +195,12 @@ return [[
     padding: 0;
 }
 
-/* A heading that does not fit wraps rather than being cut off: the outline is
- * a reader's map of the page, and half a title is not one. Two lines is the
- * limit, after which the rest is elided. */
+/* Outline rows remain one line so a long API path cannot push the entries
+ * beneath it down the page. The full title remains available through the
+ * link's title and accessible label. */
 .tealdoc-outline a {
     position: relative;
-    display: -webkit-box;
+    display: block;
     overflow: hidden;
     padding: var(--tealdoc-outline-item-padding);
     color: var(--tealdoc-text-muted);
@@ -211,8 +211,54 @@ return [[
     text-decoration: none;
     text-overflow: ellipsis;
     transition: color 120ms ease;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    white-space: nowrap;
+}
+
+.tealdoc-outline-section details {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.tealdoc-outline-section summary {
+    position: relative;
+    margin: 0;
+    padding: 0 1rem 0 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.tealdoc-outline-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.tealdoc-outline-section summary::marker {
+    content: "";
+}
+
+.tealdoc-outline-section summary::after {
+    position: absolute;
+    top: 50%;
+    right: 0.15rem;
+    width: 0.32rem;
+    height: 0.32rem;
+    border-right: 1.5px solid var(--tealdoc-text-faint);
+    border-bottom: 1.5px solid var(--tealdoc-text-faint);
+    content: "";
+    transform: translateY(-65%) rotate(45deg);
+    transition: transform 120ms ease;
+}
+
+.tealdoc-outline-section details:not([open]) > summary::after {
+    transform: translateY(-50%) rotate(-45deg);
+}
+
+.tealdoc-outline-section details > ol {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    list-style: none;
 }
 
 .tealdoc-outline a:hover,

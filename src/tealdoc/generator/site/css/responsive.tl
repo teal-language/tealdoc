@@ -122,14 +122,14 @@ return [[
         background: var(--tealdoc-background-alt);
     }
 
-    .tealdoc-mobile-outline summary {
+    .tealdoc-mobile-outline > summary {
         color: var(--tealdoc-text-muted);
         cursor: pointer;
         font-size: 0.85rem;
         font-weight: 600;
     }
 
-    .tealdoc-mobile-outline ol {
+    .tealdoc-mobile-outline > ol {
         margin: 0.75rem 0 0;
         padding: 0.75rem 0 0.25rem 0.85rem;
         border-left: 1px solid var(--tealdoc-border);

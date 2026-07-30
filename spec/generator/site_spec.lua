@@ -729,7 +729,7 @@ describe("Site generator", function()
                 --- ```
                 run: function(first: string, second: string): boolean
                 --- Stops a generated operation.
-                stop: function(string)
+                stopWithAnExtremelyLongName: function(string)
             end
 
             return api
@@ -765,7 +765,7 @@ local authored  =  true
                     rewrite = function(code, _, options)
                         calls = calls + 1
                         table.insert(handed, code)
-                        assert.are.equal(80, options.max_line_width)
+                        assert.are.equal(72, options.max_line_width)
                         if code:match("^function ")
                             and not code:find(
                                 "end -- tealdoc:generated-declaration-end",
@@ -816,7 +816,7 @@ local authored  =  true
         assert.are.equal(1, initializations)
         assert.are.equal(2, calls)
         assert.is_truthy(table.concat(handed, "\n"):find(
-            "local TealdocGenerated1: function(string)",
+            "local TealdocGenerated1XXXXXXX: function(string)",
             1,
             true
         ), table.concat(handed, "\n"))
@@ -826,7 +826,7 @@ local authored  =  true
             true
         ), markdown)
         assert.is_truthy(markdown:find(
-            "\nfunction api.stop",
+            "\nfunction api.stopWithAnExtremelyLongName",
             1,
             true
         ), markdown)
@@ -1785,6 +1785,17 @@ print(value)
         ))
         assert.is_truthy(api:find("<h3", 1, true))
         assert.is_truthy(api:find("<h4", 1, true))
+        assert.is_truthy(api:find(
+            '<li class="level-2 tealdoc-outline-section">' ..
+                "<details open><summary><a ",
+            1,
+            true
+        ), api)
+        assert.is_truthy(api:find(
+            "</summary><ol>",
+            1,
+            true
+        ), api)
         assert.is_truthy(markdown:find("## Module contents", 1, true))
         assert.is_falsy(api:find("Public APIs in", 1, true))
         assert.is_falsy(api:find("Every public item", 1, true))
@@ -2323,7 +2334,7 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            ".tealdoc-outline ol {\n    position: relative;\n    padding-left: 1.55rem;",
+            ".tealdoc-outline > ol {\n    position: relative;\n    padding-left: 1.55rem;",
             1,
             true
         ))
@@ -2335,6 +2346,14 @@ print(value)
             true
         ))
         assert.is_truthy(css:find("text-overflow: ellipsis", 1, true))
+        assert.is_truthy(css:find("white-space: nowrap", 1, true))
+        assert.is_falsy(css:find("-webkit-line-clamp: 2", 1, true))
+        assert.is_truthy(css:find(
+            ".tealdoc-outline-section details:not([open]) > " ..
+                "summary::after",
+            1,
+            true
+        ))
         assert.is_falsy(api:find('title="api Reference"', 1, true), api)
         assert.is_truthy(css:find(
             "box-shadow: -100vw 0 0 100vw var(--tealdoc-sidebar-background)",

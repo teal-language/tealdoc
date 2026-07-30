@@ -37,6 +37,7 @@ end
 local record Heading
     id: string
     title: string
+    outline_title: string
     level: integer
 end
 
@@ -55,7 +56,7 @@ local type PreparedExample = SiteTypes.PreparedExample
 local MANIFEST_PATH = ".tealdoc-manifest"
 local MANIFEST_HEADER = "tealdoc-manifest-v1\n"
 local CERULEAN_WRAPPER = "-- tealdoc:generated-declaration-end"
-local DOCUMENTATION_LINE_WIDTH = 80
+local DOCUMENTATION_LINE_WIDTH = 72
 
 --- Quotes a literal so it matches only itself.
 local function escape_pattern(text: string): string
@@ -173,11 +174,22 @@ local function cerulean_formatter(): function(string): string
             rest: string
         ): string
             placeholder_count = placeholder_count + 1
+            local borrowed_name = "TealdocGenerated" ..
+                tostring(placeholder_count)
             local borrowed = indent ..
-                "local TealdocGenerated" ..
-                tostring(placeholder_count) ..
+                "local " ..
+                borrowed_name ..
                 ": function"
-            table.insert(restorations, {borrowed, indent .. declared})
+            local restored = indent .. declared
+            if #borrowed < #restored then
+                borrowed_name = borrowed_name ..
+                    string.rep("X", #restored - #borrowed)
+                borrowed = indent ..
+                    "local " ..
+                    borrowed_name ..
+                    ": function"
+            end
+            table.insert(restorations, {borrowed, restored})
             return borrowed .. rest
         end
 
@@ -1036,7 +1048,6 @@ local function routes_for_pages(
 end
 
 local function headings(html: string): string, string, {Heading}
-    local outline: {string} = {}
     local found: {Heading} = {}
     local used: {string: boolean} = {}
     local explicit: {string: boolean} = {}
@@ -1108,22 +1119,9 @@ local function headings(html: string): string, string, {Heading}
                 table.insert(found, {
                     id = id,
                     title = title,
+                    outline_title = outline_title,
                     level = level,
                 })
-                table.insert(
-                    outline,
-                    '<li class="level-' ..
-                        level_text ..
-                        '"><a href="#' ..
-                        escape_html(id) ..
-                        '\" title=\"' ..
-                        escape_html(title) ..
-                        '\" aria-label=\"' ..
-                        escape_html(title) ..
-                        '">' ..
-                        escape_html(outline_title) ..
-                        "</a></li>"
-                )
             end
 
             local label = "Permalink to " .. strip_tags(content)
@@ -1143,6 +1141,57 @@ local function headings(html: string): string, string, {Heading}
                 ">"
         end
     )
+
+    local function outline_link(heading: Heading): string
+        return '<a href="#' ..
+            escape_html(heading.id) ..
+            '\" title=\"' ..
+            escape_html(heading.title) ..
+            '\" aria-label=\"' ..
+            escape_html(heading.title) ..
+            '">' ..
+            escape_html(heading.outline_title) ..
+            "</a>"
+    end
+
+    local outline: {string} = {}
+    local index = 1
+    while index <= #found do
+        local heading = found[index]
+        if heading.level == 2
+            and found[index + 1]
+            and found[index + 1].level == 3
+        then
+            table.insert(
+                outline,
+                '<li class="level-2 tealdoc-outline-section">' ..
+                    "<details open><summary>" ..
+                    outline_link(heading) ..
+                    "</summary><ol>"
+            )
+            index = index + 1
+            while index <= #found and found[index].level == 3 do
+                table.insert(
+                    outline,
+                    '<li class="level-3">' ..
+                        outline_link(found[index]) ..
+                        "</li>"
+                )
+                index = index + 1
+            end
+            table.insert(outline, "</ol></details></li>")
+        else
+            table.insert(
+                outline,
+                '<li class="level-' ..
+                    tostring(heading.level) ..
+                    '">' ..
+                    outline_link(heading) ..
+                    "</li>"
+            )
+            index = index + 1
+        end
+    end
     return with_ids, table.concat(outline, "\n"), found
 end
 
