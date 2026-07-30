@@ -477,8 +477,10 @@ only added when the configured module page has no handwritten documentation.
 
 Set `format_generated_code = true` to run synthesized API declarations through
 Cerulean. Tealdoc loads Cerulean from Lua's existing package paths at runtime;
-it remains an optional dependency. Authored fenced blocks and configured
-examples are never reformatted.
+it remains an optional dependency. The setting also formats authored Teal
+fences and configured Teal examples. Write `` ```teal no-format `` when an
+example's intentional layout must be preserved; Tealdoc removes `no-format`
+from the generated fence.
 
 Documentation comments can cross-link public types with ordinary Markdown by
 using a `tealdoc:` destination:

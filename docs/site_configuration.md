@@ -231,9 +231,9 @@ lexers, used to highlight fenced blocks in languages other than Teal.
 
 Teal and Lua are always highlighted through the Teal compiler's own lexer,
 which is what turns a type name in a code block into a link to the page that
-documents it. Every other language is read by whichever Scintillua lexer
-matches the fence's language, and a language with no lexer here is emitted
-exactly as it was written.
+documents it. Bash, GLSL, JSON, and XML use their matching Scintillua lexers.
+A language Tealdoc does not recognize, or whose lexer is absent from the
+configured directory, is emitted exactly as it was written.
 
 Tealdoc neither vendors nor depends on Scintillua: it is not published on
 LuaRocks, so a site that wants these languages installs it and says where the
@@ -500,8 +500,18 @@ validate_links = false
 
 Optional boolean, defaulting to `false`. When enabled, Tealdoc formats the Teal
 declarations it synthesizes for API references with Cerulean before syntax
-highlighting them. Handwritten fenced blocks and configured page or attached
-examples retain their original formatting.
+highlighting them. It also formats handwritten Teal fences and configured Teal
+examples. Add `no-format` after a fence's `teal` language when an example's
+intentional layout must be preserved; Tealdoc removes the marker from its
+output:
+
+````markdown
+```teal no-format
+operation()
+    :map(transform)
+    :recover(fallback)
+```
+````
 
 Cerulean remains an optional runtime dependency. Tealdoc loads it from the
 standard Lua `package.path` and `package.cpath`; install it normally with

@@ -30,6 +30,8 @@ local record Scintillua
     --- Points the adapter at a directory of Scintillua lexers, or at nothing.
     --- Called once for a build, before any page is rendered.
     configure: function(string)
+    --- Reports whether Tealdoc recognizes a language as a Scintillua lexer.
+    supports: function(string): boolean
 end
 
 --- The languages to try a lexer for. Teal and Lua are absent on purpose: they
@@ -40,6 +42,7 @@ end
 --- this list costs nothing when the directory is unset or incomplete.
 local LEXERS: {string: boolean} = {
     bash = true,
+    glsl = true,
     json = true,
     xml = true,
 }

@@ -422,66 +422,16 @@ function DefaultEnv.init(): tealdoc.Env
         flush_plain()
     end
 
-    local function markdown_type_path(
-        ctx: Generator.Phase.Context,
-        target: string
-    ): string
-        local direct = ctx.env.registry[target]
-        if direct and direct is tealdoc.TypeItem then
-            return target
-        end
-
-        local found: string
-        for path, item in pairs(ctx.env.registry) do
-            if item is tealdoc.TypeItem
-                and item.name == target
-                and Generator.filter(item, ctx.env)
-            then
-                if found and found ~= path then
-                    return nil
-                end
-                found = path
-            end
-        end
-        return found
-    end
-
     local function markdown_with_type_links(
         ctx: Generator.Phase.Context,
         text: string
     ): string
-        return (text:gsub(
-            "%]%(%s*tealdoc:([^%)%s]+)%s*%)",
-            function(target: string): string
-                local path = markdown_type_path(ctx, target)
-                if not path then
-                    log:warning(
-                        "Could not resolve Tealdoc Markdown type link: " ..
-                            target
-                    )
-                    return "](tealdoc:" .. target .. ")"
-                end
-
-                local url: string
-                if ctx.url_for_type then
-                    url = ctx.url_for_type(path)
-                end
-                if not url then
-                    local item = ctx.env.registry[path]
-                    if item and Generator.filter(item, ctx.env) then
-                        url = ctx.url_for_path(path)
-                    end
-                end
-                if not url then
-                    log:warning(
-                        "Type is not public in Tealdoc Markdown link: " ..
-                            target
-                    )
-                    return "](tealdoc:" .. target .. ")"
-                end
-                return "](" .. url .. ")"
-            end
-        ))
+        return MarkdownGenerator.resolve_markdown_type_links(
+            ctx.env,
+            text,
+            ctx.url_for_type,
+            ctx.url_for_path
+        )
     end
 
     local text_phase: Generator.Phase = {

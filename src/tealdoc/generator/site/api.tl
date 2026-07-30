@@ -52,12 +52,13 @@ local function format_teal_fences(
     local output: {string} = {}
     local opening: string
     local language: string
+    local preserve_source: boolean
     local body: {string} = {}
     for line in (markdown .. "\n"):gmatch("(.-)\n") do
         if opening then
             local closing = line:match("^%s*(`+)%s*$")
             if closing and #closing >= #opening then
-                if language == "teal" then
+                if language == "teal" and not preserve_source then
                     local formatted = format_source(
                         table.concat(body, "\n") .. "\n"
                     ):gsub("\n*$", "")
@@ -74,17 +75,22 @@ local function format_teal_fences(
                 table.insert(output, line)
                 opening = nil
                 language = nil
+                preserve_source = nil
                 body = {}
             else
                 table.insert(body, line)
             end
         else
             local fence, info = line:match(
-                "^%s*(```+)%s*([^%s]*)"
+                "^%s*(```+)%s*(.-)%s*$"
             )
             if fence then
                 opening = fence
                 language = info:match("^([%w_+%-]+)")
+                preserve_source = info == "teal no-format"
+                if preserve_source then
+                    line = line:gsub("%s+no%-format%s*$", "")
+                end
                 body = {}
             end
             table.insert(output, line)
@@ -653,12 +659,27 @@ function SiteApi.markdown(
         markdown = markdown:sub(public_end + 1)
     end
     local module_item = page_env.registry["$" .. view.public]
-    local introduction = module_item and module_item.text
-        and rebase_headings(
-            format_teal_fences(module_item.text, format_source),
-            2
+    local introduction = ""
+    if module_item and module_item.text then
+        introduction = MarkdownGenerator.resolve_markdown_type_links(
+            page_env,
+            rebase_headings(
+                format_teal_fences(module_item.text, format_source),
+                2
+            ),
+            function(path: string): string
+                return MarkdownGenerator.resolve_type_url(
+                    page_env,
+                    path,
+                    resolver,
+                    false
+                )
+            end,
+            function(path: string): string
+                return page_env.registry[path] and "#" .. path or nil
+            end
         )
-        or ""
+    end
     markdown = "\n" .. markdown
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
         return "\n" .. string.rep("#", math.min(#level + 1, 6)) .. " "

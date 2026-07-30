@@ -270,6 +270,12 @@ local record MarkdownGenerator
         type_url_for_path: URLResolver,
         allow_local_type_links?: boolean
     ): string
+    resolve_markdown_type_links: function(
+        env: tealdoc.Env,
+        text: string,
+        url_for_type?: URLResolver,
+        url_for_path?: URLResolver
+    ): string
     private_alias_target: function(
         env: tealdoc.Env,
         item: tealdoc.TypeItem,
@@ -313,6 +319,72 @@ function MarkdownGenerator.resolve_type_url(
         end
     end
     return nil
+end
+
+local function markdown_type_path(
+    env: tealdoc.Env,
+    target: string
+): string
+    local direct = env.registry[target]
+    if direct and direct is tealdoc.TypeItem then
+        return target
+    end
+
+    local found: string
+    for path, item in pairs(env.registry) do
+        if item is tealdoc.TypeItem
+            and item.name == target
+            and Generator.filter(item, env)
+        then
+            if found and found ~= path then
+                return nil
+            end
+            found = path
+        end
+    end
+    return found
+end
+
+--- Resolves explicit `tealdoc:` destinations in authored Markdown.
+---
+--- Module introductions do not pass through the ordinary item text phase, so
+--- site generation calls this directly for them. Keeping the resolver here
+--- gives introductions and item comments identical lookup and warning rules.
+function MarkdownGenerator.resolve_markdown_type_links(
+    env: tealdoc.Env,
+    text: string,
+    url_for_type?: MarkdownGenerator.URLResolver,
+    url_for_path?: MarkdownGenerator.URLResolver
+): string
+    return (text:gsub(
+        "%]%(%s*tealdoc:([^%)%s]+)%s*%)",
+        function(target: string): string
+            local path = markdown_type_path(env, target)
+            if not path then
+                log:warning(
+                    "Could not resolve Tealdoc Markdown type link: " ..
+                        target
+                )
+                return "](tealdoc:" .. target .. ")"
+            end
+
+            local url = url_for_type and url_for_type(path) or nil
+            if not url then
+                local item = env.registry[path]
+                if item and Generator.filter(item, env) and url_for_path then
+                    url = url_for_path(path)
+                end
+            end
+            if not url then
+                log:warning(
+                    "Type is not public in Tealdoc Markdown link: " ..
+                        target
+                )
+                return "](tealdoc:" .. target .. ")"
+            end
+            return "](" .. url .. ")"
+        end
+    ))
 end
 
 --- Finds the concrete private alias whose type expression should replace a

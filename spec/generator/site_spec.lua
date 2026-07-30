@@ -350,6 +350,7 @@ describe("Site generator", function()
         -- any, rather than a hard dependency on a library that is not on
         -- LuaRocks.
         local Scintillua = require("tealdoc.generator.site.scintillua")
+        assert.is_true(Scintillua.supports("glsl"))
         Scintillua.configure(nil)
         local html = SiteMarkdown.render("```bash\nls -l # note\n```\n", {})
         assert.is_truthy(html:find(
@@ -811,6 +812,10 @@ describe("Site generator", function()
 ```teal
 local authored  =  true
 ```
+
+```teal no-format
+local preserved  =  true
+```
 ]])
         local example = os.tmpname()
         write_file(example, "local example  =  true\n")
@@ -919,6 +924,12 @@ local authored  =  true
             1,
             true
         ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\nlocal preserved  =  true\n```",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find("no-format", 1, true), markdown)
         assert.is_truthy(markdown:find(
             "```teal\n-- formatted by Cerulean\n" ..
                 "if ready then\n" ..
@@ -1436,7 +1447,8 @@ local authored  =  true
             return Window
         ]], "window.tl", env)
         tealdoc.process_text([==[--[=[
-Opens windows and reports display changes.
+Opens windows and reports display changes through
+[`Window`](tealdoc:Window).
 
 # Display changes
 
@@ -1971,7 +1983,7 @@ print(value)
             true
         ))
         local introduction_at = assert(markdown:find(
-            "Opens windows and reports display changes.",
+            "Opens windows and reports display changes through",
             1,
             true
         ))
@@ -2022,6 +2034,12 @@ print(value)
         assert.is_falsy(markdown:find("\n### Functions\n", 1, true))
         assert.is_truthy(markdown:find(
             "It keeps wrapped prose\non adjacent source lines.",
+            introduction_at,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "reports display changes through\n" ..
+                "[`Window`](/modules/window/).",
             introduction_at,
             true
         ), markdown)
