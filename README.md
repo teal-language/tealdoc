@@ -919,7 +919,7 @@ priority.
 `--tealdoc-content-width` cap is `688px`, matching VitePress; set it in
 `custom_css` to choose a wider measure. The default base stack matches
 VitePress's Inter and system-font stack, including its color emoji fallbacks,
-with optical sizing enabled. Fenced code defaults to `0.8rem`;
+with optical sizing enabled. Fenced code defaults to a fixed `14px`;
 set `--tealdoc-code-block-font-size` to change it without affecting inline
 code. Its `--tealdoc-font-mono` stack prefers a locally installed JetBrains
 Mono and falls back through common system monospace fonts; Tealdoc does not

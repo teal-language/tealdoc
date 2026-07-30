@@ -2598,7 +2598,7 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            "--tealdoc-code-block-font-size: 0.72rem",
+            "--tealdoc-code-block-font-size: 14px",
             1,
             true
         ))
