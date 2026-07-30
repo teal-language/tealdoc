@@ -3144,6 +3144,55 @@ print(value)
         remove_tree(root)
     end)
 
+    it("lists child modules on a page without an API source", function()
+        local output = os.tmpname()
+        os.remove(output)
+        local source = os.tmpname()
+        write_file(source, "# Platform\n")
+
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Namespaces",
+            validate_links = false,
+            pages = {
+                {
+                    path = "platform",
+                    title = "Platform",
+                    source = source,
+                },
+                {
+                    path = "platform/events",
+                    title = "Events",
+                    description = "Typed host events.",
+                },
+                {
+                    path = "platform/input",
+                    title = "Input",
+                    description = "Gameplay input.",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/platform.md")
+        assert.is_truthy(markdown:find(
+            "## Module contents\n\n**Submodules**",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "| [`Events`](/platform/events/) | Typed host events. |",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "| [`Input`](/platform/input/) | Gameplay input. |",
+            1,
+            true
+        ), markdown)
+
+        assert(os.remove(source))
+        remove_tree(output)
+    end)
+
     it("rejects unsafe and duplicate normalized routes before output", function()
         local output = os.tmpname()
         os.remove(output)

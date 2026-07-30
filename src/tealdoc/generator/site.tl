@@ -2103,13 +2103,17 @@ local function render_page(
         formatters,
         context.settings.constructor_pattern
     )
+    local submodules = submodule_summary(
+        page,
+        context,
+        context.settings.base
+    )
     if view then
-        local summary = submodule_summary(page, context, context.settings.base) ..
-            SiteApi.summary(
-                view,
-                resolver,
-                context.settings.constructor_pattern
-            )
+        local summary = submodules .. SiteApi.summary(
+            view,
+            resolver,
+            context.settings.constructor_pattern
+        )
         if summary ~= "" then
             summary = "## Module contents\n\n" .. summary
         end
@@ -2127,6 +2131,10 @@ local function render_page(
             summary ..
             "\n" ..
             api
+    elseif submodules ~= "" then
+        markdown = markdown ..
+            "\n\n## Module contents\n\n" ..
+            submodules
     end
 
     -- The page's own types first, because a name most likely means the one
