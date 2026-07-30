@@ -1253,6 +1253,8 @@ local record TealParser is tealdoc.Parser
     module_path: string
     tl_env: tl.Env
     typenum_to_path: {integer: string}
+    processed_files: {string: boolean}
+    processing_files: {string: boolean}
     validate: function(self, text: string, path: string): {string}
 end
 
@@ -1360,7 +1362,9 @@ function TealParser.init(source_dir?: string): TealParser
         module_path = config.module_path,
         file_extensions = TealParser.file_extensions,
         tl_env = tl_env,
-        typenum_to_path = {}
+        typenum_to_path = {},
+        processed_files = {},
+        processing_files = {},
     }
     parser.tl_env.report_types = true
 
@@ -1448,7 +1452,32 @@ local function get_module_name_from_path(path: string, source_dir: string): stri
     return table.concat(components, ".")
 end
 
+local function normalized_path(path: string): string
+    return path:gsub("\\", "/"):gsub("^%./+", ""):gsub("/+$", "")
+end
+
+local function project_dependency(path: string, source_dir: string): string
+    path = normalized_path(path)
+    source_dir = normalized_path(source_dir)
+    if source_dir == ""
+        or not path:match("%.tl$")
+        or path:match("%.d%.tl$")
+    then
+        return nil
+    end
+    if path:sub(1, #source_dir + 1) ~= source_dir .. "/" then
+        return nil
+    end
+    return path
+end
+
 function TealParser:process(text: string, path: string, env: tealdoc.Env)
+    local path_key = normalized_path(path)
+    if self.processed_files[path_key] or self.processing_files[path_key] then
+        return
+    end
+    self.processing_files[path_key] = true
+
     -- TODO: handle errors
     local old_package_path = package.path
     local old_tl_path = tl.path
@@ -1459,6 +1488,29 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
     tl.path = old_tl_path
     if not ok then
         error(result)
+    end
+
+    -- Teal already resolves every literal require while checking this file.
+    -- Parse those resolved project sources before this module so a public
+    -- same-name field can find and publish the record returned by its target
+    -- module. Dependencies outside source_dir remain compiler inputs rather
+    -- than documentation inputs.
+    local dependencies: {string} = {}
+    for _, dependency in pairs(result.dependencies or {}) do
+        local source = project_dependency(dependency, self.source_dir)
+        if source and not self.processed_files[source] then
+            table.insert(dependencies, source)
+        end
+    end
+    table.sort(dependencies)
+    for _, dependency in ipairs(dependencies) do
+        local file = assert(
+            io.open(dependency, "r"),
+            "Could not open resolved Teal dependency: " .. dependency
+        )
+        local dependency_text = assert(file:read("*a"))
+        file:close()
+        self:process(dependency_text, dependency, env)
     end
 
     local reporter = result.env.reporter
@@ -1492,6 +1544,8 @@ function TealParser:process(text: string, path: string, env: tealdoc.Env)
     env.registry[module_item.path] = module_item
     process_module_comment(text, module_item, env)
     visit_node(result.ast, state)
+    self.processing_files[path_key] = nil
+    self.processed_files[path_key] = true
 end
 
 return TealParser

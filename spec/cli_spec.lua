@@ -266,4 +266,103 @@ describe("CLI", function()
         ), options)
         remove_tree(root)
     end)
+
+    it("publishes a same-name record from a resolved project dependency", function()
+        local previous_directory = assert(lfs.currentdir())
+        local previous_utf8 = _G.utf8
+        local previous_utf8_loader = package.preload["lua-utf8"]
+        local previous_teal_loader = tl.loader
+        local root = temporary_project([[
+            return {
+                source_dir = "src",
+                tealdoc = {
+                    site = {
+                        title = "Resolved records",
+                        validate_links = false,
+                        sources = {"src/api.tl"},
+                        pages = {
+                            {
+                                path = "api",
+                                title = "API",
+                                api = "api",
+                            },
+                        },
+                    },
+                },
+            }
+        ]])
+        assert(lfs.mkdir(root .. "/src"))
+        assert(lfs.mkdir(root .. "/src/pkg"))
+        write_file(root .. "/src/api.tl", [[
+            local DataStream <const> = require("pkg.DataStream")
+            local record api
+                --- Stores a request body.
+                DataStream: DataStream
+            end
+            api.DataStream = DataStream
+            return api
+        ]])
+        write_file(root .. "/src/pkg/DataStream.tl", [[
+            local record DataStream
+                --- Identifies the backing storage.
+                kind: string
+
+                --- Builds a string-backed stream.
+                ofString: function(text: string): DataStream
+            end
+            return DataStream
+        ]])
+
+        assert(lfs.chdir(root))
+        _G.utf8 = require("compat53.module").utf8
+        package.preload["lua-utf8"] = function()
+            return require("compat53.module").utf8
+        end
+        tl.loader = function() end
+        CLI:init(DefaultEnv.init())
+        local ok = CLI:run({
+            "site",
+            "-o",
+            root .. "/site",
+        })
+        assert(lfs.chdir(previous_directory))
+        _G.utf8 = previous_utf8
+        package.preload["lua-utf8"] = previous_utf8_loader
+        tl.loader = previous_teal_loader
+
+        local html_file = assert(io.open(
+            root .. "/site/api/index.html",
+            "r"
+        ))
+        local html = assert(html_file:read("*a"))
+        html_file:close()
+        local stream_start = assert(html:find(
+            '<p><a id="api.DataStream"></a></p>',
+            1,
+            true
+        ))
+        local stream = html:sub(stream_start, stream_start + 4000)
+        assert.is_true(ok)
+        assert.is_truthy(stream:find(
+            "tealdoc-kind-record",
+            1,
+            true
+        ), stream)
+        assert.is_truthy(stream:find(
+            'id="api.DataStream.kind"',
+            1,
+            true
+        ), stream)
+        assert.is_truthy(stream:find(
+            'id="api.DataStream.ofString"',
+            1,
+            true
+        ), stream)
+        assert.is_falsy(stream:find(
+            "tealdoc-kind-variable",
+            1,
+            true
+        ), stream)
+        remove_tree(root)
+    end)
 end)
