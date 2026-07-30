@@ -26,11 +26,13 @@ local record SiteApi
         resolver: MarkdownGenerator.URLResolver,
         attached_examples: {string: {SiteTypes.PreparedExample}},
         used_examples: {string: boolean},
-        formatters?: SiteTypes.CodeFormatters
+        formatters?: SiteTypes.CodeFormatters,
+        constructor_pattern?: string
     ): string, string
     summary: function(
         view: SiteTypes.ApiView,
-        resolver: MarkdownGenerator.URLResolver
+        resolver: MarkdownGenerator.URLResolver,
+        constructor_pattern?: string
     ): string
 end
 
@@ -363,6 +365,16 @@ local FUNCTION_KINDS: {string: boolean} = {
     macro = true,
 }
 
+local function is_constructor(
+    item: tealdoc.Item,
+    env: tealdoc.Env,
+    pattern?: string
+): boolean
+    return pattern ~= nil
+        and Generator.item_kind(item, env) == "function"
+        and item.name:match(pattern) ~= nil
+end
+
 --- An item whose public path belongs to another page is that page's module
 --- export, not a second API declaration on this one. The route table knows
 --- this without configuration: a child module's page wins the same public
@@ -520,7 +532,8 @@ end
 local function group_details(
     markdown: string,
     view: SiteTypes.ApiView,
-    resolver: MarkdownGenerator.URLResolver
+    resolver: MarkdownGenerator.URLResolver,
+    constructor_pattern?: string
 ): string
     local env = view.env
     local module = env.registry[view.public]
@@ -575,17 +588,20 @@ local function group_details(
     end)
 
     local groups: {{string, {tealdoc.Item}}} = {
-        { "Functions", {} },
+        { "Constructors", {} },
         { "Types", {} },
+        { "Functions", {} },
         { "Values", {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
-        local group = 3
-        if FUNCTION_KINDS[kind] then
+        local group = 4
+        if is_constructor(item, env, constructor_pattern) then
             group = 1
         elseif item is tealdoc.TypeItem then
             group = 2
+        elseif FUNCTION_KINDS[kind] then
+            group = 3
         end
         table.insert(groups[group][2], item)
     end
@@ -607,7 +623,8 @@ function SiteApi.markdown(
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {SiteTypes.PreparedExample}},
     used_examples: {string: boolean},
-    formatters?: SiteTypes.CodeFormatters
+    formatters?: SiteTypes.CodeFormatters,
+    constructor_pattern?: string
 ): string, string
     if not view then
         return "", ""
@@ -704,7 +721,12 @@ function SiteApi.markdown(
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
         return "\n" .. string.rep("#", math.min(#level + 1, 6)) .. " "
     end)
-    return group_details(markdown:sub(2), view, resolver), introduction
+    return group_details(
+        markdown:sub(2),
+        view,
+        resolver,
+        constructor_pattern
+    ), introduction
 end
 
 local function item_text(item: tealdoc.Item, env: tealdoc.Env): string
@@ -822,7 +844,8 @@ end
 
 function SiteApi.summary(
     view: SiteTypes.ApiView,
-    resolver: MarkdownGenerator.URLResolver
+    resolver: MarkdownGenerator.URLResolver,
+    constructor_pattern?: string
 ): string
     if not view then
         return ""
@@ -864,17 +887,20 @@ function SiteApi.summary(
     -- Everything under Functions is called the same way whatever `item_kind`
     -- names it, and the detail below carries the badge anyway.
     local groups: {{string, string, string, {tealdoc.Item}}} = {
-        { "Functions", "Function", "none", {} },
+        { "Constructors", "Constructor", "none", {} },
         { "Types", "Type", "kind", {} },
+        { "Functions", "Function", "none", {} },
         { "Values", "Value", "type", {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
-        local group = 3
-        if FUNCTION_KINDS[kind] then
+        local group = 4
+        if is_constructor(item, env, constructor_pattern) then
             group = 1
         elseif item is tealdoc.TypeItem then
             group = 2
+        elseif FUNCTION_KINDS[kind] then
+            group = 3
         end
         table.insert(groups[group][4], item)
     end

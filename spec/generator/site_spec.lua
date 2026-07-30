@@ -1541,6 +1541,9 @@ local record api
     --- @param options Window options.
     open: function(options: Options)
 
+    --- Creates a window.
+    newWindow: function(options: Options): Window
+
     --- Shows a [`Window`](tealdoc:Window).
     --- @param window Parent window.
     messageBox: function(window: Window)
@@ -1699,6 +1702,7 @@ print(value)
                     language = "teal",
                 },
             },
+            constructor_pattern = "^new",
             nav = {
                 {text = "Home", path = ""},
             },
@@ -2026,7 +2030,13 @@ print(value)
         assert.is_truthy(markdown:find("## Module contents", 1, true))
         assert.is_falsy(api:find("Public APIs in", 1, true))
         assert.is_falsy(api:find("Every public item", 1, true))
+        assert.is_truthy(api:find("<th>Constructor</th>", 1, true), api)
         assert.is_truthy(api:find("<th>Function</th>", 1, true), api)
+        assert.is_truthy(markdown:find(
+            "**Constructors**",
+            1,
+            true
+        ), markdown)
         assert.is_truthy(markdown:find("**Functions**", 1, true), markdown)
         assert.is_truthy(markdown:find(
             "Read-only. Reports the number of windows awaiting an event.",
@@ -2046,9 +2056,19 @@ print(value)
             true
         ))
         local type_summary_at = assert(markdown:find("**Types**", 1, true))
+        local constructor_summary_at = assert(markdown:find(
+            "**Constructors**",
+            1,
+            true
+        ))
         local function_summary_at = assert(markdown:find(
             "**Functions**",
             1,
+            true
+        ))
+        local constructors_at = assert(markdown:find(
+            "## Constructors",
+            constructor_summary_at,
             true
         ))
         local types_at = assert(markdown:find("## Types", type_summary_at, true))
@@ -2059,10 +2079,13 @@ print(value)
         ))
         assert.is_true(introduction_at < types_at)
         assert.is_true(introduction_at < functions_at)
-        assert.is_true(function_summary_at < type_summary_at, markdown)
+        assert.is_true(constructor_summary_at < type_summary_at, markdown)
+        assert.is_true(type_summary_at < function_summary_at, markdown)
+        assert.is_true(function_summary_at < constructors_at)
+        assert.is_true(constructors_at < types_at)
         assert.is_true(type_summary_at < types_at)
         assert.is_true(function_summary_at < functions_at)
-        assert.is_true(functions_at < types_at)
+        assert.is_true(types_at < functions_at)
         assert.is_truthy(markdown:find("\n## Display changes\n", 1, true))
         assert.is_truthy(
             markdown:find("\n#### Window lifetime\n", 1, true),
@@ -2075,6 +2098,16 @@ print(value)
         ))
         assert.is_truthy(markdown:find(
             "\n### api.open ",
+            functions_at,
+            true
+        ))
+        assert.is_truthy(markdown:find(
+            "\n### api.newWindow ",
+            constructors_at,
+            true
+        ))
+        assert.is_falsy(markdown:find(
+            "\n### api.newWindow ",
             functions_at,
             true
         ))
@@ -2121,9 +2154,14 @@ print(value)
             options_at,
             true
         ), markdown)
-        assert.is_falsy(markdown:find(
-            "[`Options`](/modules/api/#api.Options)",
+        local options_end = assert(markdown:find(
+            "\n## Functions",
             options_at,
+            true
+        ))
+        assert.is_falsy(markdown:sub(options_at, options_end - 1):find(
+            "[`Options`](/modules/api/#api.Options)",
+            1,
             true
         ), markdown)
         assert.is_truthy(markdown:find(
@@ -3321,6 +3359,13 @@ print(value)
                 pages = {{path = "", title = "Home"}},
             })
         end, "tealdoc.site.format_generated_code must be a boolean")
+        assert.has_error(function()
+            SiteGenerator.build(output, env, {
+                title = "Constructors",
+                constructor_pattern = "[",
+                pages = {{path = "", title = "Home"}},
+            })
+        end, "tealdoc.site.constructor_pattern must be a valid Lua pattern")
         assert.has_error(function()
             SiteGenerator.build(output, env, {
                 title = "Navigation",

@@ -103,6 +103,7 @@ local site_keys: {string: boolean} = {
     examples = true,
     validate_links = true,
     format_generated_code = true,
+    constructor_pattern = true,
     pages = true,
     sidebar = true,
     sidebar_open = true,
@@ -264,6 +265,7 @@ function SiteConfig.configure(
         "templates",
         "copyright",
         "license",
+        "constructor_pattern",
     }) do
         validate_optional_string(values, key)
     end
@@ -352,6 +354,7 @@ function SiteConfig.configure(
         examples = {},
         validate_links = values["validate_links"] ~= false,
         format_generated_code = values["format_generated_code"] == true,
+        constructor_pattern = values["constructor_pattern"] as string,
         pages = {},
         sidebar = {},
         sidebar_open = nil,
@@ -366,6 +369,21 @@ function SiteConfig.configure(
         type(settings.description) == "string",
         "tealdoc.site.description must be a string"
     )
+    if settings.constructor_pattern ~= nil then
+        assert(
+            settings.constructor_pattern ~= "",
+            "tealdoc.site.constructor_pattern must be a non-empty string"
+        )
+        local valid = pcall(
+            string.match,
+            "",
+            settings.constructor_pattern
+        )
+        assert(
+            valid,
+            "tealdoc.site.constructor_pattern must be a valid Lua pattern"
+        )
+    end
     if values["sidebar_open"] ~= nil then
         settings.sidebar_open = {}
         local selectors = values["sidebar_open"] as {any}

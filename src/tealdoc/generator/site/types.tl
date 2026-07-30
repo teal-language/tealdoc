@@ -94,6 +94,7 @@ local record SiteTypes
         examples: {Example}
         validate_links: boolean
         format_generated_code: boolean
+        constructor_pattern: string
         pages: {Page}
         sidebar: {SidebarItem}
         sidebar_open: {string: boolean}

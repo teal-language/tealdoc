@@ -278,6 +278,7 @@ settings document their complete nested table shape.
 | [`examples`](site_configuration.md#examples) | `{}` | Page and attached examples. |
 | [`validate_links`](site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
 | [`format_generated_code`](site_configuration.md#format_generated_code) | `false` | Format generated Teal with Cerulean. |
+| [`constructor_pattern`](site_configuration.md#constructor_pattern) | omitted | Lua pattern that classifies constructor functions. |
 | [`nav`](site_configuration.md#nav) | `{}` | Header navigation link tables. |
 | [`before_build`](site_configuration.md#before_build) | omitted | Pre-render build hook. |
 | [`after_build`](site_configuration.md#after_build) | omitted | Post-render build hook. |
@@ -481,6 +482,11 @@ it remains an optional dependency. The setting also formats authored Teal
 fences and configured Teal examples. Write `` ```teal no-format `` when an
 example's intentional layout must be preserved; Tealdoc removes `no-format`
 from the generated fence.
+
+Set `constructor_pattern = "^new"` to collect matching public functions under
+Constructors. Generated references order their groups as Constructors, Types,
+Functions, then Values. Methods, metamethods, and macros remain under
+Functions.
 
 Documentation comments can cross-link public types with ordinary Markdown by
 using a `tealdoc:` destination:

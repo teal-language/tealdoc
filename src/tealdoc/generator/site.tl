@@ -2100,11 +2100,16 @@ local function render_page(
         resolver,
         attached_examples,
         used_examples,
-        formatters
+        formatters,
+        context.settings.constructor_pattern
     )
     if view then
         local summary = submodule_summary(page, context, context.settings.base) ..
-            SiteApi.summary(view, resolver)
+            SiteApi.summary(
+                view,
+                resolver,
+                context.settings.constructor_pattern
+            )
         if summary ~= "" then
             summary = "## Module contents\n\n" .. summary
         end

@@ -524,6 +524,17 @@ site build, and identical generated declarations reuse the formatted result.
 format_generated_code = true
 ```
 
+## constructor_pattern
+
+Optional non-empty string. Ordinary public functions whose names match this
+Lua pattern appear under Constructors. Generated API references order their
+groups as Constructors, Types, Functions, then Values. Methods, metamethods,
+and macros remain under Functions.
+
+```lua
+constructor_pattern = "^new"
+```
+
 ## nav
 
 Optional ordered array, defaulting to `{}`. Each top-level header link requires
