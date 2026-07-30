@@ -298,7 +298,12 @@ function DefaultEnv.init(): tealdoc.Env
             if not parent or parent.kind == "module" or parent.path == ctx.module_name then
                 break
             end
-            level = math.min(level + 1, 5)
+            -- `$meta` is an internal container and emits no heading of its
+            -- own. Its metamethods sit directly beneath the owning type in
+            -- the rendered outline, so it must not consume a heading level.
+            if parent.kind ~= "metafields" then
+                level = math.min(level + 1, 5)
+            end
             current = parent
         end
         return level

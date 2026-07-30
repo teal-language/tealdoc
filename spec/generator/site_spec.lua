@@ -483,6 +483,9 @@ describe("Site generator", function()
                 interface ScalarComponent<T>
                     --- The value stored when no value is supplied.
                     scalarDefault: T
+                    --- Reads the stored scalar.
+                    metamethod __call:
+                        function(self: ScalarComponent<T>): T
                 end
 
                 --- Scalar component configuration.
@@ -623,6 +626,16 @@ describe("Site generator", function()
         ), shapes_markdown)
         assert.is_truthy(shapes_markdown:find(
             "public.shapes.ScalarComponent.scalarDefault",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "#### public.shapes.ScalarComponent.__call",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_falsy(shapes_markdown:find(
+            "##### public.shapes.ScalarComponent.__call",
             1,
             true
         ), shapes_markdown)
