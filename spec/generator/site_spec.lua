@@ -2447,7 +2447,12 @@ print(value)
             ".tealdoc-nav {\n" ..
                 "    display: flex;\n" ..
                 "    width: 100%;\n" ..
-                "    max-width: none;",
+                "    max-width: var(--tealdoc-layout-max-width);\n" ..
+                "    min-height: var(--tealdoc-header-height);\n" ..
+                "    align-items: center;\n" ..
+                "    gap: 1rem;\n" ..
+                "    margin: 0 auto;\n" ..
+                "    padding: 0 1rem;",
             1,
             true
         ))
@@ -2907,6 +2912,11 @@ print(value)
         ))
         assert.is_truthy(js:find(
             'window.localStorage.setItem(themeStorageKey, storedTheme)',
+            1,
+            true
+        ))
+        assert.is_truthy(js:find(
+            'event.key === "Escape" && searchDialog?.hasAttribute("open")',
             1,
             true
         ))

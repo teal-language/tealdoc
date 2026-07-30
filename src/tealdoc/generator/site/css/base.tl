@@ -69,12 +69,12 @@ input {
 .tealdoc-nav {
     display: flex;
     width: 100%;
-    max-width: none;
+    max-width: var(--tealdoc-layout-max-width);
     min-height: var(--tealdoc-header-height);
     align-items: center;
     gap: 1rem;
-    margin: 0;
-    padding: 0 1.5rem;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
 .tealdoc-brand {

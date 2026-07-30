@@ -170,6 +170,11 @@ return [[
     });
 
     document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && searchDialog?.hasAttribute("open")) {
+            event.preventDefault();
+            closeSearch();
+            return;
+        }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
             event.preventDefault();
             openSearch();
