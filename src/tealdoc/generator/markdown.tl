@@ -361,6 +361,12 @@ function MarkdownGenerator.resolve_markdown_type_links(
         function(target: string): string
             local path = markdown_type_path(env, target)
             if not path then
+                local routed = url_for_type
+                    and url_for_type(target)
+                    or nil
+                if routed then
+                    return "](" .. routed .. ")"
+                end
                 log:warning(
                     "Could not resolve Tealdoc Markdown type link: " ..
                         target

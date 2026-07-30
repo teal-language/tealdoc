@@ -3,6 +3,24 @@ local MarkdownGenerator = require("tealdoc.generator.markdown")
 local tealdoc = require("tealdoc")
 
 describe("Markdown generator", function()
+    it("resolves a routed public type absent from the local registry", function()
+        local env = DefaultEnv.init()
+        local markdown = MarkdownGenerator.resolve_markdown_type_links(
+            env,
+            "Returns a [`Future`](tealdoc:tecs.Future).",
+            function(path)
+                return path == "tecs.Future"
+                    and "/modules/Future/"
+                    or nil
+            end
+        )
+
+        assert.are.equal(
+            "Returns a [`Future`](/modules/Future/).",
+            markdown
+        )
+    end)
+
     it("hides single-underscore members unless explicitly public", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
