@@ -170,6 +170,35 @@ function SiteApi.type_links(
     end
     local env = view.env
 
+    -- Private aliases are projected into records or interfaces while the API
+    -- Markdown is rendered. Their fields therefore join the final documented
+    -- tree after `view.public_paths` was first collected. Walk that final tree
+    -- too, so an inlined field has the same link map entry as a field that was
+    -- public from the start.
+    local documented_paths: {string: boolean} = {}
+    for path in pairs(view.public_paths) do
+        documented_paths[path] = true
+    end
+    local walked: {string: boolean} = {}
+    local function add_children(path: string)
+        if walked[path] then
+            return
+        end
+        walked[path] = true
+        local item = env.registry[path]
+        for _, child_path in ipairs(item and item.children or {}) do
+            documented_paths[child_path] = true
+            add_children(child_path)
+        end
+    end
+    add_children(view.public)
+    local page_url = resolver(view.public)
+    local function documented_url(path: string): string
+        return resolver(path)
+            or (page_url and page_url .. "#" .. path)
+            or nil
+    end
+
     local function add_reference(reference: tealdoc.TypeReference)
         local url = MarkdownGenerator.resolve_type_url(
             env,
@@ -180,7 +209,7 @@ function SiteApi.type_links(
         add_type_link(links, ambiguous, reference.name, url)
     end
 
-    for path in pairs(view.public_paths) do
+    for path in pairs(documented_paths) do
         local item = env.registry[path]
         if item and item is tealdoc.TypeItem
             and path ~= view.public
@@ -189,8 +218,8 @@ function SiteApi.type_links(
             -- A page's registry is keyed by public path, so `path` is the
             -- spelling the documentation gives this type and the one a code
             -- block writes it under.
-            add_type_link(links, ambiguous, item.name, resolver(path))
-            add_type_link(links, ambiguous, path, resolver(path))
+            add_type_link(links, ambiguous, item.name, documented_url(path))
+            add_type_link(links, ambiguous, path, documented_url(path))
             for _, typearg in ipairs(item.typeargs or {}) do
                 for _, reference in ipairs(typearg.type_references or {}) do
                     add_reference(reference)
@@ -217,7 +246,7 @@ function SiteApi.type_links(
             -- Register that path without its shorter tails: `container`
             -- occurs in many records, while `api.Options.container` names
             -- exactly one documented member.
-            add_spelling(links, ambiguous, path, resolver(path))
+            add_spelling(links, ambiguous, path, documented_url(path))
             for _, reference in ipairs(item.type_references or {}) do
                 add_reference(reference)
             end

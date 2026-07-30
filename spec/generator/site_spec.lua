@@ -669,6 +669,24 @@ describe("Site generator", function()
             1,
             true
         ), shapes_markdown)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/shapes/#public.shapes.ScalarComponentOptions.' ..
+                'component">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "component</span></a>",
+            1,
+            true
+        ), shapes_html)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-property" ' ..
+                'href="/shapes/#public.shapes.ScalarComponentOptions.' ..
+                'component">' ..
+                '<span class="token property tealdoc-token-property">' ..
+                "component</span></a>",
+            1,
+            true
+        ), shapes_html)
         assert.is_truthy(shapes_markdown:find(
             "| `R` | " ..
                 "[`Relationship`](/shapes/#public.shapes.Relationship) |",
