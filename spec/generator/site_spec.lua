@@ -502,6 +502,8 @@ describe("Site generator", function()
                 interface ScalarComponent<T>
                     --- The value stored when no value is supplied.
                     scalarDefault: T
+                    --- Reads the stored scalar explicitly.
+                    read: function(self: ScalarComponent<T>): T
                     --- Reads the stored scalar.
                     metamethod __call:
                         function(self: ScalarComponent<T>): T
@@ -655,6 +657,7 @@ describe("Site generator", function()
         ), shapes_markdown)
         assert.is_truthy(shapes_markdown:find(
             "    scalarDefault: T\n\n" ..
+                "    read: function(self): T\n" ..
                 "    metamethod __call: function",
             1,
             true
@@ -684,6 +687,14 @@ describe("Site generator", function()
                 'component">' ..
                 '<span class="token property tealdoc-token-property">' ..
                 "component</span></a>",
+            1,
+            true
+        ), shapes_html)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/shapes/#public.shapes.ScalarComponent.read">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "read</span></a>",
             1,
             true
         ), shapes_html)
@@ -2068,21 +2079,13 @@ print(value)
             1,
             true
         ), api)
-        assert.is_truthy(api:find(
-            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
-                'href="/modules/api/#api.reset">' ..
-                '<span class="token variable tealdoc-token-variable">' ..
-                "reset</span></a>",
-            1,
-            true
-        ), api)
         assert.is_falsy(markdown:find(
-            "reset: function(self: api)",
+            "function api.reset(self: api)",
             1,
             true
         ), markdown)
         assert.is_truthy(markdown:find(
-            "reset: function(self)",
+            "function api.reset(self)",
             1,
             true
         ), markdown)

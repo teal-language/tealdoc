@@ -158,6 +158,7 @@ describe("CLI", function()
         local previous_directory = assert(lfs.currentdir())
         local previous_utf8 = _G.utf8
         local previous_utf8_loader = package.preload["lua-utf8"]
+        local previous_teal_loader = tl.loader
         local root = temporary_project([[
             return {
                 source_dir = "src",
@@ -212,6 +213,7 @@ describe("CLI", function()
         package.preload["lua-utf8"] = function()
             return require("compat53.module").utf8
         end
+        tl.loader = function() end
         CLI:init(DefaultEnv.init())
         local ok = CLI:run({
             "site",
@@ -221,6 +223,7 @@ describe("CLI", function()
         assert(lfs.chdir(previous_directory))
         _G.utf8 = previous_utf8
         package.preload["lua-utf8"] = previous_utf8_loader
+        tl.loader = previous_teal_loader
 
         local html_file = assert(io.open(
             root .. "/site/api/index.html",
