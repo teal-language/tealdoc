@@ -209,6 +209,66 @@ describe("Markdown generator", function()
         assert.is_falsy(linked_markdown:find("``T``", 1, true))
     end)
 
+    it("separates nested types only when another member follows", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Followed
+                    record Nested
+                        value: string
+                    end
+                    next: string
+                end
+
+                record Trailing
+                    first: string
+                    record Nested
+                        value: string
+                    end
+                end
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        MarkdownGenerator.init(output):run(env)
+        local file = assert(io.open(output, "r"))
+        local markdown = file:read("*a")
+        file:close()
+        os.remove(output)
+
+        assert.is_truthy(markdown:find(
+            "record api.Followed\n" ..
+                "    record Nested\n" ..
+                "        value: string\n" ..
+                "    end\n\n" ..
+                "    next: string\n" ..
+                "end",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "record api.Trailing\n" ..
+                "    first: string\n" ..
+                "    record Nested\n" ..
+                "        value: string\n" ..
+                "    end\n" ..
+                "end",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "    record Nested\n" ..
+                "        value: string\n" ..
+                "    end\n\n" ..
+                "end",
+            1,
+            true
+        ), markdown)
+    end)
+
     it("tabulates parameters, returns and type parameters", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

@@ -547,6 +547,15 @@ function DefaultEnv.init(): tealdoc.Env
         return nil
     end
 
+    local function is_structure_type(item: tealdoc.Item): boolean
+        return item is tealdoc.TypeItem
+            and (
+                item.type_kind == "record"
+                or item.type_kind == "interface"
+                or item.type_kind == "enum"
+            )
+    end
+
     structure_signature = function(
         ctx: Generator.Phase.Context,
         item: tealdoc.Item,
@@ -574,6 +583,7 @@ function DefaultEnv.init(): tealdoc.Env
             local old_path_mode = ctx.path_mode
             ctx.path_mode = "none"
             local previous_member_kind: string
+            local previous_was_structure = false
             for _, child_path in ipairs(item.children or {}) do
                 local child = assert(
                     ctx.env.registry[child_path],
@@ -582,15 +592,19 @@ function DefaultEnv.init(): tealdoc.Env
                 if not ctx.filter or ctx.filter(child, ctx.env) then
                     ctx.builder:line()
                     local member_kind = structure_member_kind(ctx, child)
-                    if previous_member_kind
-                        and member_kind
-                        and previous_member_kind ~= member_kind
+                    if previous_was_structure
+                        or (
+                            previous_member_kind
+                            and member_kind
+                            and previous_member_kind ~= member_kind
+                        )
                     then
                         ctx.builder:line()
                     end
                     structure_signature(ctx, child, indent .. "    ", true)
                     previous_member_kind = member_kind
                         or previous_member_kind
+                    previous_was_structure = is_structure_type(child)
                 end
             end
             ctx.path_mode = old_path_mode
