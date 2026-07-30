@@ -486,14 +486,9 @@ function SiteView.prepare(
         if not target
             or not target is tealdoc.TypeItem
             or Generator.filter(target, env)
+            or target.type_kind == "type"
         then
             return
-        end
-        if target.type_kind == "type" and target.alias_target then
-            local alias_target = env.registry[target.alias_target]
-            if alias_target and Generator.filter(alias_target, env) then
-                return
-            end
         end
         local mounted = mount(
             reference.path,
