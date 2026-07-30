@@ -525,6 +525,28 @@ function DefaultEnv.init(): tealdoc.Env
         boolean
     ): boolean
 
+    local function structure_member_kind(
+        ctx: Generator.Phase.Context,
+        item: tealdoc.Item
+    ): string
+        if item is tealdoc.VariableItem then
+            return "property"
+        elseif item is tealdoc.FunctionItem then
+            return "method"
+        elseif item.children and not item is tealdoc.TypeItem then
+            for _, child_path in ipairs(item.children) do
+                local child = assert(ctx.env.registry[child_path])
+                if not ctx.filter or ctx.filter(child, ctx.env) then
+                    local kind = structure_member_kind(ctx, child)
+                    if kind then
+                        return kind
+                    end
+                end
+            end
+        end
+        return nil
+    end
+
     structure_signature = function(
         ctx: Generator.Phase.Context,
         item: tealdoc.Item,
@@ -551,6 +573,7 @@ function DefaultEnv.init(): tealdoc.Env
 
             local old_path_mode = ctx.path_mode
             ctx.path_mode = "none"
+            local previous_member_kind: string
             for _, child_path in ipairs(item.children or {}) do
                 local child = assert(
                     ctx.env.registry[child_path],
@@ -558,7 +581,16 @@ function DefaultEnv.init(): tealdoc.Env
                 )
                 if not ctx.filter or ctx.filter(child, ctx.env) then
                     ctx.builder:line()
+                    local member_kind = structure_member_kind(ctx, child)
+                    if previous_member_kind
+                        and member_kind
+                        and previous_member_kind ~= member_kind
+                    then
+                        ctx.builder:line()
+                    end
                     structure_signature(ctx, child, indent .. "    ", true)
+                    previous_member_kind = member_kind
+                        or previous_member_kind
                 end
             end
             ctx.path_mode = old_path_mode

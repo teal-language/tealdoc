@@ -634,6 +634,12 @@ describe("Site generator", function()
             1,
             true
         ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "    scalarDefault: T\n\n" ..
+                "    metamethod __call: function",
+            1,
+            true
+        ), shapes_markdown)
         assert.is_falsy(shapes_markdown:find(
             "##### public.shapes.ScalarComponent.__call",
             1,
