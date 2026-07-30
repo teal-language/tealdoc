@@ -749,12 +749,13 @@ function DefaultEnv.init(): tealdoc.Env
             end
 
             ctx.builder:table(param_columns, function(row: function(...: function))
-                for _, param in ipairs(item.params) do
+                for index, param in ipairs(item.params) do
                     row(
                         function()
-                            if param.name then
-                                ctx.builder:code(attr("name"), param.name)
-                            end
+                            ctx.builder:code(
+                                attr("name"),
+                                param.name or "#" .. tostring(index)
+                            )
                         end,
                         function()
                             ctx.builder:text(attr("type"), function()

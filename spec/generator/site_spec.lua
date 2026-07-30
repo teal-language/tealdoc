@@ -824,6 +824,11 @@ local authored  =  true
             1,
             true
         ), markdown)
+        assert.is_truthy(markdown:find(
+            "| `#1` | `string` |",
+            1,
+            true
+        ), markdown)
         assert.is_falsy(markdown:find(
             "tealdoc:generated-declaration-end",
             1,
