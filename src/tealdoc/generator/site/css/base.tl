@@ -69,11 +69,11 @@ input {
 .tealdoc-nav {
     display: flex;
     width: 100%;
-    max-width: var(--tealdoc-layout-max-width);
+    max-width: none;
     min-height: var(--tealdoc-header-height);
     align-items: center;
     gap: 1rem;
-    margin: 0 auto;
+    margin: 0;
     padding: 0 1.5rem;
 }
 
@@ -103,6 +103,7 @@ input {
     flex: 1;
     justify-content: flex-start;
     gap: 0.25rem;
+    margin-left: 0.2rem;
 }
 
 .tealdoc-top-nav a {
@@ -110,7 +111,7 @@ input {
     padding: 0.45rem 0.65rem;
     color: var(--tealdoc-header-muted-color);
     border-radius: 7px;
-    font-size: 0.875rem;
+    font-size: 0.68rem;
     font-weight: 500;
     text-decoration: none;
 }

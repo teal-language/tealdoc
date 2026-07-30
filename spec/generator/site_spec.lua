@@ -2169,6 +2169,34 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
+            ".tealdoc-nav {\n" ..
+                "    display: flex;\n" ..
+                "    width: 100%;\n" ..
+                "    max-width: none;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-top-nav {\n" ..
+                "    display: flex;\n" ..
+                "    flex: 1;\n" ..
+                "    justify-content: flex-start;\n" ..
+                "    gap: 0.25rem;\n" ..
+                "    margin-left: 0.2rem;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-top-nav a {\n" ..
+                "    position: relative;\n" ..
+                "    padding: 0.45rem 0.65rem;\n" ..
+                "    color: var(--tealdoc-header-muted-color);\n" ..
+                "    border-radius: 7px;\n" ..
+                "    font-size: 0.68rem;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
             ".tealdoc-content {\n" ..
                 "    width: min(\n" ..
                 "        100% - calc(2 * var(--tealdoc-content-gutter)),\n" ..
