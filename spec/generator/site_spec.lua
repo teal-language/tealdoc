@@ -1934,6 +1934,17 @@ print(value)
             1,
             true
         ))
+        local theme_script = assert(home:find(
+            'window.localStorage.getItem("tealdoc-theme")',
+            1,
+            true
+        ))
+        local stylesheet = assert(home:find(
+            'href="/assets/pico.classless.min.css"',
+            1,
+            true
+        ))
+        assert.is_true(theme_script < stylesheet)
         assert.is_falsy(home:find("cdn.jsdelivr.net", 1, true))
         assert.is_truthy(pico:find("Pico CSS ✨ v2.1.1", 1, true))
         assert.is_truthy(home:find('<html lang="en-GB">', 1, true))
@@ -2613,6 +2624,16 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
+            ':root[data-tealdoc-theme="dark"]',
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ':root[data-tealdoc-theme="light"]',
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
             "/* A comment, which CSS lets stand before an import. */\n\n" ..
                 '@import url("https://example.test/font.css");\n\n:root {',
             1,
@@ -2962,6 +2983,11 @@ print(value)
         ))
         assert.is_truthy(js:find(
             'window.localStorage.setItem(themeStorageKey, storedTheme)',
+            1,
+            true
+        ))
+        assert.is_truthy(js:find(
+            "document.documentElement.dataset.tealdocTheme = storedTheme",
             1,
             true
         ))

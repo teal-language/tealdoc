@@ -6,6 +6,14 @@ return [[<!DOCTYPE html>
         <title>{*title*}</title>
         <meta name="description" content="{*description*}">
 {*block(head, "        ")*}
+        <script>
+            try {
+                const theme = window.localStorage.getItem("tealdoc-theme");
+                if (theme === "light" || theme === "dark") {
+                    document.documentElement.dataset.tealdocTheme = theme;
+                }
+            } catch {}
+        </script>
         <link rel="stylesheet" href="{*pico_stylesheet_url*}">
         <link rel="stylesheet" href="{*stylesheet_url*}">
         <script src="{*script_url*}" defer></script>

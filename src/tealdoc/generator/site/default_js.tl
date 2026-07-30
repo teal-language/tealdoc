@@ -12,7 +12,12 @@ return [[
     } catch {}
 
     const restoreTheme = () => {
-        if (!themeInput || !storedTheme) return;
+        if (!storedTheme) {
+            document.documentElement.removeAttribute("data-tealdoc-theme");
+            return;
+        }
+        document.documentElement.dataset.tealdocTheme = storedTheme;
+        if (!themeInput) return;
         const systemIsDark = colorScheme?.matches || false;
         themeInput.checked = (storedTheme === "dark") !== systemIsDark;
     };
@@ -21,6 +26,7 @@ return [[
     themeInput?.addEventListener("change", () => {
         const systemIsDark = colorScheme?.matches || false;
         storedTheme = themeInput.checked !== systemIsDark ? "dark" : "light";
+        document.documentElement.dataset.tealdocTheme = storedTheme;
         try {
             window.localStorage.setItem(themeStorageKey, storedTheme);
         } catch {}

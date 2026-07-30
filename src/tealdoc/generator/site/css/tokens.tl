@@ -239,7 +239,8 @@ return [[
  * the theme the reader asked for arrives in pieces. Repainting the root itself
  * resolves them all at once, and a site's own `:root` values still cascade
  * against the primitives the same way. */
-:root:has(.tealdoc-theme-input:checked) {
+:root:has(.tealdoc-theme-input:checked),
+:root[data-tealdoc-theme="dark"] {
     color-scheme: dark;
     --tealdoc-accent: var(--tealdoc-dark-accent);
     --tealdoc-accent-contrast: var(--tealdoc-dark-accent-contrast);
@@ -277,7 +278,8 @@ return [[
 }
 
 @media (prefers-color-scheme: dark) {
-    :root:has(.tealdoc-theme-input:checked) {
+    :root:has(.tealdoc-theme-input:checked),
+    :root[data-tealdoc-theme="light"] {
         color-scheme: light;
         --tealdoc-accent: var(--tealdoc-light-accent);
         --tealdoc-accent-contrast: var(--tealdoc-light-accent-contrast);
