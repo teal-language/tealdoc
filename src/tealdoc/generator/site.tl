@@ -32,6 +32,10 @@ local record SiteGenerator
         config_directory?: string
     )
     source_files: function(settings: Settings, config_directory?: string): {string}
+    hidden_source_files: function(
+        project: any,
+        config_directory?: string
+    ): {string}
 end
 
 local record Heading
@@ -63,7 +67,7 @@ local function escape_pattern(text: string): string
     return (text:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
 end
 
-local function cerulean_formatter(): function(string): string
+local function cerulean_formatters(): SiteTypes.CodeFormatters
     local function load_module(name: string): any
         return require(name)
     end
@@ -102,6 +106,7 @@ local function cerulean_formatter(): function(string): string
     local formatter_options = default_options() as {string: any}
     formatter_options["max_line_width"] = DOCUMENTATION_LINE_WIDTH
     local formatted_cache: {string: string} = {}
+    local source_cache: {string: string} = {}
 
     local function result_errors(result: {string: any}): {any}
         return result["parse_errors"] as {any} or {}
@@ -317,7 +322,7 @@ local function cerulean_formatter(): function(string): string
         return table.concat(output), wrapper_count, restorations
     end
 
-    return function(code: string): string
+    local function format_generated(code: string): string
         local cached = formatted_cache[code]
         if cached then
             return cached
@@ -387,6 +392,33 @@ local function cerulean_formatter(): function(string): string
         formatted_cache[code] = formatted
         return formatted
     end
+    local function format_source(code: string): string
+        local cached = source_cache[code]
+        if cached then
+            return cached
+        end
+        local result = rewrite(
+            code,
+            "tealdoc-example.tl",
+            formatter_options
+        ) as {string: any}
+        if #result_errors(result) > 0
+            or result["status"] == "failed"
+            or type(result["output"]) ~= "string"
+        then
+            source_cache[code] = code
+            return code
+        end
+        local formatted = (result["output"] as string)
+            :gsub("\n*$", "") ..
+            "\n"
+        source_cache[code] = formatted
+        return formatted
+    end
+    return {
+        generated = format_generated,
+        source = format_source,
+    }
 end
 
 local function read_file(path: string): string
@@ -979,6 +1011,71 @@ function SiteGenerator.source_files(
             end
         end
     end
+    return files
+end
+
+local function hidden_module_segment(name: string): boolean
+    local module_name = name:match("^(.*)%.tl$") or name
+    return module_name == "internal"
+        or module_name:sub(1, 1) == "_"
+end
+
+local function discover_hidden_sources(
+    path: string,
+    hidden: boolean,
+    files: {string}
+)
+    local attributes = lfs.symlinkattributes(path)
+    if not attributes or attributes.mode == "link" then
+        return
+    end
+    if attributes.mode == "file" then
+        if hidden and path:match("%.tl$") then
+            table.insert(files, path)
+        end
+        return
+    end
+    if attributes.mode ~= "directory" then
+        return
+    end
+
+    local entries: {string} = {}
+    for name in lfs.dir(path) do
+        if name ~= "."
+            and name ~= ".."
+            and name:sub(1, 1) ~= "."
+        then
+            table.insert(entries, name)
+        end
+    end
+    table.sort(entries)
+    for _, name in ipairs(entries) do
+        discover_hidden_sources(
+            SiteConfig.join_path(path, name),
+            hidden or hidden_module_segment(name),
+            files
+        )
+    end
+end
+
+function SiteGenerator.hidden_source_files(
+    project: any,
+    config_directory?: string
+): {string}
+    if type(project) ~= "table" then
+        return {}
+    end
+    local source_dir = (project as {string: any})["source_dir"]
+    if type(source_dir) ~= "string" or source_dir == "" then
+        return {}
+    end
+
+    local root = SiteConfig.join_path(
+        config_directory or ".",
+        source_dir as string
+    )
+    local files: {string} = {}
+    discover_hidden_sources(root, false, files)
     return files
 end
 
@@ -1995,15 +2092,15 @@ local function render_page(
     attached_examples: {string: {PreparedExample}},
     used_examples: {string: boolean},
     site_links: Highlighter.Links,
-    format_code?: function(string): string
+    formatters?: SiteTypes.CodeFormatters
 ): string, {SearchEntry}, string
-    local markdown = SiteApi.source_markdown(page)
+    local markdown = SiteApi.source_markdown(page, formatters)
     local api, module_introduction = SiteApi.markdown(
         view,
         resolver,
         attached_examples,
         used_examples,
-        format_code
+        formatters
     )
     if view then
         local summary = submodule_summary(page, context, context.settings.base) ..
@@ -2335,8 +2432,8 @@ function SiteGenerator.build(
     config_directory?: string
 )
     local settings = SiteConfig.configure(raw_settings, config_directory)
-    local format_code = settings.format_generated_code
-        and cerulean_formatter()
+    local code_formatters = settings.format_generated_code
+        and cerulean_formatters()
         or nil
     -- Where a site keeps its Scintillua lexers, if it keeps any. Set once for
     -- the build rather than threaded through every render, because it is a
@@ -2453,7 +2550,7 @@ function SiteGenerator.build(
             attached_examples,
             used_examples,
             site_links,
-            format_code
+            code_formatters
         )
         write_file(path, html)
         table.insert(context.files, path)
@@ -2529,7 +2626,7 @@ function SiteGenerator.build(
             attached_examples,
             used_examples,
             site_links,
-            format_code
+            code_formatters
         )
         local html_path = output .. "/404.html"
         write_file(html_path, html)

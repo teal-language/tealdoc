@@ -687,6 +687,25 @@ describe("Site generator", function()
             1,
             true
         ), shapes_html)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/shapes/#public.shapes.ScalarComponent.' ..
+                '$meta.__call">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "__call</span></a>",
+            1,
+            true
+        ), shapes_html)
+        assert.is_falsy(shapes_markdown:find(
+            "function(self: ScalarComponent<T>)",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "function(self): T",
+            1,
+            true
+        ), shapes_markdown)
         assert.is_truthy(shapes_markdown:find(
             "| `R` | " ..
                 "[`Relationship`](/shapes/#public.shapes.Relationship) |",
@@ -754,7 +773,7 @@ describe("Site generator", function()
         remove_tree(output)
     end)
 
-    it("formats generated code with Cerulean without changing examples", function()
+    it("formats generated code and Teal examples with Cerulean", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
         tealdoc.process_text([[
@@ -762,7 +781,9 @@ describe("Site generator", function()
                 --- Runs a generated operation.
                 ---
                 --- ```teal
-                --- local documented  =  true
+                --- if ready then
+                --- run()
+                --- end
                 --- ```
                 run: function(first: string, second: string): boolean
                 --- Stops a generated operation.
@@ -818,8 +839,12 @@ local authored  =  true
                                 },
                             }
                         end
+                        local output = code:gsub(
+                            "\nrun%(%)\n",
+                            "\n    run()\n"
+                        )
                         return {
-                            output = "-- formatted by Cerulean\n" .. code,
+                            output = "-- formatted by Cerulean\n" .. output,
                             status = "reformatted",
                             parse_errors = {},
                         }
@@ -851,7 +876,7 @@ local authored  =  true
 
         local markdown = read_file(output .. "/api.md")
         assert.are.equal(1, initializations)
-        assert.are.equal(2, calls)
+        assert.are.equal(5, calls)
         assert.is_truthy(table.concat(handed, "\n"):find(
             "local TealdocGenerated1XXXXXXX: function(string)",
             1,
@@ -878,17 +903,22 @@ local authored  =  true
             true
         ), markdown)
         assert.is_truthy(markdown:find(
-            "```teal\nlocal authored  =  true\n```",
+            "```teal\n-- formatted by Cerulean\n" ..
+                "local authored  =  true\n```",
             1,
             true
         ), markdown)
         assert.is_truthy(markdown:find(
-            "```teal\nlocal documented  =  true\n```",
+            "```teal\n-- formatted by Cerulean\n" ..
+                "if ready then\n" ..
+                "    run()\n" ..
+                "end\n```",
             1,
             true
         ), markdown)
         assert.is_truthy(markdown:find(
-            "```teal\nlocal example  =  true\n```",
+            "```teal\n-- formatted by Cerulean\n" ..
+                "local example  =  true\n```",
             1,
             true
         ), markdown)
@@ -2039,6 +2069,24 @@ print(value)
             true
         ), api)
         assert.is_truthy(api:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/modules/api/#api.reset">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "reset</span></a>",
+            1,
+            true
+        ), api)
+        assert.is_falsy(markdown:find(
+            "reset: function(self: api)",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "reset: function(self)",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(api:find(
             'class="tealdoc-breadcrumbs"',
             1,
             true
@@ -2819,6 +2867,43 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(".project { color: teal; }", 1, true))
+        remove_tree(root)
+    end)
+
+    it("discovers hidden Teal modules from the project source directory", function()
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        assert(lfs.mkdir(root .. "/src"))
+        assert(lfs.mkdir(root .. "/src/public"))
+        assert(lfs.mkdir(root .. "/src/public/internal"))
+        assert(lfs.mkdir(root .. "/src/public/internal/nested"))
+        assert(lfs.mkdir(root .. "/src/public/_private"))
+        assert(lfs.mkdir(root .. "/src/ordinary"))
+        write_file(root .. "/src/public/api.tl", "return {}\n")
+        write_file(
+            root .. "/src/public/internal/types.tl",
+            "return {}\n"
+        )
+        write_file(
+            root .. "/src/public/internal/nested/helpers.tl",
+            "return {}\n"
+        )
+        write_file(
+            root .. "/src/public/_private/helpers.tl",
+            "return {}\n"
+        )
+        write_file(root .. "/src/public/_types.tl", "return {}\n")
+        write_file(root .. "/src/ordinary/types.tl", "return {}\n")
+
+        assert.are.same({
+            root .. "/src/public/_private/helpers.tl",
+            root .. "/src/public/_types.tl",
+            root .. "/src/public/internal/nested/helpers.tl",
+            root .. "/src/public/internal/types.tl",
+        }, SiteGenerator.hidden_source_files({
+            source_dir = "src",
+        }, root))
         remove_tree(root)
     end)
 

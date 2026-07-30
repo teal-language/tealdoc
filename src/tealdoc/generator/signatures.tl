@@ -35,7 +35,9 @@ function signatures.for_function(ctx: Generator.Phase.Context, fn: tealdoc.Funct
     local params: {string} = {}
     if fn.params then
         for _, param in ipairs(fn.params) do
-            if not param.name then
+            if param.name == "self" then
+                table.insert(params, "self")
+            elseif not param.name then
                 table.insert(params, param.type or "?")
             else
                 table.insert(params, param.name .. ": " .. (param.type or "?"))

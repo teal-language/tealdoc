@@ -331,6 +331,16 @@ return [[
     color: inherit;
 }
 
+.tealdoc-code-link.tealdoc-code-link-function,
+.tealdoc-code-link.tealdoc-code-link-function:visited,
+.tealdoc-code-link.tealdoc-code-link-function:hover {
+    color: var(--tealdoc-syntax-function);
+}
+
+.tealdoc-code-link-function .tealdoc-token-function {
+    color: inherit;
+}
+
 .tealdoc-code-link:hover {
     border-bottom-style: solid;
 }

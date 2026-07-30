@@ -180,6 +180,15 @@ function CLI:add_default_commands()
                     tealdoc.process_file(file, self._env)
                 end
             end
+            for _, file in ipairs(SiteGenerator.hidden_source_files(
+                values,
+                loaded.directory
+            )) do
+                if not seen[file] then
+                    seen[file] = true
+                    tealdoc.process_file(file, self._env)
+                end
+            end
 
             SiteGenerator.build(
                 args["output"] as string,

@@ -119,6 +119,11 @@ local record SiteTypes
         code: string
     end
 
+    record CodeFormatters
+        generated: function(string): string
+        source: function(string): string
+    end
+
     record ApiView
         public: string
         modules: {string}

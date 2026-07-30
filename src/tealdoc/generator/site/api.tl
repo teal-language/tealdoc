@@ -5,7 +5,10 @@ local Highlighter = require("tealdoc.generator.site.highlighter")
 local SiteTypes = require("tealdoc.generator.site.types")
 
 local record SiteApi
-    source_markdown: function(page: SiteTypes.Page): string
+    source_markdown: function(
+        page: SiteTypes.Page,
+        formatters?: SiteTypes.CodeFormatters
+    ): string
     type_links: function(
         view: SiteTypes.ApiView,
         resolver: MarkdownGenerator.URLResolver
@@ -23,7 +26,7 @@ local record SiteApi
         resolver: MarkdownGenerator.URLResolver,
         attached_examples: {string: {SiteTypes.PreparedExample}},
         used_examples: {string: boolean},
-        format_code?: function(string): string
+        formatters?: SiteTypes.CodeFormatters
     ): string, string
     summary: function(
         view: SiteTypes.ApiView,
@@ -38,7 +41,66 @@ local function read_file(path: string): string
     return contents
 end
 
-function SiteApi.source_markdown(page: SiteTypes.Page): string
+local function format_teal_fences(
+    markdown: string,
+    format_source?: function(string): string
+): string
+    if not format_source then
+        return markdown
+    end
+
+    local output: {string} = {}
+    local opening: string
+    local language: string
+    local body: {string} = {}
+    for line in (markdown .. "\n"):gmatch("(.-)\n") do
+        if opening then
+            local closing = line:match("^%s*(`+)%s*$")
+            if closing and #closing >= #opening then
+                if language == "teal" then
+                    local formatted = format_source(
+                        table.concat(body, "\n") .. "\n"
+                    ):gsub("\n*$", "")
+                    for formatted_line in
+                        (formatted .. "\n"):gmatch("(.-)\n")
+                    do
+                        table.insert(output, formatted_line)
+                    end
+                else
+                    for _, body_line in ipairs(body) do
+                        table.insert(output, body_line)
+                    end
+                end
+                table.insert(output, line)
+                opening = nil
+                language = nil
+                body = {}
+            else
+                table.insert(body, line)
+            end
+        else
+            local fence, info = line:match(
+                "^%s*(```+)%s*([^%s]*)"
+            )
+            if fence then
+                opening = fence
+                language = info:match("^([%w_+%-]+)")
+                body = {}
+            end
+            table.insert(output, line)
+        end
+    end
+    for _, body_line in ipairs(body) do
+        table.insert(output, body_line)
+    end
+    return table.concat(output, "\n")
+end
+
+function SiteApi.source_markdown(
+    page: SiteTypes.Page,
+    formatters?: SiteTypes.CodeFormatters
+): string
+    local format_source = formatters and formatters.source or nil
     if page.example_source then
         local code = page.example_code or read_file(page.example_source)
         local language = page.example_language
@@ -46,6 +108,9 @@ function SiteApi.source_markdown(page: SiteTypes.Page): string
             language = page.example_source:match("%.tl$") and "teal"
                 or page.example_source:match("%.lua$") and "lua"
                 or "text"
+        end
+        if language == "teal" and format_source then
+            code = format_source(code)
         end
         local fence = "```"
         while code:find(fence, 1, true) do
@@ -80,7 +145,7 @@ function SiteApi.source_markdown(page: SiteTypes.Page): string
     if generated then
         text = text:sub(1, generated - 1)
     end
-    return text
+    return format_teal_fences(text, format_source)
 end
 
 --- One spelling against one type, and nothing against a spelling two types
@@ -251,6 +316,17 @@ function SiteApi.type_links(
                 add_reference(reference)
             end
         elseif item and item is tealdoc.FunctionItem then
+            -- Methods and metamethods are fields in structural declarations,
+            -- just as variables are. Their unqualified names still have an
+            -- exact owner path, so link the name in the record or interface
+            -- block to that member's detailed section.
+            add_spelling(links, ambiguous, path, documented_url(path))
+            add_spelling(
+                links,
+                ambiguous,
+                path:gsub("%.%$meta%.", "."),
+                documented_url(path)
+            )
             for _, typearg in ipairs(item.typeargs or {}) do
                 for _, reference in ipairs(typearg.type_references or {}) do
                     add_reference(reference)
@@ -506,19 +582,24 @@ function SiteApi.markdown(
     resolver: MarkdownGenerator.URLResolver,
     attached_examples: {string: {SiteTypes.PreparedExample}},
     used_examples: {string: boolean},
-    format_code?: function(string): string
+    formatters?: SiteTypes.CodeFormatters
 ): string, string
     if not view then
         return "", ""
     end
 
     local page_env = view.env
+    local format_code = formatters and formatters.generated or nil
+    local format_source = formatters and formatters.source or nil
 
     local original_texts: {{tealdoc.Item, string}} = {}
     for _, item in pairs(page_env.registry) do
         if item.kind ~= "module" and item.text and item.text ~= "" then
             table.insert(original_texts, {item, item.text})
-            item.text = rebase_headings(item.text, 3)
+            item.text = rebase_headings(
+                format_teal_fences(item.text, format_source),
+                3
+            )
         end
     end
     local markdown = add_kind_badges(
@@ -538,8 +619,12 @@ function SiteApi.markdown(
             local insertion = following or (#markdown + 1)
             local blocks: {string} = {}
             for _, example in ipairs(examples) do
+                local code = example.code
+                if example.language == "teal" and format_source then
+                    code = format_source(code)
+                end
                 local fence = "```"
-                while example.code:find(fence, 1, true) do
+                while code:find(fence, 1, true) do
                     fence = fence .. "`"
                 end
                 table.insert(
@@ -550,7 +635,7 @@ function SiteApi.markdown(
                         fence ..
                         example.language ..
                         "\n" ..
-                        example.code:gsub("\n*$", "") ..
+                        code:gsub("\n*$", "") ..
                         "\n" ..
                         fence ..
                         "\n"
@@ -569,7 +654,10 @@ function SiteApi.markdown(
     end
     local module_item = page_env.registry["$" .. view.public]
     local introduction = module_item and module_item.text
-        and rebase_headings(module_item.text, 2)
+        and rebase_headings(
+            format_teal_fences(module_item.text, format_source),
+            2
+        )
         or ""
     markdown = "\n" .. markdown
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
