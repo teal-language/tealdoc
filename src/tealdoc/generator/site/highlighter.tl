@@ -147,6 +147,25 @@ local function is_declaration_name(tokens: {tl.Token}, index: integer): boolean
     return false
 end
 
+--- The whole dotted expression a type token ends, so `EventListener` read
+--- from `types.events.EventListener` answers all three segments. A qualified
+--- name is not its last segment: the two name different types as often as
+--- they name the same one, and the link map holds the basename of every
+--- documented type, so looking one up by its final token alone finds an
+--- unrelated public type and links to it.
+local function qualified_name(tokens: {tl.Token}, index: integer): string
+    local name = tokens[index].tk
+    local cursor = index - 1
+    while cursor > 1
+        and tokens[cursor].tk == "."
+        and tokens[cursor - 1].kind == "identifier"
+    do
+        name = tokens[cursor - 1].tk .. "." .. name
+        cursor = cursor - 2
+    end
+    return name
+end
+
 function Highlighter.highlight(code: string, links?: Highlighter.Links): string
     local offsets: {integer} = {1}
     for position = 1, #code do
@@ -176,7 +195,7 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
                     and not is_declaration_name(tokens, index)
                     and links
                 then
-                    url = links[token.tk]
+                    url = links[qualified_name(tokens, index)]
                 end
                 table.insert(segments, {
                     first = first,

@@ -13,6 +13,19 @@ local function read_file(path)
     return contents
 end
 
+local function count_occurrences(haystack, needle)
+    local found = 0
+    local cursor = 1
+    while true do
+        local first, last = haystack:find(needle, cursor, true)
+        if not first then
+            return found
+        end
+        found = found + 1
+        cursor = last + 1
+    end
+end
+
 local function remove_tree(path)
     local attributes = lfs.symlinkattributes(path)
     if not attributes then
@@ -239,6 +252,51 @@ describe("Site generator", function()
         assert.is_falsy(declaration:find("tealdoc-code-link", 1, true))
     end)
 
+    it("links a qualified type by the whole path it is written under",
+        function()
+            local links = {
+                Window = "/modules/window/",
+                ["shell.Window"] = "/modules/shell/#shell.Window",
+            }
+
+            -- The qualifier decides, so the two spellings answer differently
+            -- and neither answers for the other.
+            local qualified = Highlighter.highlight(
+                "local frame: shell.Window = nil\n",
+                links
+            )
+            assert.is_truthy(qualified:find(
+                '<a class="tealdoc-code-link" ' ..
+                    'href="/modules/shell/#shell.Window">' ..
+                    '<span class="token class-name tealdoc-token-type">' ..
+                    "Window</span></a>",
+                1,
+                true
+            ), qualified)
+
+            local bare = Highlighter.highlight(
+                "local frame: Window = nil\n",
+                links
+            )
+            assert.is_truthy(bare:find(
+                '<a class="tealdoc-code-link" href="/modules/window/">' ..
+                    '<span class="token class-name tealdoc-token-type">' ..
+                    "Window</span></a>",
+                1,
+                true
+            ), bare)
+
+            -- A path the site documents nothing under stays unlinked rather
+            -- than falling back to whatever public type shares its last
+            -- segment. `type Window = internal.platform.Window` reads as a
+            -- declaration linking to itself when it does.
+            local foreign = Highlighter.highlight(
+                "type Window = internal.platform.Window\n",
+                links
+            )
+            assert.is_falsy(foreign:find("tealdoc-code-link", 1, true), foreign)
+        end)
+
     it("labels a fenced block and highlights it through its attributes",
         function()
             local html = SiteMarkdown.render(
@@ -405,6 +463,91 @@ describe("Site generator", function()
         assert.is_falsy(html:find("#hidden.Secret", 1, true))
 
         remove_tree(output)
+    end)
+
+    it("links code by the path a type is published under", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record internal
+                --- A shape a public module re-exports.
+                record Circle
+                    radius: number
+                end
+            end
+
+            return internal
+        ]], "internal.tl", env)
+        tealdoc.process_text([[
+            local type internal = require("internal")
+            local record shapes
+                --- The shape, under the name the site publishes it as.
+                type Circle = internal.Circle
+
+                --- Grows one.
+                grow: function(circle: Circle): Circle
+            end
+
+            return shapes
+        ]], "shapes.tl", env)
+
+        local guide = os.tmpname()
+        write_file(guide, "# Guide\n\n" ..
+            "```teal\n" ..
+            "local a: public.shapes.Circle = nil\n" ..
+            "local b: internal.Circle = nil\n" ..
+            "local c: Circle = nil\n" ..
+            "```\n")
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Shapes",
+            pages = {
+                {path = "", title = "Home", source = guide},
+                {
+                    path = "shapes",
+                    title = "shapes",
+                    api = "shapes",
+                    public = "public.shapes",
+                },
+            },
+        })
+
+        local link = '<a class="tealdoc-code-link" ' ..
+            'href="/shapes/#public.shapes.Circle">' ..
+            '<span class="token class-name tealdoc-token-type">' ..
+            "Circle</span></a>"
+        local guide_html = read_file(output .. "/index.html")
+        -- The published path and the bare name, and nothing for the source
+        -- path the site says nothing about.
+        assert.are.equal(2, count_occurrences(guide_html, link), guide_html)
+        assert.is_truthy(guide_html:find(
+            '<span class="token property tealdoc-token-property">internal' ..
+                '</span><span class="token punctuation ' ..
+                'tealdoc-token-punctuation">.</span>' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "Circle</span>",
+            1,
+            true
+        ), guide_html)
+
+        -- The declaration a re-export renders as is where this reads worst:
+        -- both sides are spelled `Circle`, and linking the right one by its
+        -- last segment points the reader at the left one.
+        local shapes_html = read_file(output .. "/shapes/index.html")
+        assert.is_truthy(shapes_html:find(
+            '<span class="token variable tealdoc-token-variable">internal' ..
+                '</span><span class="token punctuation ' ..
+                'tealdoc-token-punctuation">.</span>' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "Circle</span>",
+            1,
+            true
+        ), shapes_html)
+        assert.are.equal(2, count_occurrences(shapes_html, link), shapes_html)
+
+        remove_tree(output)
+        os.remove(guide)
     end)
 
     it("carries a union type through a parameter table to the page", function()
