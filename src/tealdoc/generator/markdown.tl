@@ -359,6 +359,141 @@ function MarkdownGenerator.private_alias_target(
     return nil
 end
 
+local function copy_item(item: tealdoc.Item): tealdoc.Item
+    local values: {string: any} = {}
+    for key, value in pairs(item as {string: any}) do
+        values[key] = value
+    end
+    return values as tealdoc.Item
+end
+
+--- Finds the record, interface or enum at the end of an exact private alias
+--- chain. Unlike a type-expression alias, one of these has children that must
+--- be projected under the public name to inline its definition.
+local function private_alias_structure_target(
+    env: tealdoc.Env,
+    item: tealdoc.TypeItem,
+    type_url_for_path: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+): tealdoc.TypeItem
+    if not item.alias_target
+        or MarkdownGenerator.resolve_type_url(
+            env,
+            item.alias_target,
+            type_url_for_path,
+            allow_local_type_links
+        )
+    then
+        return nil
+    end
+
+    local seen: {string: boolean} = {}
+    local path = item.alias_target
+    while path and not seen[path] do
+        seen[path] = true
+        local target = env.registry[path]
+        if not target or not target is tealdoc.TypeItem then
+            return nil
+        end
+        if target.type_kind ~= "type" then
+            return target
+        end
+        if not target.alias_target then
+            return nil
+        end
+        path = target.alias_target
+    end
+    return nil
+end
+
+--- Rehomes an exact private structural target beneath each public alias that
+--- reaches it. The parser has already resolved `alias_target`, so no name
+--- lookup or suffix matching is involved. Rehoming the children makes an
+--- interface or record genuinely inline: its fields and methods are rendered
+--- under the public alias rather than leaving a private nominal spelling.
+local function inline_private_structural_aliases(
+    env: tealdoc.Env,
+    type_url_for_path: MarkdownGenerator.URLResolver,
+    allow_local_type_links?: boolean
+)
+    local aliases: {tealdoc.TypeItem} = {}
+    local visited: {string: boolean} = {}
+    local visit: function(tealdoc.Item)
+    visit = function(item: tealdoc.Item)
+        if not item or visited[item.path] then
+            return
+        end
+        visited[item.path] = true
+        if item is tealdoc.TypeItem
+            and item.type_kind == "type"
+            and item.alias_target
+            and Generator.filter(item, env)
+        then
+            table.insert(aliases, item)
+        end
+        for _, child_path in ipairs(item.children or {}) do
+            visit(env.registry[child_path])
+        end
+    end
+    for _, module_name in ipairs(env.modules) do
+        visit(env.registry["$" .. module_name])
+    end
+
+    local clone_subtree: function(
+        string,
+        string,
+        string,
+        string
+    ): tealdoc.Item
+    clone_subtree = function(
+        source_path: string,
+        source_prefix: string,
+        public_prefix: string,
+        parent: string
+    ): tealdoc.Item
+        local source = assert(env.registry[source_path])
+        local clone = copy_item(source)
+        clone.path = public_prefix .. source_path:sub(#source_prefix + 1)
+        clone.parent = parent
+        clone.children = {}
+        env.registry[clone.path] = clone
+        for _, child_path in ipairs(source.children or {}) do
+            local child = clone_subtree(
+                child_path,
+                source_prefix,
+                public_prefix,
+                clone.path
+            )
+            table.insert(clone.children, child.path)
+        end
+        return clone
+    end
+
+    for _, alias in ipairs(aliases) do
+        local target = private_alias_structure_target(
+            env,
+            alias,
+            type_url_for_path,
+            allow_local_type_links
+        )
+        if target then
+            local projected = clone_subtree(
+                target.path,
+                target.path,
+                alias.path,
+                alias.parent
+            ) as tealdoc.TypeItem
+            projected.name = alias.name
+            projected.text = alias.text or target.text
+            projected.attributes = alias.attributes
+            projected.location = alias.location
+            projected.visibility = alias.visibility
+            projected.typeargs = alias.typeargs or target.typeargs
+            env.registry[alias.path] = projected
+        end
+    end
+end
+
 --- Builds a generator and hands back the builder it writes into.
 ---
 --- Shared by `init`, which writes the result to a file, and `render`, which
@@ -376,6 +511,15 @@ local function generator_for(
     local builder = MarkdownBuilder.init(format_code)
     local base = Generator.Base.init()
     base.item_phases = MarkdownGenerator.item_phases
+    if type_url_for_path then
+        base.on_start = function(_, env: tealdoc.Env)
+            inline_private_structural_aliases(
+                env,
+                type_url_for_path,
+                allow_local_type_links
+            )
+        end
+    end
     base.on_item_start = function(_, item: tealdoc.Item, _: string, _: tealdoc.Env)
         builder:rawline("<a id=\"", Text.escape_html(item.path), "\"></a>")
     end

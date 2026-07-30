@@ -627,10 +627,13 @@ function DefaultEnv.init(): tealdoc.Env
                         end,
                         function()
                             if typearg.constraint then
-                                ctx.builder:code(
-                                    attr("constraint"),
-                                    typearg.constraint
-                                )
+                                ctx.builder:text(attr("constraint"), function()
+                                    markdown_type(
+                                        ctx,
+                                        typearg.constraint,
+                                        typearg.type_references
+                                    )
+                                end)
                             end
                         end,
                         function()
@@ -667,10 +670,13 @@ function DefaultEnv.init(): tealdoc.Env
                         end,
                         function()
                             if typearg.constraint then
-                                ctx.builder:code(
-                                    attr("constraint"),
-                                    typearg.constraint
-                                )
+                                ctx.builder:text(attr("constraint"), function()
+                                    markdown_type(
+                                        ctx,
+                                        typearg.constraint,
+                                        typearg.type_references
+                                    )
+                                end)
                             end
                         end,
                         function()

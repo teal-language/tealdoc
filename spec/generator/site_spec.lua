@@ -478,6 +478,18 @@ describe("Site generator", function()
 
                 --- A listener only its public alias documents.
                 type EventListener = function<E is Event>(event: E)
+
+                --- A scalar component only its public alias documents.
+                interface ScalarComponent<T>
+                    --- The value stored when no value is supplied.
+                    scalarDefault: T
+                end
+
+                --- Scalar component configuration.
+                interface ScalarComponentOptions<T>
+                    --- The component this configuration creates.
+                    component: ScalarComponent<T>
+                end
             end
 
             return internal
@@ -502,6 +514,20 @@ describe("Site generator", function()
 
                 --- A public listener linked to its definition.
                 type Listener = targets.Listener
+
+                --- A private generic interface projected under this alias.
+                type ScalarComponent<T> = internal.ScalarComponent<T>
+
+                --- Another private generic interface projected here.
+                type ScalarComponentOptions<T> =
+                    internal.ScalarComponentOptions<T>
+
+                --- A relationship constraint documented on this page.
+                interface Relationship
+                end
+
+                --- Options constrained to the exact relationship above.
+                type RelationshipOptions<R is Relationship> = {value: R}
 
                 --- Grows one.
                 grow: function(circle: Circle): Circle
@@ -580,6 +606,37 @@ describe("Site generator", function()
             1,
             true
         ), shapes_markdown)
+        assert.is_falsy(shapes_markdown:find(
+            "generic<T> internal.ScalarComponent",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_falsy(shapes_markdown:find(
+            "generic<T> internal.ScalarComponentOptions",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "interface public.shapes.ScalarComponent<T>",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "public.shapes.ScalarComponent.scalarDefault",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "interface public.shapes.ScalarComponentOptions<T>",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "| `R` | " ..
+                "[`Relationship`](/shapes/#public.shapes.Relationship) |",
+            1,
+            true
+        ), shapes_markdown)
 
         -- A target another page documents keeps the alias spelling and links
         -- through the import name to that target rather than to this page's
@@ -653,7 +710,7 @@ describe("Site generator", function()
                 --- ```
                 run: function(first: string, second: string): boolean
                 --- Stops a generated operation.
-                stop: function(reason: string)
+                stop: function(string)
             end
 
             return api
@@ -674,6 +731,7 @@ local authored  =  true
 
         local calls = 0
         local initializations = 0
+        local handed = {}
         with_preloaded_modules({
             ["cerulean.options"] = function()
                 return {
@@ -685,8 +743,10 @@ local authored  =  true
             end,
             ["cerulean.rewriter"] = function()
                 return {
-                    rewrite = function(code)
+                    rewrite = function(code, _, options)
                         calls = calls + 1
+                        table.insert(handed, code)
+                        assert.are.equal(80, options.max_line_width)
                         if code:match("^function ")
                             and not code:find(
                                 "end -- tealdoc:generated-declaration-end",
@@ -736,6 +796,11 @@ local authored  =  true
         local markdown = read_file(output .. "/api.md")
         assert.are.equal(1, initializations)
         assert.are.equal(2, calls)
+        assert.is_truthy(table.concat(handed, "\n"):find(
+            "local TealdocGenerated1: function(string)",
+            1,
+            true
+        ), table.concat(handed, "\n"))
         assert.is_truthy(markdown:find(
             "```teal\n-- formatted by Cerulean\nfunction api.run",
             1,
@@ -2012,6 +2077,11 @@ print(value)
         ))
         assert.is_truthy(css:find(
             "--tealdoc-code-block-font-size: 0.72rem",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            "--tealdoc-code-lang-top: 2px",
             1,
             true
         ))

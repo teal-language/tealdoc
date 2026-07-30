@@ -191,6 +191,11 @@ function SiteApi.type_links(
             -- block writes it under.
             add_type_link(links, ambiguous, item.name, resolver(path))
             add_type_link(links, ambiguous, path, resolver(path))
+            for _, typearg in ipairs(item.typeargs or {}) do
+                for _, reference in ipairs(typearg.type_references or {}) do
+                    add_reference(reference)
+                end
+            end
             local target_url = item.alias_target
                 and MarkdownGenerator.resolve_type_url(
                     env,
@@ -207,6 +212,11 @@ function SiteApi.type_links(
                 )
             end
         elseif item and item is tealdoc.FunctionItem then
+            for _, typearg in ipairs(item.typeargs or {}) do
+                for _, reference in ipairs(typearg.type_references or {}) do
+                    add_reference(reference)
+                end
+            end
             for _, param in ipairs(item.params or {}) do
                 for _, reference in ipairs(param.type_references or {}) do
                     add_reference(reference)

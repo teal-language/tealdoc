@@ -190,6 +190,8 @@ local record tealdoc
         name: string
         --- The constraint of the type argument if any.
         constraint: string
+        --- Named types contained in the constraint.
+        type_references: {TypeReference}
         --- The description of the type argument.
         description: string
     end

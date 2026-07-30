@@ -55,6 +55,7 @@ local type PreparedExample = SiteTypes.PreparedExample
 local MANIFEST_PATH = ".tealdoc-manifest"
 local MANIFEST_HEADER = "tealdoc-manifest-v1\n"
 local CERULEAN_WRAPPER = "-- tealdoc:generated-declaration-end"
+local DOCUMENTATION_LINE_WIDTH = 80
 
 --- Quotes a literal so it matches only itself.
 local function escape_pattern(text: string): string
@@ -97,7 +98,8 @@ local function cerulean_formatter(): function(string): string
         string,
         any
     ): any
-    local formatter_options = default_options()
+    local formatter_options = default_options() as {string: any}
+    formatter_options["max_line_width"] = DOCUMENTATION_LINE_WIDTH
     local formatted_cache: {string: string} = {}
 
     local function result_errors(result: {string: any}): {any}
@@ -161,6 +163,24 @@ local function cerulean_formatter(): function(string): string
             return borrowed .. rest
         end
 
+        -- A generated callable is only a signature, and some signatures have
+        -- unnamed parameters. Teal permits those in a function type but not in
+        -- a function declaration, so lend the signature to a typed local. It
+        -- needs no temporary body and Cerulean can still wrap every argument.
+        local function borrow_callable(
+            indent: string,
+            declared: string,
+            rest: string
+        ): string
+            placeholder_count = placeholder_count + 1
+            local borrowed = indent ..
+                "local TealdocGenerated" ..
+                tostring(placeholder_count) ..
+                ": function"
+            table.insert(restorations, {borrowed, indent .. declared})
+            return borrowed .. rest
+        end
+
         -- A type argument list ends at the `>` that closes the `<` it opened
         -- with, and a constraint can name a generic type of its own, so the
         -- close has to be counted for rather than searched for. Answers the
@@ -185,8 +205,11 @@ local function cerulean_formatter(): function(string): string
             local emitted = line
             local indent, body = line:match("^(%s*)(.*)$")
 
+            local function_name, function_rest = body:match(
+                "^function%s+(" .. qualified .. ")([<%(].*)$"
+            )
             local meta_name, meta_rest = body:match(
-                "^metamethod%s+(" .. qualified .. ")(%(.*)$"
+                "^metamethod%s+(" .. qualified .. ")([<%(].*)$"
             )
             -- A generic type alias is spelled the way the compiler shows a
             -- type rather than the way Teal writes one: the parameters
@@ -206,7 +229,7 @@ local function cerulean_formatter(): function(string): string
             end
 
             local kind, dotted, rest: string, string, string
-            if not meta_name and not alias_params then
+            if not function_name and not meta_name and not alias_params then
                 for _, word in ipairs({"record", "interface", "enum"}) do
                     if not kind then
                         kind, dotted, rest = body:match(
@@ -221,10 +244,15 @@ local function cerulean_formatter(): function(string): string
                 end
             end
 
-            if meta_name then
-                emitted = borrow(
+            if function_name then
+                emitted = borrow_callable(
                     indent,
-                    "local function ",
+                    "function " .. function_name,
+                    function_rest
+                )
+            elseif meta_name then
+                emitted = borrow_callable(
+                    indent,
                     "metamethod " .. meta_name,
                     meta_rest
                 )

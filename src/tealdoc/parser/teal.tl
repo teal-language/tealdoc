@@ -473,7 +473,10 @@ local function function_item_for_node(node: tl.Node, visibility: tealdoc.Declara
         for i, typearg in ipairs(node.typeargs) do
             item.typeargs[i] = {
                 name = typearg.typearg,
-                constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
+                constraint = typearg.constraint
+                    and type_to_string(state.type_report, typearg.constraint),
+                type_references = typearg.constraint
+                    and type_references_for_type(typearg.constraint, state)
             }
         end
     end
@@ -503,7 +506,9 @@ local function item_for_function_type(t: tl.FunctionType | tl.GenericType, visib
                 constraint = typearg_constraint_to_string(
                     state.type_report,
                     typearg.constraint
-                )
+                ),
+                type_references = typearg.constraint
+                    and type_references_for_type(typearg.constraint, state)
             }
         end
 
@@ -808,7 +813,10 @@ local function typedecl_visitor(name: string, comments: {tl.Comment}, t: tl.Type
         for i, typearg in ipairs(def.typeargs) do
             typeargs[i] = {
                 name = typearg.typearg,
-                constraint = typearg.constraint and type_to_string(state.type_report, typearg.constraint)
+                constraint = typearg.constraint
+                    and type_to_string(state.type_report, typearg.constraint),
+                type_references = typearg.constraint
+                    and type_references_for_type(typearg.constraint, state)
             }
         end
         def = def.t
