@@ -2131,6 +2131,17 @@ print(value)
             1,
             true
         ), api)
+        local outline_h1 = assert(api:find(
+            '<li class="level-1"><a href="#guide"',
+            1,
+            true
+        ))
+        local outline_h2 = assert(api:find(
+            '<li class="level-2 tealdoc-outline-section">',
+            outline_h1,
+            true
+        ))
+        assert.is_true(outline_h1 < outline_h2)
         assert.is_truthy(api:find(
             "</summary><ol>",
             1,
@@ -2342,6 +2353,12 @@ print(value)
             1,
             true
         ))
+        assert.is_truthy(api:find(
+            'class="tealdoc-breadcrumb-home" aria-label="Home" ' ..
+                'title="Home"><span aria-hidden="true">⌂</span></a>',
+            1,
+            true
+        ), api)
         assert.is_falsy(api:find("api Reference", 1, true))
         assert.are.equal(1, select(2, api:gsub("<h1[%s>]", "")))
         assert.is_truthy(api:find("Open a checked value", 1, true), api)
@@ -2903,6 +2920,15 @@ print(value)
             ".tealdoc-breadcrumbs a:hover {\n" ..
                 "    color: var(--tealdoc-accent-hover);\n" ..
                 "    text-decoration-line: underline !important;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-breadcrumbs li {\n" ..
+                "    display: inline-flex;\n" ..
+                "    align-items: center;\n" ..
+                "    margin: 0;\n" ..
+                "    padding: 0;",
             1,
             true
         ))

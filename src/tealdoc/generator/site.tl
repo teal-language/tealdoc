@@ -1191,11 +1191,16 @@ local function headings(html: string): string, string, {Heading}
                 end
                 used[id] = true
             end
-            if level == 2 or level == 3 then
-                parent = id
+            if level == 1 or level == 2 or level == 3 then
+                if level == 1 then
+                    parent = ""
+                    outline_prefix = ""
+                else
+                    parent = id
+                end
                 local title = strip_tags(content)
                 local outline_title = title
-                if level == 2 then
+                if level == 1 or level == 2 then
                     outline_prefix = ""
                 else
                     -- Every entry under a section drops the namespace its
@@ -1461,7 +1466,8 @@ local function breadcrumbs(
     local items: {string} = {
         '<li><a href="' ..
             escape_html(page_url(base, "")) ..
-            '">Home</a></li>',
+            '" class="tealdoc-breadcrumb-home" aria-label="Home" ' ..
+            'title="Home"><span aria-hidden="true">⌂</span></a></li>',
     }
     local segments: {string} = {}
     for segment in page.path:gmatch("[^/]+") do
@@ -2168,11 +2174,15 @@ local function render_page(
         },
     }
     for _, heading in ipairs(page_headings) do
-        table.insert(entries, {
-            title = page.title .. " › " .. heading.title,
-            url = page_url(settings.base, page.path) .. "#" .. heading.id,
-            text = heading.title .. " " .. page.title,
-        })
+        -- The page entry above already indexes its H1. Adding it again as a
+        -- child heading would produce two search results for the same page.
+        if heading.level ~= 1 then
+            table.insert(entries, {
+                title = page.title .. " › " .. heading.title,
+                url = page_url(settings.base, page.path) .. "#" .. heading.id,
+                text = heading.title .. " " .. page.title,
+            })
+        end
     end
 
     local assets = page_url(settings.base, "assets")

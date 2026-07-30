@@ -32,6 +32,7 @@ return [[
     display: inline-flex;
     align-items: center;
     margin: 0;
+    padding: 0;
     color: var(--tealdoc-text-faint);
     font-size: 0.82rem;
     line-height: 1.2;
@@ -54,6 +55,15 @@ return [[
 .tealdoc-breadcrumbs a:hover {
     color: var(--tealdoc-accent-hover);
     text-decoration-line: underline !important;
+}
+
+.tealdoc-breadcrumbs .tealdoc-breadcrumb-home {
+    font-size: 0.9rem;
+    text-decoration-line: none !important;
+}
+
+.tealdoc-breadcrumbs .tealdoc-breadcrumb-home:hover {
+    text-decoration-line: none !important;
 }
 
 .tealdoc-breadcrumbs [aria-current="page"] {
