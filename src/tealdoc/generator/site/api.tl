@@ -139,6 +139,26 @@ local function add_type_link(
     add_spelling(links, ambiguous, name:match("([%w_]+)$"), url)
 end
 
+--- The nominal spelling on an alias's right-hand side. `typename` may carry
+--- generic arguments around it, while the highlighter looks up only the
+--- dotted identifier ending at the type token.
+local function alias_spelling(item: tealdoc.TypeItem): string
+    if not item.alias_target then
+        return nil
+    end
+    local target_name = item.alias_target:match("([%w_]+)$")
+    local unqualified: string
+    for candidate in item.typename:gmatch("[%a_][%w_%.]*") do
+        if candidate:match("([%w_]+)$") == target_name then
+            if candidate:find(".", 1, true) then
+                return candidate
+            end
+            unqualified = unqualified or candidate
+        end
+    end
+    return unqualified
+end
+
 function SiteApi.type_links(
     view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver
@@ -171,6 +191,21 @@ function SiteApi.type_links(
             -- block writes it under.
             add_type_link(links, ambiguous, item.name, resolver(path))
             add_type_link(links, ambiguous, path, resolver(path))
+            local target_url = item.alias_target
+                and MarkdownGenerator.resolve_type_url(
+                    env,
+                    item.alias_target,
+                    resolver,
+                    false
+                )
+            if target_url then
+                add_spelling(
+                    links,
+                    ambiguous,
+                    alias_spelling(item),
+                    target_url
+                )
+            end
         elseif item and item is tealdoc.FunctionItem then
             for _, param in ipairs(item.params or {}) do
                 for _, reference in ipairs(param.type_references or {}) do

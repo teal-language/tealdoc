@@ -62,6 +62,9 @@ local record Generator
             filter: function(item: tealdoc.Item, env: tealdoc.Env): boolean
             url_for_path: function(path: string): string
             url_for_type: function(path: string): string
+            private_alias_target: function(
+                item: tealdoc.TypeItem
+            ): tealdoc.TypeItem
         end
 
         name: string

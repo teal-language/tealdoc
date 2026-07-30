@@ -470,19 +470,38 @@ describe("Site generator", function()
         env.no_warnings_on_missing = true
         tealdoc.process_text([[
             local record internal
-                --- A shape a public module re-exports.
-                record Circle
-                    radius: number
+                --- A shape only its public alias documents.
+                type Circle = {radius: number}
+
+                record Event
                 end
+
+                --- A listener only its public alias documents.
+                type EventListener = function<E is Event>(event: E)
             end
 
             return internal
         ]], "internal.tl", env)
         tealdoc.process_text([[
+            local record targets
+                --- A listener with its own public definition.
+                type Listener = function(message: string)
+            end
+
+            return targets
+        ]], "targets.tl", env)
+        tealdoc.process_text([[
             local type internal = require("internal")
+            local type targets = require("targets")
             local record shapes
                 --- The shape, under the name the site publishes it as.
                 type Circle = internal.Circle
+
+                --- A private listener rendered as its concrete function type.
+                type EventListener = internal.EventListener
+
+                --- A public listener linked to its definition.
+                type Listener = targets.Listener
 
                 --- Grows one.
                 grow: function(circle: Circle): Circle
@@ -510,6 +529,12 @@ describe("Site generator", function()
                     api = "shapes",
                     public = "public.shapes",
                 },
+                {
+                    path = "targets",
+                    title = "targets",
+                    api = "targets",
+                    public = "public.targets",
+                },
             },
         })
 
@@ -531,16 +556,39 @@ describe("Site generator", function()
             true
         ), guide_html)
 
-        -- The declaration a re-export renders as is where this reads worst:
-        -- both sides are spelled `Circle`, and linking the right one by its
-        -- last segment points the reader at the left one.
+        -- Authored code still says what it says: the source path is private
+        -- and therefore has nowhere honest to link.
+        --
+        -- A generated declaration is different. Tealdoc knows that it is an
+        -- alias and can say what a private target means instead of publishing
+        -- an internal spelling.
         local shapes_html = read_file(output .. "/shapes/index.html")
+        local shapes_markdown = read_file(output .. "/shapes.md")
+        assert.is_falsy(shapes_markdown:find(
+            "type public.shapes.Circle = internal.Circle",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "type public.shapes.Circle = {radius : number}",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "type public.shapes.EventListener = " ..
+                "function<E is Event>(E)",
+            1,
+            true
+        ), shapes_markdown)
+
+        -- A target another page documents keeps the alias spelling and links
+        -- through the import name to that target rather than to this page's
+        -- same-named declaration.
         assert.is_truthy(shapes_html:find(
-            '<span class="token variable tealdoc-token-variable">internal' ..
-                '</span><span class="token punctuation ' ..
-                'tealdoc-token-punctuation">.</span>' ..
+            '<a class="tealdoc-code-link" ' ..
+                'href="/targets/#public.targets.Listener">' ..
                 '<span class="token class-name tealdoc-token-type">' ..
-                "Circle</span>",
+                "Listener</span></a>",
             1,
             true
         ), shapes_html)
