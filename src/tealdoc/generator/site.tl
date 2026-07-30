@@ -1816,13 +1816,6 @@ local function header_actions(
             icon("markdown") ..
             "</a>"
     )
-    table.insert(
-        output,
-        '<label class="tealdoc-icon-link tealdoc-theme-toggle" for="tealdoc-theme-input" aria-label="Toggle light and dark theme" title="Toggle theme">' ..
-            icon("sun") ..
-            icon("moon") ..
-            "</label>"
-    )
     if settings.github then
         table.insert(
             output,
@@ -1833,6 +1826,13 @@ local function header_actions(
                 "</a>"
         )
     end
+    table.insert(
+        output,
+        '<label class="tealdoc-icon-link tealdoc-theme-toggle" for="tealdoc-theme-input" aria-label="Toggle light and dark theme" title="Toggle theme">' ..
+            icon("sun") ..
+            icon("moon") ..
+            "</label>"
+    )
     return table.concat(output, "\n")
 end
 

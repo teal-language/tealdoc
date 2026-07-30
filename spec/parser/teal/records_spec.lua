@@ -1,6 +1,36 @@
 local util = require("spec.util")
 
 describe("teal support in tealdoc: records", function()
+    it("records exact nominal targets for structural properties", function()
+        local registry = util.registry_for_text([[
+            local record Target
+            end
+
+            local interface Contract
+                target: Target
+            end
+
+            local record Container
+                target: Target
+            end
+        ]])
+
+        local expected = {
+            {
+                name = "Target",
+                path = "$test~Target",
+            },
+        }
+        assert.same(
+            expected,
+            registry["$test~Contract.target"].type_references
+        )
+        assert.same(
+            expected,
+            registry["$test~Container.target"].type_references
+        )
+    end)
+
     describe("declarations", function()
         it("should parse a local record", function()
             util.check_registry([[

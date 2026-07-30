@@ -1573,6 +1573,35 @@ print(value)
         local api = read_file(output .. "/modules/api/index.html")
         local css = read_file(output .. "/assets/tealdoc.css")
         local pico = read_file(output .. "/assets/pico.classless.min.css")
+        local top_nav_at = assert(home:find(
+            'class="tealdoc-top-nav"',
+            1,
+            true
+        ))
+        local markdown_action_at = assert(home:find(
+            'title="View Markdown"',
+            top_nav_at,
+            true
+        ))
+        local github_action_at = assert(home:find(
+            'title="GitHub"',
+            markdown_action_at,
+            true
+        ))
+        local theme_action_at = assert(home:find(
+            'title="Toggle theme"',
+            github_action_at,
+            true
+        ))
+        local search_action_at = assert(home:find(
+            'class="tealdoc-search-button"',
+            theme_action_at,
+            true
+        ))
+        assert.is_true(top_nav_at < markdown_action_at)
+        assert.is_true(markdown_action_at < github_action_at)
+        assert.is_true(github_action_at < theme_action_at)
+        assert.is_true(theme_action_at < search_action_at)
         local js = read_file(output .. "/assets/tealdoc.js")
         local search = read_file(output .. "/assets/search-index.js")
         local markdown = read_file(output .. "/modules/api.md")
@@ -1988,6 +2017,16 @@ print(value)
             1,
             true
         ), api)
+        assert.is_truthy(api:find(
+            '<span class="token variable tealdoc-token-variable">window' ..
+                '</span><span class="token punctuation ' ..
+                'tealdoc-token-punctuation">:</span> ' ..
+                '<a class="tealdoc-code-link" href="/modules/window/">' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "Window</span></a>",
+            1,
+            true
+        ), api)
         assert.is_falsy(api:find(
             'href="/modules/api/#api.Options"><span class="token class-name tealdoc-token-type">Options</span></a></code>',
             1,
@@ -2027,6 +2066,15 @@ print(value)
         ))
         assert.is_truthy(css:find(
             "--tealdoc-content-width: var(--vp-content-width, 688px)",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-search-button {\n" ..
+                "    display: inline-flex;\n" ..
+                "    width: min(190px, 18vw);\n" ..
+                "    min-width: 0;\n" ..
+                "    min-height: 30px;",
             1,
             true
         ))
@@ -2232,7 +2280,12 @@ print(value)
             true
         ))
         assert.is_truthy(css:find(
-            ".tealdoc-code-link .tealdoc-token-type {\n    color: inherit;",
+            ".tealdoc-code-link,\n" ..
+                ".tealdoc-code-link:visited,\n" ..
+                ".tealdoc-code-link:hover {\n" ..
+                "    color: var(--tealdoc-syntax-type);\n" ..
+                "    border-bottom: 1px dotted " ..
+                "var(--tealdoc-syntax-type);",
             1,
             true
         ))

@@ -101,7 +101,7 @@ input {
 .tealdoc-top-nav {
     display: flex;
     flex: 1;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 0.25rem;
 }
 
@@ -137,20 +137,27 @@ input {
 
 .tealdoc-search-button {
     display: inline-flex;
-    width: min(240px, 22vw);
+    width: min(190px, 18vw);
     min-width: 0;
-    min-height: 34px;
+    min-height: 30px;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.45rem;
-    margin: 0 0 0 1.75rem;
-    padding: 0.35rem 0.65rem;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.25rem 0.5rem;
     color: var(--tealdoc-header-muted-color);
     border: 1px solid var(--tealdoc-header-border);
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--tealdoc-header-control-background);
     box-shadow: none;
-    font-size: 0.82rem;
+    font-size: 0.76rem;
+}
+
+.tealdoc-header-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.2rem;
 }
 
 .tealdoc-search-button:hover {
@@ -221,13 +228,13 @@ input {
 
 .tealdoc-search-button kbd {
     margin-left: auto;
-    padding: 0.1rem 0.35rem;
+    padding: 0.06rem 0.28rem;
     color: var(--tealdoc-header-muted-color);
     border: 1px solid var(--tealdoc-header-border);
     border-radius: 4px;
     background: transparent;
     box-shadow: none;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
 }
 
 .tealdoc-mobile-menu,

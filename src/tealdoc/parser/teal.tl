@@ -200,7 +200,11 @@ local function typearg_constraint_to_string(
     return reported
 end
 
-local function type_references_for_type(typ: tl.Type, state: VisitState): {tealdoc.TypeReference}
+local function type_references_for_type(
+    typ: tl.Type,
+    state: VisitState,
+    include_resolved_structural?: boolean
+): {tealdoc.TypeReference}
     local references: {tealdoc.TypeReference} = {}
     local seen: {integer: boolean} = {}
     local added: {string: boolean} = {}
@@ -224,6 +228,27 @@ local function type_references_for_type(typ: tl.Type, state: VisitState): {teald
             if t.typevals then
                 for _, typeval in ipairs(t.typevals) do
                     visit(typeval)
+                end
+            end
+        elseif include_resolved_structural
+            and (t is tl.RecordLikeType or t is tl.EnumType)
+        then
+            local typenum = typenum_for_type(state.type_report, t)
+            local path = typenum and state.typenum_to_path[typenum]
+            local rendered = path and type_to_string(state.type_report, t)
+            local target_name = path and path:match("([%w_]+)$")
+            for candidate in (rendered or ""):gmatch(
+                "[%a_][%w_%.]*"
+            ) do
+                if candidate:match("([%w_]+)$") == target_name then
+                    if not added[candidate .. "\0" .. path] then
+                        table.insert(references, {
+                            name = candidate,
+                            path = path,
+                        })
+                        added[candidate .. "\0" .. path] = true
+                    end
+                    break
                 end
             end
         elseif t is tl.GenericType then
@@ -270,6 +295,18 @@ local function type_references_for_type(typ: tl.Type, state: VisitState): {teald
 
     visit(typ)
     return #references > 0 and references or nil
+end
+
+local function type_references_for_field_type(
+    typ: tl.Type,
+    state: VisitState
+): {tealdoc.TypeReference}
+    -- Record and interface properties are reported as their resolved
+    -- structural type, unlike function arguments, which retain a NominalType
+    -- wrapper. Recover the declaration through the same type-report identity
+    -- used when it was registered, while keeping the spelling Teal printed at
+    -- this exact property.
+    return type_references_for_type(typ, state, true)
 end
 
 
@@ -1039,10 +1076,15 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
             item = item_for_function_type(field_type as tl.FunctionType | tl.GenericType, "record", meta and "metamethod" or "function", state, t)
 
         else
+            local references = type_references_for_field_type(
+                field_type,
+                state
+            )
             local field_item: tealdoc.VariableItem = {
                 kind = "variable",
                 visibility = "record",
                 typename = type_to_string(state.type_report, field_type),
+                type_references = references,
                 location = location_for_type(field_type)
             }
             item = field_item

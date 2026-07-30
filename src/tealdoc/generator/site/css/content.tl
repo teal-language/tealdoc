@@ -296,19 +296,22 @@ return [[
     color: var(--tealdoc-syntax-variable);
 }
 
-.tealdoc-code-link {
-    color: var(--tealdoc-link);
-    border-bottom: 1px dotted currentColor;
+.tealdoc-code-link,
+.tealdoc-code-link:visited,
+.tealdoc-code-link:hover {
+    color: var(--tealdoc-syntax-type);
+    border-bottom: 1px dotted var(--tealdoc-syntax-type);
     text-decoration: none;
     text-underline-offset: 0.18em;
 }
 
-.tealdoc-code-link .tealdoc-token-type {
+.tealdoc-code-link .tealdoc-token-type,
+.tealdoc-code-link:visited .tealdoc-token-type,
+.tealdoc-code-link:hover .tealdoc-token-type {
     color: inherit;
 }
 
 .tealdoc-code-link:hover {
-    color: var(--tealdoc-link-hover);
     border-bottom-style: solid;
 }
 

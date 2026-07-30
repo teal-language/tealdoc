@@ -211,6 +211,10 @@ function SiteApi.type_links(
                     target_url
                 )
             end
+        elseif item and item is tealdoc.VariableItem then
+            for _, reference in ipairs(item.type_references or {}) do
+                add_reference(reference)
+            end
         elseif item and item is tealdoc.FunctionItem then
             for _, typearg in ipairs(item.typeargs or {}) do
                 for _, reference in ipairs(typearg.type_references or {}) do
