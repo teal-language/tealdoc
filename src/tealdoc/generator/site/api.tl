@@ -212,6 +212,12 @@ function SiteApi.type_links(
                 )
             end
         elseif item and item is tealdoc.VariableItem then
+            -- Structural declarations write only the field name, but the
+            -- enclosing record or interface gives it an exact public path.
+            -- Register that path without its shorter tails: `container`
+            -- occurs in many records, while `api.Options.container` names
+            -- exactly one documented member.
+            add_spelling(links, ambiguous, path, resolver(path))
             for _, reference in ipairs(item.type_references or {}) do
                 add_reference(reference)
             end

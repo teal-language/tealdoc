@@ -166,6 +166,42 @@ local function qualified_name(tokens: {tl.Token}, index: integer): string
     return name
 end
 
+--- The public path whose structural declaration owns the fields in this
+--- block. Member names are commonly unqualified inside a record or interface,
+--- so this supplies the scope that makes `container` mean precisely
+--- `api.Options.container`.
+local function structural_path(tokens: {tl.Token}): string
+    for index, token in ipairs(tokens) do
+        if token.tk == "record" or token.tk == "interface" then
+            local parts: {string} = {}
+            local cursor = index + 1
+            local first = tokens[cursor]
+            if first
+                and first.y == token.y
+                and first.kind == "identifier"
+            then
+                table.insert(parts, first.tk)
+                cursor = cursor + 1
+            end
+            while tokens[cursor]
+                and tokens[cursor + 1]
+                and tokens[cursor].y == token.y
+                and tokens[cursor].tk == "."
+                and tokens[cursor + 1].y == token.y
+                and tokens[cursor + 1].kind == "identifier"
+            do
+                table.insert(parts, ".")
+                table.insert(parts, tokens[cursor + 1].tk)
+                cursor = cursor + 2
+            end
+            if #parts > 0 then
+                return table.concat(parts)
+            end
+        end
+    end
+    return nil
+end
+
 function Highlighter.highlight(code: string, links?: Highlighter.Links): string
     local offsets: {integer} = {1}
     for position = 1, #code do
@@ -175,6 +211,7 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
     end
 
     local tokens = tl.lex(code, "tealdoc-code-block.tl")
+    local structure = structural_path(tokens)
     local segments: {Segment} = {}
     for index, token in ipairs(tokens) do
         for _, comment in ipairs(token.comments or {}) do
@@ -196,6 +233,17 @@ function Highlighter.highlight(code: string, links?: Highlighter.Links): string
                     and links
                 then
                     url = links[qualified_name(tokens, index)]
+                elseif token.kind == "identifier"
+                    and tokens[index + 1]
+                    and tokens[index + 1].tk == ":"
+                    and links
+                then
+                    local qualified = qualified_name(tokens, index)
+                    if qualified ~= token.tk then
+                        url = links[qualified]
+                    elseif structure then
+                        url = links[structure .. "." .. token.tk]
+                    end
                 end
                 table.insert(segments, {
                     first = first,
@@ -229,7 +277,15 @@ function Highlighter.render(code: string, segments: {Segment}): string
                 Text.escape_html(text) ..
                 "</span>"
             if segment.url then
-                token = '<a class="tealdoc-code-link" href="' ..
+                local link_class = "tealdoc-code-link"
+                if segment.style ~= "type" then
+                    link_class = link_class ..
+                        " tealdoc-code-link-" ..
+                        segment.style
+                end
+                token = '<a class="' ..
+                    link_class ..
+                    '" href="' ..
                     Text.escape_html(segment.url) ..
                     '">' ..
                     token ..

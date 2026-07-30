@@ -250,6 +250,25 @@ describe("Site generator", function()
             {Window = "/modules/window/"}
         )
         assert.is_falsy(declaration:find("tealdoc-code-link", 1, true))
+
+        local member = Highlighter.highlight(
+            "interface api.Options is BaseOptions\n" ..
+                "    window: Window\n" ..
+                "end\n",
+            {
+                ["api.Options.window"] =
+                    "/modules/api/#api.Options.window",
+                Window = "/modules/window/",
+            }
+        )
+        assert.is_truthy(member:find(
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/modules/api/#api.Options.window">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "window</span></a>",
+            1,
+            true
+        ), member)
     end)
 
     it("links a qualified type by the whole path it is written under",
@@ -2068,8 +2087,11 @@ print(value)
             true
         ), api)
         assert.is_truthy(api:find(
-            '<span class="token variable tealdoc-token-variable">window' ..
-                '</span><span class="token punctuation ' ..
+            '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
+                'href="/modules/api/#api.Options.window">' ..
+                '<span class="token variable tealdoc-token-variable">' ..
+                "window</span></a>" ..
+                '<span class="token punctuation ' ..
                 'tealdoc-token-punctuation">:</span> ' ..
                 '<a class="tealdoc-code-link" href="/modules/window/">' ..
                 '<span class="token class-name tealdoc-token-type">' ..
@@ -2335,7 +2357,23 @@ print(value)
                 ".tealdoc-code-link:hover {\n" ..
                 "    color: var(--tealdoc-syntax-type);\n" ..
                 "    border-bottom: 1px dotted " ..
-                "var(--tealdoc-syntax-type);",
+                "currentColor;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-code-link.tealdoc-code-link-variable,\n" ..
+                ".tealdoc-code-link.tealdoc-code-link-variable:visited,\n" ..
+                ".tealdoc-code-link.tealdoc-code-link-variable:hover {\n" ..
+                "    color: var(--tealdoc-syntax-variable);",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-code-link.tealdoc-code-link-property,\n" ..
+                ".tealdoc-code-link.tealdoc-code-link-property:visited,\n" ..
+                ".tealdoc-code-link.tealdoc-code-link-property:hover {\n" ..
+                "    color: var(--tealdoc-syntax-property);",
             1,
             true
         ))
@@ -2356,6 +2394,12 @@ print(value)
         ))
         assert.is_truthy(css:find(
             ".tealdoc-outline li {\n    margin: 0;\n    padding: 0;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-outline-section details[open] > summary {\n" ..
+                "    margin-bottom: 0;",
             1,
             true
         ))
@@ -2399,6 +2443,14 @@ print(value)
         ))
         assert.is_truthy(css:find(
             ".tealdoc-sidebar-section details[open] > summary {\n    margin-bottom: 0;",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-sidebar-section .tealdoc-sidebar-section > " ..
+                "details > summary {\n" ..
+                "    margin-left: calc(-1 * " ..
+                "var(--tealdoc-sidebar-nested-indent));",
             1,
             true
         ))

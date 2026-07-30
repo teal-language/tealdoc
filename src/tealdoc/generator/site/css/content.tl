@@ -300,7 +300,7 @@ return [[
 .tealdoc-code-link:visited,
 .tealdoc-code-link:hover {
     color: var(--tealdoc-syntax-type);
-    border-bottom: 1px dotted var(--tealdoc-syntax-type);
+    border-bottom: 1px dotted currentColor;
     text-decoration: none;
     text-underline-offset: 0.18em;
 }
@@ -308,6 +308,26 @@ return [[
 .tealdoc-code-link .tealdoc-token-type,
 .tealdoc-code-link:visited .tealdoc-token-type,
 .tealdoc-code-link:hover .tealdoc-token-type {
+    color: inherit;
+}
+
+.tealdoc-code-link.tealdoc-code-link-variable,
+.tealdoc-code-link.tealdoc-code-link-variable:visited,
+.tealdoc-code-link.tealdoc-code-link-variable:hover {
+    color: var(--tealdoc-syntax-variable);
+}
+
+.tealdoc-code-link-variable .tealdoc-token-variable {
+    color: inherit;
+}
+
+.tealdoc-code-link.tealdoc-code-link-property,
+.tealdoc-code-link.tealdoc-code-link-property:visited,
+.tealdoc-code-link.tealdoc-code-link-property:hover {
+    color: var(--tealdoc-syntax-property);
+}
+
+.tealdoc-code-link-property .tealdoc-token-property {
     color: inherit;
 }
 

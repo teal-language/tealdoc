@@ -133,9 +133,16 @@ return [[
     color: var(--tealdoc-sidebar-heading-color);
 }
 
-/* A group nested inside another is one row among the rows it sits with, so it
- * reads in their color. The heading color belongs to the top level, which is
- * what the rule and the space above it already divide. */
+/* A nested group is the parent of the rows beneath it, not one of those rows.
+ * Pull its summary back across the list's own inset, leaving that inset in
+ * place for its children. Each deeper section therefore begins one level
+ * before the links it owns. */
+.tealdoc-sidebar-section .tealdoc-sidebar-section > details > summary {
+    margin-left: calc(-1 * var(--tealdoc-sidebar-nested-indent));
+}
+
+/* Nested groups keep the item color because only the divided top level uses
+ * the stronger section-heading color. */
 .tealdoc-sidebar-section .tealdoc-sidebar-section > details > summary:not([role]) {
     color: var(--tealdoc-sidebar-item-color);
 }
@@ -235,6 +242,10 @@ return [[
     padding: 0 1rem 0 0;
     cursor: pointer;
     list-style: none;
+}
+
+.tealdoc-outline-section details[open] > summary {
+    margin-bottom: 0;
 }
 
 .tealdoc-outline-section summary::-webkit-details-marker {
