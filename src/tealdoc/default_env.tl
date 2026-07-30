@@ -103,7 +103,7 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
-    local typearg_tag_handler: tealdoc.Tag = { -- TODO: improve!
+    local typearg_tag_handler: tealdoc.Tag = {
         name = "typearg",
         has_param = true,
         has_description = true,
@@ -119,30 +119,33 @@ function DefaultEnv.init(): tealdoc.Env
                 return
             end
 
+            -- A tag says which parameter it describes, so it is bound by
+            -- that name. Binding by position instead meant the tags had to
+            -- be written in declaration order, and a pair written the other
+            -- way round was noticed and then thrown away rather than put
+            -- where it belonged.
             local typearg: tealdoc.Typearg
             if item.typeargs then
-                for _, t in ipairs(item.typeargs) do
-                    if t.description == nil then
-                        typearg = t
+                for _, candidate in ipairs(item.typeargs) do
+                    if candidate.name == ctx.param then
+                        typearg = candidate
                         break
+                    end
+                end
+                if not typearg then
+                    -- A parameter the compiler reported without a name can
+                    -- still be described; the first undescribed one is it.
+                    for _, candidate in ipairs(item.typeargs) do
+                        if not candidate.name and candidate.description == nil then
+                            typearg = candidate
+                            break
+                        end
                     end
                 end
             end
             if not typearg then
                 log:warning(
-                    "Found more @typearg tags than declared type arguments in '%s' (%s:%s:%s)",
-                    item.name,
-                    item.location.filename,
-                    item.location.y,
-                    item.location.x
-                )
-                return
-            end
-
-            if typearg.name and typearg.name ~= ctx.param then
-                log:warning(
-                    "Typearg name mismatch: expected '%s', got '%s' in '%s' (%s:%s:%s)",
-                    typearg.name,
+                    "No type argument named '%s' is declared by '%s' (%s:%s:%s)",
                     ctx.param,
                     item.name,
                     item.location.filename,
@@ -150,6 +153,16 @@ function DefaultEnv.init(): tealdoc.Env
                     item.location.x
                 )
                 return
+            end
+            if typearg.description ~= nil then
+                log:warning(
+                    "Type argument '%s' of '%s' is described twice (%s:%s:%s)",
+                    ctx.param,
+                    item.name,
+                    item.location.filename,
+                    item.location.y,
+                    item.location.x
+                )
             end
             typearg.name = ctx.param
             typearg.description = ctx.description
