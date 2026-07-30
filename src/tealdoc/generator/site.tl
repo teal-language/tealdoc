@@ -148,15 +148,37 @@ local function cerulean_formatter(): function(string): string
             indent: string,
             keyword: string,
             declared: string,
-            rest: string
+            rest: string,
+            tail?: string
         ): string
             placeholder_count = placeholder_count + 1
             local borrowed = indent ..
                 keyword ..
                 "TealdocGenerated" ..
-                tostring(placeholder_count)
+                tostring(placeholder_count) ..
+                (tail or "")
             table.insert(restorations, {borrowed, indent .. declared})
             return borrowed .. rest
+        end
+
+        -- A type argument list ends at the `>` that closes the `<` it opened
+        -- with, and a constraint can name a generic type of its own, so the
+        -- close has to be counted for rather than searched for. Answers the
+        -- list and whatever follows it, or nothing if the list never closes.
+        local function typeargs(text: string): string, string
+            local depth = 0
+            for index = 1, #text do
+                local char = text:sub(index, index)
+                if char == "<" then
+                    depth = depth + 1
+                elseif char == ">" then
+                    depth = depth - 1
+                    if depth == 0 then
+                        return text:sub(1, index), text:sub(index + 1)
+                    end
+                end
+            end
+            return nil, nil
         end
 
         for line in (normalized .. "\n"):gmatch("(.-)\n") do
@@ -166,8 +188,25 @@ local function cerulean_formatter(): function(string): string
             local meta_name, meta_rest = body:match(
                 "^metamethod%s+(" .. qualified .. ")(%(.*)$"
             )
+            -- A generic type alias is spelled the way the compiler shows a
+            -- type rather than the way Teal writes one: the parameters
+            -- arrive after the `=`, introduced by `generic`, and the type
+            -- they parameterize follows them. Teal puts the same parameters
+            -- on the name being declared, so the borrowed name takes them
+            -- and the `generic<...>` marker goes back with the path.
+            local alias_params, alias_rest: string, string
+            local alias_dotted, alias_generic = body:match(
+                "^type%s+(" .. qualified .. ")%s*=%s*generic(<.*)$"
+            )
+            if alias_generic then
+                alias_params, alias_rest = typeargs(alias_generic)
+                if not alias_rest or not alias_rest:match("^%s%S") then
+                    alias_params, alias_rest = nil, nil
+                end
+            end
+
             local kind, dotted, rest: string, string, string
-            if not meta_name then
+            if not meta_name and not alias_params then
                 for _, word in ipairs({"record", "interface", "enum"}) do
                     if not kind then
                         kind, dotted, rest = body:match(
@@ -188,6 +227,14 @@ local function cerulean_formatter(): function(string): string
                     "local function ",
                     "metamethod " .. meta_name,
                     meta_rest
+                )
+            elseif alias_params then
+                emitted = borrow(
+                    indent,
+                    "local type ",
+                    "type " .. alias_dotted .. " = generic" .. alias_params,
+                    alias_rest,
+                    alias_params .. " ="
                 )
             elseif kind then
                 emitted = borrow(indent, "local " .. kind, kind .. dotted, rest)

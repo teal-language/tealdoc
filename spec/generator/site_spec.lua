@@ -581,6 +581,103 @@ local authored  =  true
         os.remove(example)
     end)
 
+    it("hands Cerulean a generic type alias Teal will take", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                --- Holds one value.
+                interface Holder<T>
+                    item: T
+                end
+
+                --- Names a keyed lookup.
+                type Key<T> = {T}
+
+                --- Names a constrained option set.
+                type Options<C is Holder<string>> = {string: C}
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local source = os.tmpname()
+        write_file(source, "# Generics\n")
+        local output = os.tmpname()
+        os.remove(output)
+
+        local handed = {}
+        with_preloaded_modules({
+            ["cerulean.options"] = function()
+                return {
+                    default = function()
+                        return {max_line_width = 88}
+                    end,
+                }
+            end,
+            ["cerulean.rewriter"] = function()
+                return {
+                    rewrite = function(code)
+                        table.insert(handed, code)
+                        return {
+                            output = code,
+                            status = "unchanged",
+                            parse_errors = {},
+                        }
+                    end,
+                }
+            end,
+        }, function()
+            SiteGenerator.build(output, env, {
+                title = "Generics",
+                format_generated_code = true,
+                validate_links = false,
+                pages = {
+                    {
+                        path = "api",
+                        title = "API",
+                        source = source,
+                        api = "api",
+                    },
+                },
+            })
+        end)
+
+        -- The parameters move onto the borrowed name, which is where Teal
+        -- writes them, and the `generic` marker the compiler shows a type
+        -- with is gone from everything the formatter reads.
+        local seen = table.concat(handed, "\n")
+        assert.is_truthy(seen:find(
+            "local type TealdocGenerated1<T> = {T}",
+            1,
+            true
+        ), seen)
+        assert.is_truthy(seen:find(
+            "local type TealdocGenerated1<C is Holder<string>> = {string : C}",
+            1,
+            true
+        ), seen)
+        assert.is_falsy(seen:find("generic<", 1, true), seen)
+
+        -- The path and the marker come back exactly as they were written,
+        -- constraint and all, so a signature says what it said before.
+        local markdown = read_file(output .. "/api.md")
+        assert.is_truthy(markdown:find(
+            "```teal\ntype api.Key = generic<T> {T}\n```",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "```teal\ntype api.Options = " ..
+                "generic<C is Holder<string>> {string : C}\n```",
+            1,
+            true
+        ), markdown)
+
+        remove_tree(output)
+        os.remove(source)
+    end)
+
     it("requires Cerulean only when generated formatting is enabled", function()
         local output = os.tmpname()
         os.remove(output)
