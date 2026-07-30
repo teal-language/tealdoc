@@ -556,6 +556,12 @@ describe("Site generator", function()
                     --- The component this configuration creates.
                     component: ScalarComponent<T>
                 end
+
+                --- Client configuration from an undocumented dependency.
+                record Options
+                    --- The request timeout.
+                    timeout: number
+                end
             end
 
             return internal
@@ -587,6 +593,9 @@ describe("Site generator", function()
                 --- Another private generic interface projected here.
                 type ScalarComponentOptions<T> =
                     internal.ScalarComponentOptions<T>
+
+                --- Public client configuration.
+                type ClientOptions = internal.Options
 
                 --- A relationship constraint documented on this page.
                 interface Relationship
@@ -711,6 +720,21 @@ describe("Site generator", function()
         ), shapes_markdown)
         assert.is_truthy(shapes_markdown:find(
             "interface public.shapes.ScalarComponentOptions<T>",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "record public.shapes.ClientOptions",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "public.shapes.ClientOptions.timeout",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_falsy(shapes_markdown:find(
+            "type public.shapes.ClientOptions = internal.Options",
             1,
             true
         ), shapes_markdown)

@@ -422,6 +422,30 @@ local function store_item_at_path(item: tealdoc.Item, path: string, state: Visit
                     )
                 end
             end
+        -- A type-only import may expose the record returned by its module
+        -- under the exact path where the importing module publishes an alias:
+        --
+        --     local type Stored = require("pkg.Store")
+        --     type Store = Stored
+        --
+        -- The resolved record is the useful public declaration. Promote it
+        -- instead of replacing it with a nominal alias or treating the two
+        -- views of the same type as conflicting declarations.
+        elseif old_item is tealdoc.TypeItem
+            and item is tealdoc.TypeItem
+            and item.type_kind == "type"
+            and item.alias_target == path
+        then
+            if item.text then
+                old_item.text = item.text
+            end
+            if state.env.documented_items[item] then
+                state.env.documented_items[old_item] = true
+            end
+            old_item.name = item.name
+            old_item.visibility = item.visibility
+            old_item.parent = nil
+            item = old_item
         else
             assert(false) -- TODO: better error handling
         end
@@ -445,11 +469,12 @@ end
 local function store_item(item: tealdoc.Item, state: VisitState, typ?: tl.Type): string
     local path = store_item_at_path(item, get_path(item, state, typ), state)
     if not path then return end
-    if not item.parent then
+    local stored_item = assert(state.env.registry[path])
+    if not stored_item.parent then
         if not state.parent_item.children then
             state.parent_item.children = {}
         end
-        item.parent = state.parent_item.path
+        stored_item.parent = state.parent_item.path
         -- hack for not adding the same item twice in case we are replacing an item
         for _, child in ipairs(state.parent_item.children) do
             if child == path then
@@ -1454,6 +1479,7 @@ end
 
 local function normalized_path(path: string): string
     local normalized = path:gsub("\\", "/")
+    normalized = normalized:gsub("/+", "/")
     normalized = normalized:gsub("^%./+", "")
     normalized = normalized:gsub("/+$", "")
     return normalized

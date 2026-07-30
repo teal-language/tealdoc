@@ -2530,7 +2530,11 @@ function SiteGenerator.build(
     local views: {string: SiteTypes.ApiView} = {}
     for _, page in ipairs(context.pages) do
         if page.api then
-            views[page.path] = SiteView.prepare(page, context.env)
+            views[page.path] = SiteView.prepare(
+                page,
+                context.env,
+                context.pages
+            )
         end
     end
     local resolver = routes_for_pages(context.pages, views, settings.base)

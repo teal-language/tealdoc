@@ -267,7 +267,7 @@ describe("CLI", function()
         remove_tree(root)
     end)
 
-    it("publishes a same-name record from a resolved project dependency", function()
+    it("publishes same-name records from resolved project dependencies", function()
         local previous_directory = assert(lfs.currentdir())
         local previous_utf8 = _G.utf8
         local previous_utf8_loader = package.preload["lua-utf8"]
@@ -295,9 +295,13 @@ describe("CLI", function()
         assert(lfs.mkdir(root .. "/src/pkg"))
         write_file(root .. "/src/api.tl", [[
             local DataStream <const> = require("pkg.DataStream")
+            local type Stored = require("pkg.Store")
             local record api
                 --- Stores a request body.
                 DataStream: DataStream
+
+                --- Holds values under typed keys.
+                type Store = Stored
             end
             api.DataStream = DataStream
             return api
@@ -311,6 +315,13 @@ describe("CLI", function()
                 ofString: function(text: string): DataStream
             end
             return DataStream
+        ]])
+        write_file(root .. "/src/pkg/Store.tl", [[
+            local record Store
+                --- Reads a stored value.
+                get: function(self: Store, name: string): any
+            end
+            return Store
         ]])
 
         assert(lfs.chdir(root))
@@ -363,6 +374,22 @@ describe("CLI", function()
             1,
             true
         ), stream)
+        local store_start = assert(html:find(
+            '<p><a id="api.Store"></a></p>',
+            1,
+            true
+        ))
+        local store = html:sub(store_start, store_start + 2500)
+        assert.is_truthy(store:find(
+            "tealdoc-kind-record",
+            1,
+            true
+        ), store)
+        assert.is_truthy(store:find(
+            'id="api.Store.get"',
+            1,
+            true
+        ), store)
         remove_tree(root)
     end)
 end)

@@ -3,7 +3,11 @@ local Generator = require("tealdoc.generator")
 local SiteTypes = require("tealdoc.generator.site.types")
 
 local record SiteView
-    prepare: function(page: SiteTypes.Page, env: tealdoc.Env): SiteTypes.ApiView
+    prepare: function(
+        page: SiteTypes.Page,
+        env: tealdoc.Env,
+        pages?: {SiteTypes.Page}
+    ): SiteTypes.ApiView
     modules: function(page: SiteTypes.Page): {string}
 end
 
@@ -238,7 +242,8 @@ end
 
 function SiteView.prepare(
     page: SiteTypes.Page,
-    env: tealdoc.Env
+    env: tealdoc.Env,
+    pages?: {SiteTypes.Page}
 ): SiteTypes.ApiView
     local api_sources = sources(page)
     if #api_sources == 0 then
@@ -260,6 +265,30 @@ function SiteView.prepare(
     local mounted_from: {string: string} = {}
     local root_children: {string} = {}
     local module_texts: {string} = {}
+
+    local function has_documented_target(path: string): boolean
+        for _, candidate_page in ipairs(pages or {page}) do
+            for _, source in ipairs(sources(candidate_page)) do
+                if path == source.module
+                    or path:sub(1, #source.module + 1) ==
+                        source.module .. "."
+                then
+                    if #(source.include or {}) == 0 then
+                        return true
+                    end
+                    local remainder = path:sub(#source.module + 2)
+                    local first = remainder:match("^([^.]+)")
+                        or remainder
+                    for _, name in ipairs(source.include) do
+                        if name == first then
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+        return false
+    end
 
     local function mount(
         source_path: string,
@@ -451,6 +480,7 @@ function SiteView.prepare(
             and public .. "." .. target.name
             or nil
         local candidate = candidate_path
+            and mounted_from[candidate_path]
             and projected.registry[candidate_path]
             or nil
         if target
@@ -510,6 +540,53 @@ function SiteView.prepare(
             end
         end
     end
+    local function expand_private_alias(
+        path: string,
+        item: tealdoc.TypeItem
+    ): tealdoc.TypeItem
+        if item.type_kind ~= "type" or not item.alias_target then
+            return item
+        end
+        local target_path = canonical_alias(item, env)
+        local target = target_path and env.registry[target_path]
+        if not target
+            or not target is tealdoc.TypeItem
+            or target.type_kind == "type"
+            or has_documented_target(target_path)
+        then
+            return item
+        end
+
+        -- A resolved dependency is not necessarily a documented module.
+        -- Project its structural declaration under the public alias so a
+        -- namespace-shaped source path cannot manufacture a link to an
+        -- anchor no page renders.
+        local definition = copy_item(target) as tealdoc.TypeItem
+        definition.path = path
+        definition.parent = item.parent
+        definition.name = item.name
+        definition.visibility = item.visibility
+        definition.text = item.text or definition.text
+        definition.typeargs = item.typeargs or definition.typeargs
+        definition.children = {}
+        projected.registry[path] = definition
+        source_to_public[target_path] = path
+        mounted_from[path] = target_path
+        for _, child_path in ipairs(target.children or {}) do
+            local child_public = mount(
+                child_path,
+                target_path,
+                path,
+                path,
+                false,
+                true
+            )
+            if child_public then
+                table.insert(definition.children, child_public)
+            end
+        end
+        return definition
+    end
     local function scan(path: string)
         if scanned[path] then
             return
@@ -536,7 +613,9 @@ function SiteView.prepare(
                 end
             end
         elseif item is tealdoc.TypeItem then
-            include_typeargs(item.typeargs)
+            local type_item = expand_private_alias(path, item)
+            item = type_item
+            include_typeargs(type_item.typeargs)
         end
         for _, child in ipairs(item.children or {}) do
             scan(child)

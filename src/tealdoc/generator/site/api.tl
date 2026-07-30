@@ -384,6 +384,35 @@ local function is_submodule_export(
     view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver
 ): boolean
+    -- A resolved structural type can share a source namespace with another
+    -- page without being a module export. It remains part of this page's API
+    -- and supplies the anchor that its signatures reference.
+    if item is tealdoc.TypeItem then
+        local module_record = view.env.registry["$" .. item.path] ~= nil
+        if not module_record then
+            for path in pairs(view.env.registry) do
+                local source_path = path:match("^%$(.+)$")
+                local source = source_path
+                    and view.env.registry[source_path]
+                    or nil
+                if source
+                    and source is tealdoc.TypeItem
+                    and source.location
+                    and item.location
+                    and source.location.filename ==
+                        item.location.filename
+                    and source.location.y == item.location.y
+                    and source.location.x == item.location.x
+                then
+                    module_record = true
+                    break
+                end
+            end
+        end
+        if not module_record then
+            return false
+        end
+    end
     local page_url = resolver(view.public)
     local item_url = resolver(item.path)
     return page_url
