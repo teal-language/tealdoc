@@ -424,13 +424,15 @@ function DefaultEnv.init(): tealdoc.Env
 
     local function markdown_with_type_links(
         ctx: Generator.Phase.Context,
-        text: string
+        text: string,
+        self_url?: string
     ): string
         return MarkdownGenerator.resolve_markdown_type_links(
             ctx.env,
             text,
             ctx.url_for_type,
-            ctx.url_for_path
+            ctx.url_for_path,
+            self_url
         )
     end
 
@@ -438,8 +440,23 @@ function DefaultEnv.init(): tealdoc.Env
         name = "text",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
             if item.text then
+                local self_url: string
+                if item is tealdoc.TypeItem
+                    and (
+                        item.type_kind == "record"
+                        or item.type_kind == "interface"
+                    )
+                then
+                    self_url = ctx.url_for_type
+                        and ctx.url_for_type(item.path)
+                        or ctx.url_for_path(item.path)
+                end
                 ctx.builder:paragraph(attr("text"), function()
-                    ctx.builder:md(markdown_with_type_links(ctx, item.text))
+                    ctx.builder:md(markdown_with_type_links(
+                        ctx,
+                        item.text,
+                        self_url
+                    ))
                 end)
             end
         end

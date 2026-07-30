@@ -21,6 +21,23 @@ describe("Markdown generator", function()
         )
     end)
 
+    it("renders a routed reference to the current item without a link", function()
+        local env = DefaultEnv.init()
+        local markdown = MarkdownGenerator.resolve_markdown_type_links(
+            env,
+            "Returns a [`Future`](tealdoc:tecs.Future)`<T>`.",
+            function(path)
+                return path == "tecs.Future"
+                    and "/modules/Future/"
+                    or nil
+            end,
+            nil,
+            "/modules/Future/"
+        )
+
+        assert.are.equal("Returns a `Future<T>`.", markdown)
+    end)
+
     it("hides single-underscore members unless explicitly public", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

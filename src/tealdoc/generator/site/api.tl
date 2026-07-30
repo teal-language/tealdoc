@@ -363,6 +363,22 @@ local FUNCTION_KINDS: {string: boolean} = {
     macro = true,
 }
 
+--- An item whose public path belongs to another page is that page's module
+--- export, not a second API declaration on this one. The route table knows
+--- this without configuration: a child module's page wins the same public
+--- path over the field on its parent.
+local function is_submodule_export(
+    item: tealdoc.Item,
+    view: SiteTypes.ApiView,
+    resolver: MarkdownGenerator.URLResolver
+): boolean
+    local page_url = resolver(view.public)
+    local item_url = resolver(item.path)
+    return page_url
+        and item_url
+        and item_url ~= page_url .. "#" .. item.path
+end
+
 local function rebase_headings(text: string, target: integer): string
     local lines: {string} = {}
     for line in (text .. "\n"):gmatch("(.-)\n") do
@@ -503,7 +519,8 @@ end
 
 local function group_details(
     markdown: string,
-    view: SiteTypes.ApiView
+    view: SiteTypes.ApiView,
+    resolver: MarkdownGenerator.URLResolver
 ): string
     local env = view.env
     local module = env.registry[view.public]
@@ -544,7 +561,9 @@ local function group_details(
 
     local items: {tealdoc.Item} = {}
     for _, entry in ipairs(positioned) do
-        table.insert(items, entry[1])
+        if not is_submodule_export(entry[1], view, resolver) then
+            table.insert(items, entry[1])
+        end
     end
     table.sort(items, function(a: tealdoc.Item, b: tealdoc.Item): boolean
         local left = a.name:lower()
@@ -677,14 +696,15 @@ function SiteApi.markdown(
             end,
             function(path: string): string
                 return page_env.registry[path] and "#" .. path or nil
-            end
+            end,
+            resolver(view.public)
         )
     end
     markdown = "\n" .. markdown
     markdown = markdown:gsub("\n(##+) ", function(level: string): string
         return "\n" .. string.rep("#", math.min(#level + 1, 6)) .. " "
     end)
-    return group_details(markdown:sub(2), view), introduction
+    return group_details(markdown:sub(2), view, resolver), introduction
 end
 
 local function item_text(item: tealdoc.Item, env: tealdoc.Env): string
@@ -748,6 +768,58 @@ local function item_summary(item: tealdoc.Item, env: tealdoc.Env): string
     return prefix .. (text:gsub("\\", "\\\\"):gsub("|", "\\|"))
 end
 
+local function rightmost_type_name(
+    item: tealdoc.VariableItem,
+    env: tealdoc.Env
+): string, string
+    local reference = item.type_references and item.type_references[1]
+    if not reference then
+        return item.typename:match("([%a_][%w_]*)%s*$") or item.typename, nil
+    end
+
+    local name = reference.name:match("([%a_][%w_]*)$")
+        or reference.name
+    local path = reference.path
+    local target = env.registry[path]
+    local seen: {string: boolean} = {}
+    while target
+        and target is tealdoc.TypeItem
+        and target.type_kind == "type"
+        and target.alias_target
+        and not Generator.filter(target, env)
+        and not seen[path]
+    do
+        seen[path] = true
+        path = target.alias_target
+        name = path:match("([%a_][%w_]*)$") or name
+        target = env.registry[path]
+    end
+    return name, path
+end
+
+local function value_type(
+    item: tealdoc.Item,
+    env: tealdoc.Env,
+    resolver: MarkdownGenerator.URLResolver
+): string
+    if not item is tealdoc.VariableItem then
+        return "—"
+    end
+    local name, path = rightmost_type_name(item, env)
+    local url = path
+        and MarkdownGenerator.resolve_type_url(
+            env,
+            path,
+            resolver,
+            false
+        )
+        or nil
+    if url then
+        return "[`" .. name .. "`](" .. url .. ")"
+    end
+    return "`" .. name .. "`"
+end
+
 function SiteApi.summary(
     view: SiteTypes.ApiView,
     resolver: MarkdownGenerator.URLResolver
@@ -764,7 +836,10 @@ function SiteApi.summary(
     local items: {tealdoc.Item} = {}
     for _, path in ipairs(module.children) do
         local item = env.registry[path]
-        if item and Generator.filter(item, env) then
+        if item
+            and Generator.filter(item, env)
+            and not is_submodule_export(item, view, resolver)
+        then
             table.insert(items, item)
         end
     end
@@ -784,15 +859,14 @@ function SiteApi.summary(
     -- reader arriving at a module wants either the shapes it defines or the
     -- calls it answers, and interleaving them by name means reading the kind
     -- column of every row to find out which of the two a name is.
-    -- A kind column earns its place where the group holds more than one kind:
-    -- a type is a record or an interface or an enum, a value is a field or a
-    -- variable. Everything under Functions is called the same way whatever
-    -- `item_kind` names it, and the detail below carries the badge anyway, so
-    -- a column there would repeat the heading on every row.
-    local groups: {{string, string, boolean, {tealdoc.Item}}} = {
-        { "Functions", "Function", false, {} },
-        { "Types", "Type", true, {} },
-        { "Values", "Value", true, {} },
+    -- Types need their declaration kind. Values need their type: "variable"
+    -- only repeats that the row is in Values and hides the useful fact.
+    -- Everything under Functions is called the same way whatever `item_kind`
+    -- names it, and the detail below carries the badge anyway.
+    local groups: {{string, string, string, {tealdoc.Item}}} = {
+        { "Functions", "Function", "none", {} },
+        { "Types", "Type", "kind", {} },
+        { "Values", "Value", "type", {} },
     }
     for _, item in ipairs(items) do
         local kind = Generator.item_kind(item, env)
@@ -808,16 +882,20 @@ function SiteApi.summary(
     local output: {string} = {}
     for _, group in ipairs(groups) do
         local heading, column = group[1], group[2]
-        local show_kind, group_items = group[3], group[4]
+        local metadata, group_items = group[3], group[4]
         if #group_items > 0 then
             if #output > 0 then
                 table.insert(output, "\n")
             end
             table.insert(output, "**" .. heading .. "**\n\n")
-            if show_kind then
+            if metadata ~= "none" then
                 table.insert(
                     output,
-                    "| " .. column .. " | Kind | Description |\n"
+                    "| " ..
+                        column ..
+                        " | " ..
+                        (metadata == "kind" and "Kind" or "Type") ..
+                        " | Description |\n"
                 )
                 table.insert(output, "| --- | --- | --- |\n")
             else
@@ -827,7 +905,7 @@ function SiteApi.summary(
             for _, item in ipairs(group_items) do
                 local url = resolver(item.path) or "#" .. item.path
                 local cells = "| [`" .. item.name .. "`](" .. url .. ") | "
-                if show_kind then
+                if metadata == "kind" then
                     local kind = Generator.item_kind(item, env)
                     cells = cells ..
                         '<span class="tealdoc-kind-badge tealdoc-kind-' ..
@@ -835,6 +913,8 @@ function SiteApi.summary(
                         '">' ..
                         kind ..
                         "</span> | "
+                elseif metadata == "type" then
+                    cells = cells .. value_type(item, env, resolver) .. " | "
                 end
                 table.insert(
                     output,

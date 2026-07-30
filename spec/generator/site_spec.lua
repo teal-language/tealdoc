@@ -397,6 +397,14 @@ describe("Site generator", function()
         tealdoc.process_text([[
             local type first = require("first")
             local type hidden = require("hidden")
+            local record KindTypes
+                --- The value for this kind.
+                widget: first.Widget
+            end
+            local enum Status
+                "ready"
+                "waiting"
+            end
             local record second
                 --- An alias that remains linked after projection.
                 type WidgetAlias = first.Widget
@@ -409,6 +417,15 @@ describe("Site generator", function()
 
                 --- Mentions an internal type which has no public page.
                 conceal: function(secret: hidden.Secret)
+
+                --- Exposes one type per kind.
+                on: KindTypes
+
+                --- Publishes a same-named structural type.
+                type Status = Status
+
+                --- Reports the current status.
+                status: Status
             end
 
             return second
@@ -465,6 +482,7 @@ describe("Site generator", function()
         })
 
         local html = read_file(output .. "/api/index.html")
+        local markdown = read_file(output .. "/api.md")
         assert.is_truthy(html:find('id="public.api.Widget"', 1, true), html)
         assert.is_truthy(html:find('id="public.api.WidgetAlias"', 1, true), html)
         assert.equals(
@@ -475,6 +493,29 @@ describe("Site generator", function()
         assert.is_truthy(html:find('id="public.api.Camera"', 1, true), html)
         assert.is_truthy(html:find('id="public.api.Camera.x"', 1, true), html)
         assert.is_truthy(html:find('id="public.Root"', 1, true), html)
+        assert.is_truthy(html:find('id="public.api.KindTypes"', 1, true), html)
+        assert.is_truthy(html:find(
+            'id="public.api.KindTypes.widget"',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find('id="public.api.Status"', 1, true), html)
+        assert.is_truthy(html:find(
+            'id="public.api.Status.&quot;ready&quot;"',
+            1,
+            true
+        ), html)
+        assert.is_truthy(html:find(
+            'href="/api/#public.api.KindTypes"',
+            1,
+            true
+        ), html)
+        assert.is_truthy(markdown:find(
+            "| [`on`](/api/#public.api.on) | " ..
+                "[`KindTypes`](/api/#public.api.KindTypes) |",
+            1,
+            true
+        ), markdown)
         assert.is_truthy(html:find('href="/api/#public.Root"', 1, true), html)
         assert.is_falsy(html:find('id="public.Hidden"', 1, true))
         assert.is_falsy(html:find('id="public.api.x"', 1, true))
@@ -1107,22 +1148,19 @@ local preserved  =  true
         assert.is_truthy(markdown:find("## Module contents", 1, true), markdown)
         assert.is_truthy(markdown:find(
             "| [`Build`](/constants/#api.Build) | " ..
-                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
-                "variable</span> | `<const>` Returns the build identifier. |",
+                "`string` | `<const>` Returns the build identifier. |",
             1,
             true
         ), markdown)
         assert.is_truthy(markdown:find(
             "| [`Status`](/constants/#api.Status) | " ..
-                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
-                "variable</span> | Returns the current status. |",
+                "`string` | Returns the current status. |",
             1,
             true
         ), markdown)
         assert.is_falsy(markdown:find(
             "| [`Status`](/constants/#api.Status) | " ..
-                '<span class="tealdoc-kind-badge tealdoc-kind-variable">' ..
-                "variable</span> | `<const>`",
+                "`string` | `<const>`",
             1,
             true
         ))
@@ -1144,6 +1182,7 @@ local preserved  =  true
             local type watch = require("watch")
             local record filesystem
                 watch: watch
+                current: watch.Options
                 observe: function(): watch.Options
             end
             return filesystem
@@ -1174,11 +1213,29 @@ local preserved  =  true
         })
 
         local html = read_file(output .. "/filesystem/index.html")
+        local markdown = read_file(output .. "/filesystem.md")
         assert.is_truthy(html:find(
             'href="/filesystem/watch/#public.filesystem.watch.Options"',
             1,
             true
         ), html)
+        assert.is_truthy(markdown:find(
+            "| [`Watch`](/filesystem/watch/) |",
+            1,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "| [`current`](/filesystem/#public.filesystem.current) | " ..
+                "[`Options`](/filesystem/watch/" ..
+                "#public.filesystem.watch.Options) |",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "### public.filesystem.watch ",
+            1,
+            true
+        ), markdown)
         remove_tree(output)
     end)
 
@@ -1447,7 +1504,7 @@ local preserved  =  true
             return Window
         ]], "window.tl", env)
         tealdoc.process_text([==[--[=[
-Opens windows and reports display changes through
+[`API`](tealdoc:api) opens windows and reports display changes through
 [`Window`](tealdoc:Window).
 
 # Display changes
@@ -1467,6 +1524,7 @@ local record api
     --- Read-only. Reports the number of windows awaiting an event.
     pending: integer
 
+    --- Configures [`Options`](tealdoc:Options).
     record Options
         window: Window
     end
@@ -1983,7 +2041,7 @@ print(value)
             true
         ))
         local introduction_at = assert(markdown:find(
-            "Opens windows and reports display changes through",
+            "opens windows and reports display changes through",
             1,
             true
         ))
@@ -2041,6 +2099,31 @@ print(value)
             "reports display changes through\n" ..
                 "[`Window`](/modules/window/).",
             introduction_at,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            "`API` opens windows and reports display changes through",
+            1,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "[`API`](/modules/api/)",
+            1,
+            true
+        ), markdown)
+        local options_at = assert(markdown:find(
+            "\n### api.Options ",
+            1,
+            true
+        ))
+        assert.is_truthy(markdown:find(
+            "Configures `Options`.",
+            options_at,
+            true
+        ), markdown)
+        assert.is_falsy(markdown:find(
+            "[`Options`](/modules/api/#api.Options)",
+            options_at,
             true
         ), markdown)
         assert.is_truthy(markdown:find(

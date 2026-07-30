@@ -274,7 +274,8 @@ local record MarkdownGenerator
         env: tealdoc.Env,
         text: string,
         url_for_type?: URLResolver,
-        url_for_path?: URLResolver
+        url_for_path?: URLResolver,
+        self_url?: string
     ): string
     private_alias_target: function(
         env: tealdoc.Env,
@@ -296,15 +297,18 @@ function MarkdownGenerator.resolve_type_url(
     local seen: {string: boolean} = {}
     while path and not seen[path] do
         seen[path] = true
+        -- A site route is the authoritative proof that this source path has a
+        -- public documentation target. Projected APIs deliberately route a
+        -- private declaration path to the public name they mounted it under.
+        local routed = type_url_for_path(path)
+        if routed then
+            return routed
+        end
         local item = env.registry[path]
         if not item then
-            return type_url_for_path(path)
+            return nil
         end
         if Generator.filter(item, env) then
-            local url = type_url_for_path(path)
-            if url then
-                return url
-            end
             if allow_local_type_links ~= false then
                 return "#" .. path
             end
@@ -354,24 +358,27 @@ function MarkdownGenerator.resolve_markdown_type_links(
     env: tealdoc.Env,
     text: string,
     url_for_type?: MarkdownGenerator.URLResolver,
-    url_for_path?: MarkdownGenerator.URLResolver
+    url_for_path?: MarkdownGenerator.URLResolver,
+    self_url?: string
 ): string
-    return (text:gsub(
-        "%]%(%s*tealdoc:([^%)%s]+)%s*%)",
-        function(target: string): string
+    local resolved = (text:gsub(
+        "(%b[])%(%s*tealdoc:([^%)%s]+)%s*%)",
+        function(label: string, target: string): string
             local path = markdown_type_path(env, target)
             if not path then
                 local routed = url_for_type
                     and url_for_type(target)
                     or nil
                 if routed then
-                    return "](" .. routed .. ")"
+                    return routed == self_url
+                        and label:sub(2, -2)
+                        or label .. "(" .. routed .. ")"
                 end
                 log:warning(
                     "Could not resolve Tealdoc Markdown type link: " ..
                         target
                 )
-                return "](tealdoc:" .. target .. ")"
+                return label .. "(tealdoc:" .. target .. ")"
             end
 
             local url = url_for_type and url_for_type(path) or nil
@@ -386,11 +393,17 @@ function MarkdownGenerator.resolve_markdown_type_links(
                     "Type is not public in Tealdoc Markdown link: " ..
                         target
                 )
-                return "](tealdoc:" .. target .. ")"
+                return label .. "(tealdoc:" .. target .. ")"
             end
-            return "](" .. url .. ")"
+            return url == self_url
+                and label:sub(2, -2)
+                or label .. "(" .. url .. ")"
         end
     ))
+    -- A linked nominal name is often followed by a separately coded generic
+    -- suffix. Removing a self-link leaves two adjacent code spans; combine
+    -- them into the one type expression they render as.
+    return (resolved:gsub("`([^`\r\n]+)``([^`\r\n]+)`", "`%1%2`"))
 end
 
 --- Finds the concrete private alias whose type expression should replace a

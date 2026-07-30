@@ -212,6 +212,19 @@ local function same_public_item(
             and left.is_const == right.is_const
             and summary_line(left) == summary_line(right)
     end
+    if left is tealdoc.TypeItem and right is tealdoc.TypeItem then
+        local alias: tealdoc.TypeItem
+        local definition: tealdoc.TypeItem
+        if left.type_kind == "type" and right.type_kind ~= "type" then
+            alias, definition = left, right
+        elseif right.type_kind == "type" and left.type_kind ~= "type" then
+            alias, definition = right, left
+        end
+        if alias and definition then
+            return alias.name == definition.name
+                and alias.typename:match("([%w_]+)$") == definition.name
+        end
+    end
     local left_target = canonical_alias(left, env)
     local right_target = canonical_alias(right, env)
     if left_target and right_target and left_target == right_target then
@@ -253,13 +266,14 @@ function SiteView.prepare(
         source_prefix: string,
         public_prefix: string,
         parent: string,
-        exported_root?: boolean
+        exported_root?: boolean,
+        force?: boolean
     ): string
         local item = assert(
             env.registry[source_path],
             "public API item not found: " .. source_path
         )
-        if not Generator.filter(item, env) then
+        if not force and not Generator.filter(item, env) then
             return nil
         end
         local suffix = source_path:sub(#source_prefix + 1)
@@ -281,7 +295,13 @@ function SiteView.prepare(
             table.insert(source_paths, source_path)
             local existing = assert(projected.registry[public_path])
             local replace = item is tealdoc.TypeItem
-                and not (previous_item is tealdoc.TypeItem)
+                and (
+                    not (previous_item is tealdoc.TypeItem)
+                    or (
+                        previous_item.type_kind == "type"
+                        and item.type_kind ~= "type"
+                    )
+                )
             if replace then
                 local clone = copy_item(item)
                 clone.path = public_path
@@ -302,7 +322,9 @@ function SiteView.prepare(
                     child_path,
                     source_prefix,
                     public_prefix,
-                    public_path
+                    public_path,
+                    false,
+                    force
                 )
                 if child_public then
                     table.insert(existing.children, child_public)
@@ -328,7 +350,9 @@ function SiteView.prepare(
                 child_path,
                 source_prefix,
                 public_prefix,
-                public_path
+                public_path,
+                false,
+                force
             )
             if child_public then
                 table.insert(clone.children, child_public)
@@ -406,6 +430,127 @@ function SiteView.prepare(
                 end
             end
         end
+    end
+
+    -- A private named type in a public signature is part of that public API
+    -- whether or not the source module returned the type itself. Publish the
+    -- structural closure under the page root so a signature never ends at an
+    -- unexplained, unlinked name.
+    local pending: {string} = {}
+    for _, path in ipairs(root_children) do
+        table.insert(pending, path)
+    end
+    local scanned: {string: boolean} = {}
+    local function include_reference(reference: tealdoc.TypeReference)
+        if source_to_public[reference.path] then
+            return
+        end
+        local target = env.registry[reference.path]
+        local candidate_path = target
+            and target is tealdoc.TypeItem
+            and public .. "." .. target.name
+            or nil
+        local candidate = candidate_path
+            and projected.registry[candidate_path]
+            or nil
+        if target
+            and candidate
+            and same_public_item(candidate, target, env)
+            and not (
+                candidate is tealdoc.TypeItem
+                and candidate.type_kind == "type"
+                and target is tealdoc.TypeItem
+                and target.type_kind ~= "type"
+            )
+        then
+            source_to_public[reference.path] = candidate_path
+            return
+        end
+        local aliased_public: string
+        for source_path, public_path in pairs(source_to_public) do
+            local source = env.registry[source_path]
+            if source
+                and source is tealdoc.TypeItem
+                and canonical_alias(source, env) == reference.path
+            then
+                if aliased_public and aliased_public ~= public_path then
+                    return
+                end
+                aliased_public = public_path
+            end
+        end
+        if aliased_public then
+            source_to_public[reference.path] = aliased_public
+            return
+        end
+        if not target
+            or not target is tealdoc.TypeItem
+            or Generator.filter(target, env)
+        then
+            return
+        end
+        if target.type_kind == "type" and target.alias_target then
+            local alias_target = env.registry[target.alias_target]
+            if alias_target and Generator.filter(alias_target, env) then
+                return
+            end
+        end
+        local mounted = mount(
+            reference.path,
+            reference.path,
+            public .. "." .. target.name,
+            public,
+            true,
+            true
+        )
+        if mounted then
+            table.insert(root_children, mounted)
+            table.insert(pending, mounted)
+        end
+    end
+    local function include_typeargs(typeargs: {tealdoc.Typearg})
+        for _, typearg in ipairs(typeargs or {}) do
+            for _, reference in ipairs(typearg.type_references or {}) do
+                include_reference(reference)
+            end
+        end
+    end
+    local function scan(path: string)
+        if scanned[path] then
+            return
+        end
+        scanned[path] = true
+        local item = projected.registry[path]
+        if not item then
+            return
+        end
+        if item is tealdoc.VariableItem then
+            for _, reference in ipairs(item.type_references or {}) do
+                include_reference(reference)
+            end
+        elseif item is tealdoc.FunctionItem then
+            include_typeargs(item.typeargs)
+            for _, param in ipairs(item.params or {}) do
+                for _, reference in ipairs(param.type_references or {}) do
+                    include_reference(reference)
+                end
+            end
+            for _, result in ipairs(item.returns or {}) do
+                for _, reference in ipairs(result.type_references or {}) do
+                    include_reference(reference)
+                end
+            end
+        elseif item is tealdoc.TypeItem then
+            include_typeargs(item.typeargs)
+        end
+        for _, child in ipairs(item.children or {}) do
+            scan(child)
+        end
+    end
+    local next_pending = 1
+    while next_pending <= #pending do
+        scan(pending[next_pending])
+        next_pending = next_pending + 1
     end
 
     local module_root: tealdoc.Item = {
