@@ -1,4 +1,5 @@
 local SiteTypes = require("tealdoc.generator.site.types")
+local lfs = require("lfs")
 
 local record SiteConfig
     configure: function(
@@ -129,6 +130,19 @@ local page_keys: {string: boolean} = {
     canonical = true,
     image = true,
     noindex = true,
+    sidebar_order = true,
+}
+
+local frontmatter_page_keys: {string: boolean} = {
+    title = true,
+    description = true,
+    api = true,
+    public = true,
+    layout = true,
+    canonical = true,
+    image = true,
+    noindex = true,
+    sidebar_order = true,
 }
 
 local api_source_keys: {string: boolean} = {
@@ -223,6 +237,160 @@ local function validate_link(link: any, name: string)
     assert(type(values["path"]) == "string", name .. ".path is required")
 end
 
+local function read_file(path: string): string
+    local file = assert(io.open(path, "rb"), "Could not read " .. path)
+    local text = assert(file:read("*a"))
+    file:close()
+    return text
+end
+
+local function unquote(value: string): string
+    local quote = value:sub(1, 1)
+    if (quote == '"' or quote == "'") and value:sub(-1) == quote then
+        return value:sub(2, -2)
+    end
+    return value
+end
+
+local function page_frontmatter(path: string): {string: any}
+    local text = read_file(path)
+    local values: {string: any} = {}
+    local body = text
+    if text:sub(1, 4) == "---\n" then
+        local ending = text:find("\n---\n", 5, true)
+        if ending then
+            local frontmatter = text:sub(5, ending - 1)
+            body = text:sub(ending + 5)
+            local list: {string}
+            for line in (frontmatter .. "\n"):gmatch("(.-)\n") do
+                local key, value = line:match("^([%a_][%w_]*):%s*(.-)%s*$")
+                if key then
+                    list = nil
+                    if value == "" and key == "api" then
+                        list = {}
+                        values[key] = list
+                    elseif key == "noindex" then
+                        assert(
+                            value == "true" or value == "false",
+                            path .. ": noindex must be true or false"
+                        )
+                        values[key] = value == "true"
+                    elseif key == "sidebar_order" then
+                        local number = tonumber(value)
+                        assert(
+                            number ~= nil,
+                            path .. ": sidebar_order must be a number"
+                        )
+                        values[key] = number
+                    elseif frontmatter_page_keys[key] then
+                        values[key] = unquote(value)
+                    end
+                elseif list then
+                    local item = line:match("^%s+%-%s+(.+)%s*$")
+                    assert(
+                        item ~= nil,
+                        path .. ": api must be a list of module names"
+                    )
+                    table.insert(list, unquote(item))
+                end
+            end
+        end
+    end
+    if not values["title"] then
+        values["title"] = body:match("^%s*#%s+([^\n]+)")
+    end
+    return values
+end
+
+local function markdown_route(root: string, path: string): string
+    local relative = path:sub(#root + 2):gsub("\\", "/")
+    relative = relative:gsub("%.md$", "")
+    if relative == "index" then
+        return ""
+    end
+    return (relative:gsub("/index$", ""))
+end
+
+local function discover_markdown(
+    root: string,
+    path: string,
+    pages: {{string: any}}
+)
+    local attributes = assert(
+        lfs.symlinkattributes(path),
+        "Could not read configured page source " .. path
+    )
+    assert(
+        attributes.mode ~= "link",
+        "configured page sources may not be symbolic links: " .. path
+    )
+    if attributes.mode == "file" then
+        if path:match("%.md$") then
+            local page = page_frontmatter(path)
+            page["path"] = markdown_route(root, path)
+            page["source"] = path
+            table.insert(pages, page)
+        end
+        return
+    end
+    assert(
+        attributes.mode == "directory",
+        "configured page source must be a Markdown file or directory: " .. path
+    )
+    local entries: {string} = {}
+    for entry in lfs.dir(path) do
+        if entry ~= "." and entry ~= ".." and entry:sub(1, 1) ~= "." then
+            table.insert(entries, entry)
+        end
+    end
+    table.sort(entries)
+    for _, entry in ipairs(entries) do
+        discover_markdown(root, join_path(path, entry), pages)
+    end
+end
+
+local function page_values(
+    configured: any,
+    directory: string
+): {{string: any}}
+    local entries: {any} = {}
+    if type(configured) == "string" then
+        entries = {configured}
+    elseif configured ~= nil then
+        assert(
+            type(configured) == "table",
+            "tealdoc.site.pages must be a string or list of page sources"
+        )
+        entries = configured as {any}
+    end
+
+    local pages: {{string: any}} = {}
+    for index = 1, #entries do
+        local value = entries[index]
+        if type(value) == "string" then
+            local source = resolve_file_path(
+                directory,
+                value,
+                "tealdoc.site.pages[" .. tostring(index) .. "]"
+            )
+            local attributes = lfs.symlinkattributes(source)
+            assert(attributes, "Could not read configured page source " .. source)
+            local root = attributes.mode == "directory"
+                and source
+                or source:match("^(.*)[/\\][^/\\]+$") or "."
+            discover_markdown(root, source, pages)
+        else
+            assert(
+                type(value) == "table",
+                "tealdoc.site.pages[" .. tostring(index) ..
+                    "] must be a string or table"
+            )
+            table.insert(pages, value as {string: any})
+        end
+    end
+    return pages
+end
+
 function SiteConfig.configure(
     raw: any,
     config_directory?: string
@@ -257,7 +425,6 @@ function SiteConfig.configure(
     end
     for _, key in ipairs({
         "redirects",
-        "pages",
         "sidebar",
         "sidebar_open",
         "nav",
@@ -268,6 +435,12 @@ function SiteConfig.configure(
     }) do
         validate_optional_table(values, key)
     end
+    assert(
+        values["pages"] == nil
+            or type(values["pages"]) == "string"
+            or type(values["pages"]) == "table",
+        "tealdoc.site.pages must be a string or list of page sources"
+    )
     for _, key in ipairs({
         "sitemap",
         "robots",
@@ -416,14 +589,12 @@ function SiteConfig.configure(
         )
         table.insert(settings.footer_links, link as SiteTypes.Link)
     end
-    for index, page_value in ipairs(values["pages"] as {any} or {}) do
+    local configured_pages = page_values(values["pages"], directory)
+    local pages_by_path: {string: SiteTypes.Page} = {}
+    for index, page_value in ipairs(configured_pages) do
         local name = "tealdoc.site.pages[" .. tostring(index) .. "]"
         validate_keys(page_value, page_keys, name)
         local page = page_value as {string: any}
-        assert(
-            type(page["title"]) == "string" and page["title"] ~= "",
-            name .. ".title is required"
-        )
         for _, key in ipairs({
             "description",
             "source",
@@ -543,22 +714,37 @@ function SiteConfig.configure(
             page["noindex"] == nil or type(page["noindex"]) == "boolean",
             name .. ".noindex must be a boolean"
         )
-        local normalized_values: {string: any} = {}
-        for key, value in pairs(page) do
-            normalized_values[key] = value
-        end
-        local normalized = normalized_values as SiteTypes.Page
-        normalized.path = normalize_route(
+        assert(
+            page["sidebar_order"] == nil
+                or type(page["sidebar_order"]) == "number",
+            name .. ".sidebar_order must be a number"
+        )
+        local path = normalize_route(
             page["path"] or "",
             name .. ".path",
             true
         )
-        if page["source"] then
-            normalized.source = resolve_file_path(
-                directory,
-                page["source"],
-                name .. ".source"
+        local normalized = pages_by_path[path]
+        if not normalized then
+            normalized = {path = path, title = ""}
+            pages_by_path[path] = normalized
+            table.insert(settings.pages, normalized)
+        else
+            assert(
+                normalized.source ~= nil and page["source"] == nil
+                    or normalized.source == nil and page["source"] ~= nil,
+                "duplicate normalized page or example route: " .. path
             )
+        end
+        for key, value in pairs(page) do
+            (normalized as {string: any})[key] = value
+        end
+        normalized.path = path
+        if page["source"] then
+            local source = page["source"] as string
+            normalized.source = lfs.symlinkattributes(source)
+                    and source
+                or resolve_file_path(directory, source, name .. ".source")
         end
         for action_index, action in ipairs(
             page["hero_actions"] as {any} or {}
@@ -581,11 +767,13 @@ function SiteConfig.configure(
                 feature_name .. ".title is required"
             )
         end
-        table.insert(settings.pages, normalized)
     end
-    local pages_by_path: {string: SiteTypes.Page} = {}
     for _, page in ipairs(settings.pages) do
-        pages_by_path[page.path] = page
+        assert(
+            type(page.title) == "string" and page.title ~= "",
+            "page " .. (page.path == "" and "/" or "/" .. page.path) ..
+                " requires a title in frontmatter, an H1, or configuration"
+        )
     end
     local normalize_sidebar_item: function(any, string): SiteTypes.SidebarItem
     normalize_sidebar_item = function(

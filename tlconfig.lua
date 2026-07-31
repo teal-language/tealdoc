@@ -16,7 +16,6 @@ return {
             title = "Tealdoc",
             description = "A documentation generator for Teal",
             base = "/",
-            sources = { "src/tealdoc.tl" },
             nav = {
                 { text = "Install", path = "installation" },
                 { text = "Tutorial", path = "tutorial" },

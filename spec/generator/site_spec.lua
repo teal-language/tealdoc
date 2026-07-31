@@ -3197,6 +3197,114 @@ local answer: integer = "wrong"
         remove_tree(root)
     end)
 
+    it("discovers Markdown pages and derives recursive navigation", function()
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        assert(lfs.mkdir(root .. "/docs"))
+        write_nested_file(root .. "/docs", "index.md", [[
+---
+title: Project
+description: "Project documentation"
+features:
+  - title: This nested metadata is supplied by an explicit page override.
+---
+
+# Project
+]])
+        write_nested_file(root .. "/docs", "guide/index.md", [[
+---
+description: "The complete guide"
+sidebar_order: 10
+---
+
+# Guide
+]])
+        write_nested_file(root .. "/docs", "guide/setup/install.md", [[
+---
+title: Install
+description: "Installing the project"
+---
+
+# Ignored fallback title
+]])
+        write_nested_file(root .. "/docs", "api.md", [[
+---
+description: "The API reference"
+sidebar_order: 20
+---
+
+# API
+]])
+
+        local output = root .. "/site"
+        SiteGenerator.build(output, DefaultEnv.init(), {
+            title = "Project",
+            pages = "docs",
+        }, root)
+
+        local home = read_file(output .. "/index.html")
+        local install = read_file(output .. "/guide/setup/install/index.html")
+        assert.is_truthy(home:find(
+            '<meta name="description" content="Project documentation">',
+            1,
+            true
+        ), home)
+        assert.is_truthy(home:find(
+            '<details open><summary><a href="/guide/">Guide</a></summary>',
+            1,
+            true
+        ), home)
+        assert.is_truthy(install:find(
+            "<summary>Setup</summary>",
+            1,
+            true
+        ), install)
+        assert.is_truthy(install:find(
+            'href="/guide/setup/install/" aria-current="page">Install</a>',
+            1,
+            true
+        ), install)
+        assert.is_true(
+            assert(home:find(">Guide</a>", 1, true)) <
+                assert(home:find(">API</a>", 1, true))
+        )
+        remove_tree(root)
+    end)
+
+    it("loads the Teal modules selected by discovered API pages", function()
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        assert(lfs.mkdir(root .. "/docs"))
+        assert(lfs.mkdir(root .. "/src"))
+        assert(lfs.mkdir(root .. "/src/example"))
+        write_file(root .. "/src/example/api.tl", "return {}\n")
+        write_file(root .. "/src/example/types.tl", "return {}\n")
+        write_file(root .. "/docs/index.md", [[
+---
+title: API
+public: example
+api:
+  - example.api
+  - example.types
+---
+
+# API
+]])
+
+        assert.are.same({
+            root .. "/src/example/api.tl",
+            root .. "/src/example/types.tl",
+        }, SiteGenerator.source_files({
+            title = "Project",
+            pages = "docs",
+        }, root, {
+            source_dir = "src",
+        }))
+        remove_tree(root)
+    end)
+
     it("discovers hidden Teal modules from the project source directory", function()
         local root = os.tmpname()
         os.remove(root)

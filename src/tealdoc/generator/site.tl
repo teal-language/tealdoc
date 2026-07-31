@@ -30,7 +30,11 @@ local record SiteGenerator
         settings: Settings,
         config_directory?: string
     )
-    source_files: function(settings: Settings, config_directory?: string): {string}
+    source_files: function(
+        settings: Settings,
+        config_directory?: string,
+        project?: any
+    ): {string}
     hidden_source_files: function(
         project: any,
         config_directory?: string
@@ -995,7 +999,8 @@ end
 
 function SiteGenerator.source_files(
     raw: SiteGenerator.Settings,
-    config_directory?: string
+    config_directory?: string,
+    project?: any
 ): {string}
     local settings = SiteConfig.configure(raw, config_directory)
     local files: {string} = {}
@@ -1007,6 +1012,57 @@ function SiteGenerator.source_files(
             if not seen[file] then
                 seen[file] = true
                 table.insert(files, file)
+            end
+        end
+    end
+
+    local project_values = type(project) == "table"
+        and project as {string: any}
+        or {}
+    local source_dir = project_values["source_dir"]
+    if source_dir ~= nil then
+        assert(
+            type(source_dir) == "string" and source_dir ~= "",
+            "source_dir must be a non-empty string"
+        )
+        local root = SiteConfig.join_path(
+            config_directory or ".",
+            source_dir as string
+        )
+        for _, page in ipairs(settings.pages) do
+            local api = page.api
+            local entries: {string | SiteTypes.ApiSource} = {}
+            if type(api) == "string" then
+                entries = {api as string}
+            elseif type(api) == "table" then
+                entries = api as {string | SiteTypes.ApiSource}
+            end
+            for index = 1, #entries do
+                local value = entries[index]
+                local module = type(value) == "string"
+                    and value as string
+                    or (value as SiteTypes.ApiSource).module
+                local base = SiteConfig.join_path(
+                    root,
+                    (module:gsub("%.", "/"))
+                )
+                local source: string
+                for _, candidate in ipairs({base .. ".tl", base .. "/init.tl"}) do
+                    local attributes = lfs.symlinkattributes(candidate)
+                    if attributes and attributes.mode == "file" then
+                        source = candidate
+                        break
+                    end
+                end
+                assert(
+                    source ~= nil,
+                    "could not resolve API module " .. module ..
+                        " below source_dir " .. (source_dir as string)
+                )
+                if not seen[source] then
+                    seen[source] = true
+                    table.insert(files, source)
+                end
             end
         end
     end
@@ -1318,21 +1374,6 @@ local function navigation(
     return table.concat(output, "\n")
 end
 
-local function sidebar_page(
-    page: SiteGenerator.Page,
-    current: string,
-    base: string
-): string
-    local selected = page.path == current and ' aria-current="page"' or ""
-    return '<li><a href="' ..
-        escape_html(page_url(base, page.path)) ..
-        '"' ..
-        selected ..
-        ">" ..
-        escape_html(page.title) ..
-        "</a></li>"
-end
-
 local function group_title(path: string): string
     local title = path:gsub("[_-]+", " ")
     return title:sub(1, 1):upper() .. title:sub(2)
@@ -1345,6 +1386,80 @@ local function sidebar(
     configured: {SiteTypes.SidebarItem},
     open_sections: {string: boolean}
 ): string
+    if not configured or #configured == 0 then
+        local roots: {SiteTypes.SidebarItem} = {}
+        local nodes: {string: SiteTypes.SidebarItem} = {}
+        local node_paths: {any: string} = {}
+        local pages_by_path: {string: SiteGenerator.Page} = {}
+        for _, page in ipairs(pages) do
+            pages_by_path[page.path] = page
+            if page.path and page.path ~= "" then
+                local parent = roots
+                local path = ""
+                for segment in page.path:gmatch("[^/]+") do
+                    path = path == "" and segment or path .. "/" .. segment
+                    local item = nodes[path]
+                    if not item then
+                        item = {
+                            text = group_title(segment),
+                            items = {},
+                            collapsed = open_sections ~= nil
+                                and not (
+                                    open_sections[path]
+                                        or open_sections[segment]
+                                        or open_sections[group_title(segment)]
+                                )
+                                or nil,
+                        }
+                        nodes[path] = item
+                        node_paths[item] = path
+                        table.insert(parent, item)
+                    end
+                    parent = item.items
+                end
+                local item = nodes[page.path]
+                item.path = page.path
+                item.text = page.title
+            end
+        end
+
+        local order_for: function(SiteTypes.SidebarItem): number
+        order_for = function(item: SiteTypes.SidebarItem): number
+            local page = pages_by_path[node_paths[item]]
+            if page and page.sidebar_order then
+                return page.sidebar_order
+            end
+            local order = math.huge
+            for _, child in ipairs(item.items or {}) do
+                order = math.min(order, order_for(child))
+            end
+            return order
+        end
+        local function sort_items(items: {SiteTypes.SidebarItem})
+            for _, item in ipairs(items) do
+                sort_items(item.items or {})
+            end
+            table.sort(items, function(
+                left: SiteTypes.SidebarItem,
+                right: SiteTypes.SidebarItem
+            ): boolean
+                local left_order = order_for(left)
+                local right_order = order_for(right)
+                if left_order ~= right_order then
+                    return left_order < right_order
+                end
+                local a = node_paths[left]:match("([^/]+)$"):lower()
+                local b = node_paths[right]:match("([^/]+)$"):lower()
+                if a == b then
+                    return node_paths[left] < node_paths[right]
+                end
+                return a < b
+            end)
+        end
+        sort_items(roots)
+        configured = roots
+    end
+
     if configured and #configured > 0 then
         local contains_current: function(SiteTypes.SidebarItem): boolean
         contains_current = function(item: SiteTypes.SidebarItem): boolean
@@ -1407,45 +1522,7 @@ local function sidebar(
         end
         return table.concat(explicit, "\n")
     end
-
-    local output: {string} = {}
-    local groups: {string: {SiteGenerator.Page}} = {}
-    local group_order: {string} = {}
-    for _, page in ipairs(pages) do
-        if page.path and page.path ~= "" then
-            local group = page.path:match("^([^/]+)/")
-            if group then
-                if not groups[group] then
-                    groups[group] = {}
-                    table.insert(group_order, group)
-                end
-                table.insert(groups[group], page)
-            else
-                table.insert(output, sidebar_page(page, current, base))
-            end
-        end
-    end
-    for _, group in ipairs(group_order) do
-        local children: {string} = {}
-        for _, page in ipairs(groups[group]) do
-            table.insert(children, sidebar_page(page, current, base))
-        end
-        local open = not open_sections
-            or open_sections[group]
-            or open_sections[group_title(group)]
-            or current:match("^([^/]+)/") == group
-        table.insert(
-            output,
-            '<li class="tealdoc-sidebar-section"><details' ..
-                (open and " open" or "") ..
-                "><summary>" ..
-                escape_html(group_title(group)) ..
-                "</summary><ul>" ..
-                table.concat(children, "\n") ..
-                "</ul></details></li>"
-        )
-    end
-    return table.concat(output, "\n")
+    return ""
 end
 
 local function breadcrumbs(

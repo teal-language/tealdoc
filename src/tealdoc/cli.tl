@@ -167,7 +167,8 @@ function CLI:add_default_commands()
 
             local files = SiteGenerator.source_files(
                 site_config,
-                loaded.directory
+                loaded.directory,
+                values
             )
             local seen: {string: boolean} = {}
             for _, file in ipairs(files) do

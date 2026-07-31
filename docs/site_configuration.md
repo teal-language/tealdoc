@@ -301,7 +301,9 @@ redirects = {
 
 Optional ordered array, defaulting to `{}`. Each value is a config-relative
 Teal file or directory. Directories are discovered recursively and
-deterministically.
+deterministically. Modules selected by a page's `api` field are loaded from
+`source_dir` automatically, so an ordinary API site does not need this field.
+Use it to process additional modules that no API page selects.
 
 ```lua
 sources = {
@@ -312,10 +314,60 @@ sources = {
 
 ## pages
 
-Optional ordered array, defaulting to `{}`. Each page requires `title`; `path`
-defaults to the home route. `source` adds handwritten Markdown, while `api`
-selects one processed Teal module or an ordered list of modules whose generated
-reference is appended.
+Required string or ordered array. A string names a Markdown file or directory;
+directories are discovered recursively and deterministically. `index.md`
+becomes its directory's route and every other filename becomes its basename.
+For example, `docs/index.md` becomes `/`, while
+`docs/guide/installation.md` becomes `/guide/installation`:
+
+```lua
+pages = "docs"
+```
+
+Discovered pages read `title`, `description`, `api`, `public`, `layout`,
+`canonical`, `image`, `noindex`, and `sidebar_order` from flat YAML
+frontmatter. `title` falls back to the first H1. An `api` module or list of
+modules is resolved below the project's `source_dir` and processed
+automatically:
+
+```markdown
+---
+title: API
+description: The public Example API
+api: example
+sidebar_order: 20
+---
+
+# API
+```
+
+```yaml
+public: example
+api:
+  - example.components
+  - example.camera
+```
+
+An array may mix discovery paths with explicit page tables. An explicit table
+with the same route as a discovered page overrides only the fields it names.
+This is useful for API projections assembled from several modules or visual
+home-page fields that are easier to express in Lua:
+
+```lua
+pages = {
+    "docs",
+    {
+        path = "api/graphics",
+        api = {"example.camera", "example.materials"},
+        public = "example.graphics",
+    },
+}
+```
+
+Without discovery, each explicit page still needs a `title`; `path` defaults
+to the home route. `source` adds handwritten Markdown, while `api` selects one
+Teal module or an ordered list of modules whose generated reference is
+appended.
 
 ```lua
 pages = {
@@ -372,7 +424,8 @@ pages = {
 
 Page fields are `path`, `title`, `description`, `source`, `api`, `public`,
 `layout`, `hero_title`, `hero_text`, `hero_image`, `hero_image_alt`,
-`hero_actions`, `features`, `canonical`, `image`, and `noindex`.
+`hero_actions`, `features`, `canonical`, `image`, `noindex`, and
+`sidebar_order`.
 `hero_actions` is an array of `{ text, path, theme? }` links. `features` is an
 array of `{ title, details?, icon?, image? }` tables.
 
@@ -396,11 +449,16 @@ page's summary item.
 
 ## sidebar
 
-Optional recursively nested array. When omitted, Tealdoc derives its sidebar
-from page routes. Each explicit item accepts `text`, `path`, nested `items`,
-and `collapsed`. A page item may omit `text`, in which case its configured page
-title is used. A group may omit `path`; when it has one, its section label
-links directly to that page.
+Optional recursively nested array. When omitted, Tealdoc derives the complete
+sidebar tree from page routes. A page at a parent route becomes the linked
+section heading for its descendants. Siblings are ordered by
+`sidebar_order`, then route; a section without its own page inherits the
+earliest order among its descendants.
+
+Each explicit item accepts `text`, `path`, nested `items`, and `collapsed`. A
+page item may omit `text`, in which case its configured page title is used. A
+group may omit `path`; when it has one, its section label links directly to
+that page.
 
 ```lua
 sidebar = {

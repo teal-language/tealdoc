@@ -42,6 +42,7 @@ local record SiteTypes
         canonical: string
         image: string
         noindex: boolean
+        sidebar_order: number
     end
 
     record SidebarItem

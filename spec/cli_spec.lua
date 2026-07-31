@@ -267,6 +267,72 @@ describe("CLI", function()
         remove_tree(root)
     end)
 
+    it("builds a discovered API page without configured Teal sources", function()
+        local previous_directory = assert(lfs.currentdir())
+        local previous_utf8 = _G.utf8
+        local previous_utf8_loader = package.preload["lua-utf8"]
+        local previous_teal_loader = tl.loader
+        local root = temporary_project([[
+            return {
+                source_dir = "src",
+                tealdoc = {
+                    site = {
+                        title = "Discovered API",
+                        validate_links = false,
+                        pages = "docs",
+                    },
+                },
+            }
+        ]])
+        assert(lfs.mkdir(root .. "/docs"))
+        assert(lfs.mkdir(root .. "/src"))
+        write_file(root .. "/docs/index.md", [[
+---
+title: API
+description: "The discovered API"
+api: api
+---
+
+# API
+]])
+        write_file(root .. "/src/api.tl", [[
+            local record api
+                --- Returns a greeting.
+                hello: function(): string
+            end
+            return api
+        ]])
+
+        assert(lfs.chdir(root))
+        _G.utf8 = require("compat53.module").utf8
+        package.preload["lua-utf8"] = function()
+            return require("compat53.module").utf8
+        end
+        tl.loader = function() end
+        CLI:init(DefaultEnv.init())
+        local ok = CLI:run({
+            "site",
+            "-o",
+            root .. "/site",
+        })
+        assert(lfs.chdir(previous_directory))
+        _G.utf8 = previous_utf8
+        package.preload["lua-utf8"] = previous_utf8_loader
+        tl.loader = previous_teal_loader
+
+        local html_file = assert(io.open(root .. "/site/index.html", "r"))
+        local html = assert(html_file:read("*a"))
+        html_file:close()
+        assert.is_true(ok)
+        assert.is_truthy(html:find('id="api.hello"', 1, true), html)
+        assert.is_truthy(html:find(
+            '<meta name="description" content="The discovered API">',
+            1,
+            true
+        ), html)
+        remove_tree(root)
+    end)
+
     it("publishes same-name records from resolved project dependencies", function()
         local previous_directory = assert(lfs.currentdir())
         local previous_utf8 = _G.utf8
