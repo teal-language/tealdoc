@@ -2619,6 +2619,17 @@ print(value)
             true
         ), api)
         assert.is_truthy(css:find("@media (max-width: 760px)", 1, true))
+        assert.is_truthy(css:find(
+            "scroll-padding-top: calc(var(--tealdoc-header-height) + 2rem)",
+            1,
+            true
+        ))
+        assert.is_truthy(css:find(
+            ".tealdoc-content a[id] {\n" ..
+                "    scroll-margin-top: 2rem;",
+            1,
+            true
+        ))
         assert.is_truthy(css:find("--vp-c-brand-1", 1, true))
         assert.is_truthy(css:find(
             "--tealdoc-dark-accent-contrast: #102f33",

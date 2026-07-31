@@ -1,6 +1,12 @@
 return [[
 html {
-    scroll-padding-top: calc(var(--tealdoc-header-height) + 1rem);
+    scroll-padding-top: calc(var(--tealdoc-header-height) + 2rem);
+}
+
+/* API links use a stable empty anchor immediately before their generated
+ * heading. Give that target the same breathing room as a heading's own id. */
+.tealdoc-content a[id] {
+    scroll-margin-top: 2rem;
 }
 
 body {
