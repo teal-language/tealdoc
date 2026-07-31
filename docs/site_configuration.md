@@ -305,6 +305,13 @@ deterministically. Modules selected by a page's `api` field are loaded from
 `source_dir` automatically, so an ordinary API site does not need this field.
 Use it to process additional modules that no API page selects.
 
+During a site build, Tealdoc also indexes modules below an `internal` path
+segment or a segment beginning with `_`, such as `example.internal.types` or
+`example._types`. These modules are hidden from the public site by default,
+but remain available to resolve types and aliases used by public API modules.
+To publish one, select it explicitly with a page's `api` field or add its file
+or directory to `sources`.
+
 ```lua
 sources = {
     "src/my/api.tl",
