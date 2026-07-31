@@ -62,9 +62,7 @@ local function detailed_signature_for_structure_type(ctx: Generator.Phase.Contex
             end
         end
     elseif item.children then
-        for _, child in ipairs(item.children) do
-            local child_item = ctx.env.registry[child]
-            assert(child_item, "Child item not found: " .. child)
+        for _, child_item in ipairs(Generator.record_members(item, ctx.env)) do
             if signature(ctx, child_item, indent.."  ") then
                 ctx.builder:line()
             end

@@ -143,6 +143,8 @@ return [[
 
 .tealdoc-kind-function,
 .tealdoc-kind-method,
+.tealdoc-kind-static,
+.tealdoc-kind-instance,
 .tealdoc-kind-metamethod,
 .tealdoc-kind-macro {
     color: var(--tealdoc-accent);

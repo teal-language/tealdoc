@@ -9,6 +9,11 @@ local record Generator
     attr: function(name: string): Attribute
     filter: function(item: tealdoc.Item, env: tealdoc.Env): boolean
     item_kind: function(item: tealdoc.Item, env: tealdoc.Env): string
+    method_role: function(item: tealdoc.Item, env: tealdoc.Env): string
+    record_members: function(
+        item: tealdoc.Item,
+        env: tealdoc.Env
+    ): {tealdoc.Item}
 
     interface Builder
         type Content = string | function(b: Builder) | Attribute
@@ -170,6 +175,109 @@ function Generator.item_kind(
     return item.kind
 end
 
+--- Whether a record or interface function is called on its type or on an
+--- instance. Overload containers inherit the role shared by their signatures.
+--- Other callables, including metamethods and non-record functions, have no
+--- record-method role.
+function Generator.method_role(
+    item: tealdoc.Item,
+    env: tealdoc.Env
+): string
+    if item is tealdoc.FunctionItem then
+        if item.function_kind ~= "function" or item.visibility ~= "record" then
+            return nil
+        end
+        if item.params
+            and item.params[1]
+            and item.params[1].name == "self"
+        then
+            return "instance"
+        end
+        return "static"
+    end
+    if item.kind == "overload" or item.kind == "overloaded" then
+        local role: string
+        for _, child_path in ipairs(item.children or {}) do
+            local child = env.registry[child_path]
+            local child_role = child and Generator.method_role(child, env)
+                or nil
+            if child_role then
+                if role and role ~= child_role then
+                    return nil
+                end
+                role = child_role
+            end
+        end
+        return role
+    end
+    return nil
+end
+
+local function item_name_less(a: tealdoc.Item, b: tealdoc.Item): boolean
+    local left = a.name:lower()
+    local right = b.name:lower()
+    if left == right then
+        return a.path < b.path
+    end
+    return left < right
+end
+
+local function ordered_members(
+    items: {tealdoc.Item},
+    env: tealdoc.Env,
+    sort_declarations?: boolean
+): {tealdoc.Item}
+    local declarations: {tealdoc.Item} = {}
+    local static: {tealdoc.Item} = {}
+    local instance: {tealdoc.Item} = {}
+    local other_callables: {tealdoc.Item} = {}
+    for _, child in ipairs(items) do
+        local role = Generator.method_role(child, env)
+        if role == "static" then
+            table.insert(static, child)
+        elseif role == "instance" then
+            table.insert(instance, child)
+        elseif child is tealdoc.FunctionItem
+            or child.kind == "metafields"
+            or child.kind == "metamethods"
+        then
+            table.insert(other_callables, child)
+        else
+            table.insert(declarations, child)
+        end
+    end
+    if sort_declarations then
+        table.sort(declarations, item_name_less)
+    end
+    table.sort(static, item_name_less)
+    table.sort(instance, item_name_less)
+    table.sort(other_callables, item_name_less)
+    for _, child in ipairs(static) do
+        table.insert(declarations, child)
+    end
+    for _, child in ipairs(instance) do
+        table.insert(declarations, child)
+    end
+    for _, child in ipairs(other_callables) do
+        table.insert(declarations, child)
+    end
+    return declarations
+end
+
+--- Record declarations read as data, then type-level operations, then the
+--- operations available on an instance. Each method group is alphabetical;
+--- non-method declarations retain their source order.
+function Generator.record_members(
+    item: tealdoc.Item,
+    env: tealdoc.Env
+): {tealdoc.Item}
+    local members: {tealdoc.Item} = {}
+    for _, child_path in ipairs(item.children or {}) do
+        table.insert(members, assert(env.registry[child_path]))
+    end
+    return ordered_members(members, env)
+end
+
 function Generator.categories_for_module_record(item: tealdoc.Item, env: tealdoc.Env): {string}, {string: {tealdoc.Item}}
     local categories_order: {string} = {}
     local categories: {string: {tealdoc.Item}} = {}
@@ -191,9 +299,7 @@ function Generator.categories_for_module_record(item: tealdoc.Item, env: tealdoc
     end
 
     if item.children then
-        for _, child_name in ipairs(item.children) do
-            local child_item = env.registry[child_name]
-            assert(child_item)
+        for _, child_item in ipairs(Generator.record_members(item, env)) do
             if child_item.kind == "overloaded" or  child_item.kind == "metamethods" then
                 local nested = child_item.children
                 if nested then
@@ -212,15 +318,18 @@ function Generator.categories_for_module_record(item: tealdoc.Item, env: tealdoc
     table.sort(categories_order)
 
     for _, category_name in ipairs(categories_order) do
-        table.sort(categories[category_name], function(a: tealdoc.Item, b: tealdoc.Item): boolean
-            return a.name < b.name
-        end)
+        categories[category_name] = ordered_members(
+            categories[category_name],
+            env,
+            true
+        )
     end
     table.insert(categories_order, "$uncategorized")
-    table.sort(uncategorized, function(a: tealdoc.Item, b: tealdoc.Item): boolean
-        return a.name < b.name
-    end)
-    categories["$uncategorized"] = uncategorized
+    categories["$uncategorized"] = ordered_members(
+        uncategorized,
+        env,
+        true
+    )
 
     return categories_order, categories
 end
@@ -318,9 +427,18 @@ local function visit_item(generator: Generator.Base, module_name: string, item: 
             end
         end
     elseif item.children and not (item.kind == "function") then -- we skip inner declarations currently
-        for _, child_name in ipairs(item.children) do
-            local child_item = env.registry[child_name]
-            assert(child_item)
+        local children: {tealdoc.Item}
+        if item is tealdoc.TypeItem
+            and (item.type_kind == "record" or item.type_kind == "interface")
+        then
+            children = Generator.record_members(item, env)
+        else
+            children = {}
+            for _, child_name in ipairs(item.children) do
+                table.insert(children, assert(env.registry[child_name]))
+            end
+        end
+        for _, child_item in ipairs(children) do
             visit_item(generator, module_name, child_item, env)
         end
     end

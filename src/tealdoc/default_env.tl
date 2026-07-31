@@ -569,11 +569,20 @@ function DefaultEnv.init(): tealdoc.Env
             ctx.path_mode = "none"
             local previous_member_kind: string
             local previous_was_structure = false
-            for _, child_path in ipairs(item.children or {}) do
-                local child = assert(
-                    ctx.env.registry[child_path],
-                    "Child item not found: " .. child_path
-                )
+            local children: {tealdoc.Item} = {}
+            if item.type_kind == "record"
+                or item.type_kind == "interface"
+            then
+                children = Generator.record_members(item, ctx.env)
+            else
+                for _, child_path in ipairs(item.children or {}) do
+                    table.insert(
+                        children,
+                        assert(ctx.env.registry[child_path])
+                    )
+                end
+            end
+            for _, child in ipairs(children) do
                 if not ctx.filter or ctx.filter(child, ctx.env) then
                     ctx.builder:line()
                     local member_kind = structure_member_kind(ctx, child)

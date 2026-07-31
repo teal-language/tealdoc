@@ -1658,6 +1658,147 @@ local example  =  true
         remove_tree(output)
     end)
 
+    it("orders and labels static and instance methods", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                record Widget
+                    --- Runs on the second widget instance.
+                    instanceZulu: function(self: Widget)
+
+                    --- Creates the second widget.
+                    staticZulu: function(): Widget
+
+                    --- Runs on the first widget instance.
+                    instanceAlpha: function(self: Widget)
+
+                    --- Creates the first widget.
+                    staticAlpha: function(): Widget
+                end
+
+                interface Service
+                    --- Runs on the second service instance.
+                    instanceZulu: function(self: Service)
+
+                    --- Creates the second service.
+                    staticZulu: function(): Service
+
+                    --- Runs on the first service instance.
+                    instanceAlpha: function(self: Service)
+
+                    --- Creates the first service.
+                    staticAlpha: function(): Service
+                end
+
+                --- Runs on the second API instance.
+                instanceZulu: function(self: api)
+
+                --- Creates the second API value.
+                staticZulu: function(): api
+
+                --- Runs on the first API instance.
+                instanceAlpha: function(self: api)
+
+                --- Creates the first API value.
+                staticAlpha: function(): api
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Method roles",
+            pages = {
+                {path = "", title = "Home"},
+                {
+                    path = "api",
+                    title = "API",
+                    api = "api",
+                    public = "api",
+                },
+            },
+        })
+
+        local markdown = read_file(output .. "/api.md")
+        local html = read_file(output .. "/api/index.html")
+        local function ordered(text, names)
+            local previous = 0
+            for _, name in ipairs(names) do
+                local position = assert(
+                    text:find(name, previous + 1, true),
+                    "missing ordered item " .. name .. " in:\n" .. text
+                )
+                assert.is_true(previous < position, text)
+                previous = position
+            end
+        end
+
+        local summary = assert(markdown:find("### Functions", 1, true))
+        local details = assert(markdown:find(
+            "\n## Functions\n",
+            summary,
+            true
+        ))
+        ordered(markdown:sub(summary, details - 1), {
+            "[`staticAlpha`]",
+            "[`staticZulu`]",
+            "[`instanceAlpha`]",
+            "[`instanceZulu`]",
+        })
+        assert.is_truthy(markdown:find(
+            'tealdoc-kind-static">Static</span>',
+            summary,
+            true
+        ), markdown)
+        assert.is_truthy(markdown:find(
+            'tealdoc-kind-instance">Instance</span>',
+            summary,
+            true
+        ), markdown)
+
+        ordered(markdown:sub(details), {
+            "### api.staticAlpha ",
+            "### api.staticZulu ",
+            "### api:instanceAlpha ",
+            "### api:instanceZulu ",
+        })
+        ordered(markdown, {
+            "    staticAlpha: function(): Widget",
+            "    staticZulu: function(): Widget",
+            "    instanceAlpha: function(self)",
+            "    instanceZulu: function(self)",
+        })
+        ordered(markdown, {
+            "#### api.Widget.staticAlpha ",
+            "#### api.Widget.staticZulu ",
+            "#### api.Widget:instanceAlpha ",
+            "#### api.Widget:instanceZulu ",
+        })
+        ordered(markdown, {
+            "    staticAlpha: function(): Service",
+            "    staticZulu: function(): Service",
+            "    instanceAlpha: function(self)",
+            "    instanceZulu: function(self)",
+        })
+        ordered(markdown, {
+            "#### api.Service.staticAlpha ",
+            "#### api.Service.staticZulu ",
+            "#### api.Service:instanceAlpha ",
+            "#### api.Service:instanceZulu ",
+        })
+        ordered(html, {
+            'href="#api-staticalpha"',
+            'href="#api-staticzulu"',
+            'href="#apiinstancealpha"',
+            'href="#apiinstancezulu"',
+        })
+
+        remove_tree(output)
+    end)
+
     it("composes source and API docs into a responsive static site", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
@@ -2337,15 +2478,12 @@ print(value)
             functions_at,
             true
         ), markdown)
-        -- The functions table carries no kind column, so a row goes straight
-        -- from the name to the description.
+        -- The functions table distinguishes type-level calls from calls on an
+        -- instance.
         assert.is_truthy(markdown:find(
-            "| [`reset`](/modules/api/#api.reset) | ",
-            1,
-            true
-        ), markdown)
-        assert.is_falsy(markdown:find(
-            "| [`reset`](/modules/api/#api.reset) | <span",
+            "| [`reset`](/modules/api/#api.reset) | " ..
+                '<span class="tealdoc-kind-badge ' ..
+                'tealdoc-kind-instance">Instance</span> | ',
             1,
             true
         ), markdown)
@@ -2371,12 +2509,12 @@ print(value)
             true
         ), api)
         assert.is_truthy(api:find(
-            'class="tealdoc-kind-badge tealdoc-kind-function">function</span>',
+            'class="tealdoc-kind-badge tealdoc-kind-static">Static</span>',
             1,
             true
         ), api)
         assert.is_truthy(api:find(
-            'class="tealdoc-kind-badge tealdoc-kind-method">method</span>',
+            'class="tealdoc-kind-badge tealdoc-kind-instance">Instance</span>',
             1,
             true
         ), api)

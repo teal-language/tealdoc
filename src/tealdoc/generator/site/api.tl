@@ -340,6 +340,16 @@ local FUNCTION_KINDS: {string: boolean} = {
     macro = true,
 }
 
+local function method_role_rank(item: tealdoc.Item, env: tealdoc.Env): integer
+    local role = Generator.method_role(item, env)
+    if role == "static" then
+        return 1
+    elseif role == "instance" then
+        return 2
+    end
+    return 3
+end
+
 local function is_constructor(
     item: tealdoc.Item,
     env: tealdoc.Env,
@@ -516,12 +526,16 @@ local function add_kind_badges(markdown: string, env: tealdoc.Env): string
                     anchor_end + 1
                 )
                 if heading_start == anchor_end + 1 then
-                    local kind = Generator.item_kind(item, env)
+                    local kind = Generator.method_role(item, env)
+                        or Generator.item_kind(item, env)
+                    local label = kind == "static" and "Static"
+                        or kind == "instance" and "Instance"
+                        or kind
                     local badge = ' <span class="tealdoc-kind-badge ' ..
                         'tealdoc-kind-' ..
                         kind ..
                         '">' ..
-                        kind ..
+                        label ..
                         "</span>"
                     markdown = markdown:sub(1, heading_end) ..
                         badge ..
@@ -583,6 +597,11 @@ local function group_details(
         end
     end
     table.sort(items, function(a: tealdoc.Item, b: tealdoc.Item): boolean
+        local left_role = method_role_rank(a, env)
+        local right_role = method_role_rank(b, env)
+        if left_role ~= right_role then
+            return left_role < right_role
+        end
         local left = a.name:lower()
         local right = b.name:lower()
         if left == right then
@@ -873,6 +892,11 @@ function SiteApi.summary(
         end
     end
     table.sort(items, function(a: tealdoc.Item, b: tealdoc.Item): boolean
+        local left_role = method_role_rank(a, env)
+        local right_role = method_role_rank(b, env)
+        if left_role ~= right_role then
+            return left_role < right_role
+        end
         local left = a.name:lower()
         local right = b.name:lower()
         if left == right then
@@ -890,13 +914,14 @@ function SiteApi.summary(
     -- column of every row to find out which of the two a name is.
     -- Types need their declaration kind. Values need their type: "variable"
     -- only repeats that the row is in Values and hides the useful fact.
-    -- Runtime callables share Functions whatever `item_kind` names them, and
-    -- the detail below carries the badge. Compile-time macros remain their own
-    -- vocabulary and therefore their own group.
+    -- Runtime callables share Functions whatever `item_kind` names them. Their
+    -- table and detail badges distinguish static and instance methods.
+    -- Compile-time macros remain their own vocabulary and therefore their own
+    -- group.
     local groups: {{string, string, string, {tealdoc.Item}}} = {
         { "Constructors", "Constructor", "none", {} },
         { "Types", "Type", "kind", {} },
-        { "Functions", "Function", "none", {} },
+        { "Functions", "Function", "role", {} },
         { "Macros", "Macro", "none", {} },
         { "Values", "Value", "type", {} },
     }
@@ -930,7 +955,7 @@ function SiteApi.summary(
                     "| " ..
                         column ..
                         " | " ..
-                        (metadata == "kind" and "Kind" or "Type") ..
+                        (metadata == "type" and "Type" or "Kind") ..
                         " | Description |\n"
                 )
                 table.insert(output, "| --- | --- | --- |\n")
@@ -949,6 +974,20 @@ function SiteApi.summary(
                         '">' ..
                         kind ..
                         "</span> | "
+                elseif metadata == "role" then
+                    local role = Generator.method_role(item, env)
+                    if role then
+                        local label = role == "static" and "Static"
+                            or "Instance"
+                        cells = cells ..
+                            '<span class="tealdoc-kind-badge tealdoc-kind-' ..
+                            role ..
+                            '">' ..
+                            label ..
+                            "</span> | "
+                    else
+                        cells = cells .. "— | "
+                    end
                 elseif metadata == "type" then
                     cells = cells .. value_type(item, env, resolver) .. " | "
                 end
