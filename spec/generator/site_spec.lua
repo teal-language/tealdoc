@@ -3152,6 +3152,11 @@ print(value)
             true
         ))
         assert.is_truthy(js:find(
+            'row.top - view.top - (view.height - row.height) / 2',
+            1,
+            true
+        ))
+        assert.is_truthy(js:find(
             'window.localStorage.getItem(themeStorageKey)',
             1,
             true
