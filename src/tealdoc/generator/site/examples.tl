@@ -150,7 +150,7 @@ function SiteExamples.prepare(
     table.sort(files)
     for _, source in ipairs(files) do
         local text = read_file(source)
-        for region in text:gmatch("%-%-%s*#region%s+(tecs%.[%w%.]+)%s*\n") do
+        for region in text:gmatch("%-%-%s*#region%s+([%a_][%w_%.]*)%s*\n") do
             local code = extract_region(text, source, region)
             local description = ""
             description, code = description_and_code(code)

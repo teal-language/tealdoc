@@ -758,7 +758,7 @@ describe("Site generator", function()
             true
         ), shapes_markdown)
         assert.is_truthy(shapes_markdown:find(
-            "#### public.shapes.ScalarComponent.__call",
+            "#### public.shapes.ScalarComponent:__call",
             1,
             true
         ), shapes_markdown)
@@ -938,8 +938,14 @@ local authored  =  true
 local preserved  =  true
 ```
 ]])
-        local example = os.tmpname()
-        write_file(example, "local example  =  true\n")
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        write_nested_file(root, "docs/examples/api.tl", [[
+-- #region api.run
+local example  =  true
+-- #endregion api.run
+]])
         local output = os.tmpname()
         os.remove(output)
 
@@ -1001,14 +1007,7 @@ local preserved  =  true
                         api = "api",
                     },
                 },
-                examples = {
-                    {
-                        attach_to = "api.run",
-                        source = example,
-                        language = "teal",
-                    },
-                },
-            })
+            }, root)
         end)
 
         local markdown = read_file(output .. "/api.md")
@@ -1068,7 +1067,7 @@ local preserved  =  true
 
         remove_tree(output)
         os.remove(source)
-        os.remove(example)
+        remove_tree(root)
     end)
 
     it("hands Cerulean a generic type alias Teal will take", function()
@@ -1767,19 +1766,18 @@ print(answer)
 | api | Module |
 ]])
         source_file:close()
-        local example = os.tmpname()
-        local example_file = assert(io.open(example, "w"))
-        example_file:write("local answer: integer = 42\nprint(answer)\n")
-        example_file:close()
-        local attached_example = os.tmpname()
-        local attached_example_file = assert(io.open(attached_example, "w"))
-        attached_example_file:write([[
--- #region identity
+        local example_root = os.tmpname()
+        os.remove(example_root)
+        assert(lfs.mkdir(example_root))
+        write_nested_file(example_root, "docs/examples/api.tl", [[
+-- #region api.open
+--[=[
+Open a checked value.
+]=]
 local value: string = "checked"
 print(value)
--- #endregion identity
+-- #endregion api.open
 ]])
-        attached_example_file:close()
         local custom_css = os.tmpname()
         local custom_css_file = assert(io.open(custom_css, "w"))
         custom_css_file:write([[/* A comment, which CSS lets stand before an import. */
@@ -1851,22 +1849,6 @@ print(value)
             redirects = {
                 ["old-api.html"] = "modules/api",
             },
-            examples = {
-                {
-                    path = "examples/answer",
-                    title = "Checked answer",
-                    description = "A compiler-checked Teal example.",
-                    source = example,
-                    language = "teal",
-                },
-                {
-                    attach_to = "api.open",
-                    title = "Open a checked value",
-                    source = attached_example,
-                    region = "identity",
-                    language = "teal",
-                },
-            },
             constructor_pattern = "^new",
             nav = {
                 {text = "Home", path = ""},
@@ -1934,7 +1916,7 @@ print(value)
                     and generated[output .. "/robots.txt"]
                     and generated[output .. "/404.html"]
             end,
-        })
+        }, example_root)
 
         local home = read_file(output .. "/index.html")
         local api = read_file(output .. "/modules/api/index.html")
@@ -1979,7 +1961,6 @@ print(value)
         local window_html = read_file(output .. "/modules/window/index.html")
         local window_markdown = read_file(output .. "/modules/window.md")
         local redirect = read_file(output .. "/old-api.html")
-        local example_html = read_file(output .. "/examples/answer/index.html")
         local not_found = read_file(output .. "/404.html")
         local sitemap = read_file(output .. "/sitemap.xml")
         local robots = read_file(output .. "/robots.txt")
@@ -3109,24 +3090,6 @@ print(value)
             true
         ))
         assert.is_falsy(redirect:find("<script", 1, true))
-        assert.is_truthy(example_html:find(
-            'keyword-local tealdoc-token-keyword">local</span>',
-            1,
-            true
-        ), example_html)
-        -- Every block is wrapped, and the wrapper carries the language on its
-        -- own so the corner label has something to draw and does not sit on
-        -- the element that scrolls.
-        assert.is_truthy(example_html:find(
-            '<div class="tealdoc-code-block" data-lang="teal"><pre',
-            1,
-            true
-        ), example_html)
-        assert.is_truthy(example_html:find(
-            "A compiler-checked Teal example.",
-            1,
-            true
-        ))
         assert.is_truthy(not_found:find("<title>Missing | Test</title>", 1, true))
         assert.is_truthy(not_found:find(
             '<meta name="robots" content="noindex, nofollow">',
@@ -3158,17 +3121,20 @@ print(value)
         remove_tree(output)
         remove_tree(public)
         os.remove(source)
-        os.remove(example)
-        os.remove(attached_example)
+        remove_tree(example_root)
         os.remove(custom_css)
     end)
 
     it("rejects invalid checked Teal examples before writing output", function()
         local env = DefaultEnv.init()
-        local example = os.tmpname()
-        local file = assert(io.open(example, "w"))
-        file:write('local answer: integer = "wrong"\n')
-        file:close()
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        write_nested_file(root, "docs/examples/api.tl", [[
+-- #region api.invalid
+local answer: integer = "wrong"
+-- #endregion api.invalid
+]])
         local output = os.tmpname()
         os.remove(output)
 
@@ -3177,19 +3143,11 @@ print(value)
                 title = "Test",
                 description = "Test documentation",
                 base = "/",
-                pages = {},
-                examples = {
-                    {
-                        path = "examples/invalid",
-                        title = "Invalid",
-                        source = example,
-                        language = "teal",
-                    },
-                },
-            })
+                pages = {{path = "", title = "Home"}},
+            }, root)
         end)
-        assert.is_nil(lfs.attributes(output))
-        os.remove(example)
+        remove_tree(output)
+        remove_tree(root)
     end)
     it("resolves project files and discovers Teal sources from the config", function()
         local root = os.tmpname()
@@ -3804,41 +3762,46 @@ print(value)
     end)
 
     it("extracts nested example regions with CRLF and trailing spaces", function()
-        local source = os.tmpname()
-        write_file(
-            source,
-            "-- #region selected   \r\n" ..
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record api
+                selected: function()
+                nested: function()
+            end
+
+            return api
+        ]], "api.tl", env)
+        local root = os.tmpname()
+        os.remove(root)
+        assert(lfs.mkdir(root))
+        write_nested_file(
+            root,
+            "docs/examples/api.lua",
+            "-- #region api.selected   \r\n" ..
                 "local keep1 = 1\r\n" ..
-                "-- #region nested\r\n" ..
+                "-- #region api.nested\r\n" ..
                 "local nested = 2\r\n" ..
-                "-- #endregion   \r\n" ..
+                "-- #endregion api.nested\r\n" ..
                 "local keep2 = 3\r\n" ..
-                "-- #endregion selected   \r\n"
+            "-- #endregion api.selected   \r\n"
         )
         local output = os.tmpname()
         os.remove(output)
 
-        SiteGenerator.build(output, DefaultEnv.init(), {
+        SiteGenerator.build(output, env, {
             title = "Examples",
             validate_links = false,
-            examples = {
-                {
-                    path = "nested",
-                    title = "Nested regions",
-                    source = source,
-                    region = "selected",
-                    language = "lua",
-                },
-            },
-        })
+            pages = {{path = "api", title = "API", api = "api"}},
+        }, root)
 
-        local markdown = read_file(output .. "/nested.md")
+        local markdown = read_file(output .. "/api.md")
         assert.is_truthy(markdown:find("local keep1 = 1", 1, true), markdown)
         assert.is_truthy(markdown:find("local nested = 2", 1, true), markdown)
         assert.is_truthy(markdown:find("local keep2 = 3", 1, true), markdown)
         assert.is_falsy(markdown:find("#region", 1, true), markdown)
         remove_tree(output)
-        os.remove(source)
+        remove_tree(root)
     end)
 
     it("caps demoted API headings at level six", function()
