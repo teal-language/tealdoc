@@ -21,7 +21,6 @@ local record SiteGenerator
     type Feature = SiteTypes.Feature
     type HeadEntry = SiteTypes.HeadEntry
     type Page = SiteTypes.Page
-    type Example = SiteTypes.Example
     type Settings = SiteTypes.Settings
     type Context = SiteTypes.Context
 
@@ -2462,9 +2461,8 @@ function SiteGenerator.build(
     -- the build rather than threaded through every render, because it is a
     -- property of the installation and not of a page.
     Scintillua.configure(settings.lexers)
-    local pages: {SiteGenerator.Page}
+    local pages: {SiteGenerator.Page} = settings.pages
     local attached_examples: {string: {PreparedExample}}
-    pages, attached_examples = SiteExamples.prepare(settings, env)
     settings.redirects = validated_redirects(pages, settings.redirects)
 
     local used_examples: {string: boolean} = {}
@@ -2547,6 +2545,11 @@ function SiteGenerator.build(
             )
         end
     end
+    attached_examples = SiteExamples.prepare(
+        views,
+        config_directory or ".",
+        env
+    )
     local resolver = routes_for_pages(context.pages, views, settings.base)
     -- Built once for the whole site: it is the same table every time and
     -- walking the registry is not free.
@@ -2617,7 +2620,7 @@ function SiteGenerator.build(
     for item_path in pairs(attached_examples) do
         assert(
             used_examples[item_path],
-            "example attach_to is not a public API item: " .. item_path
+            "example region does not name a rendered API item: " .. item_path
         )
     end
 

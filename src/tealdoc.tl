@@ -88,7 +88,6 @@ local record tealdoc
         y: integer
     end
 
-
     --- Item is an abstract base interface for Tealdoc items.
     --- Items represent documentation entities such as functions, variables, types, etc.
     --- Items can also represent abstract concepts like namespaces or modules.

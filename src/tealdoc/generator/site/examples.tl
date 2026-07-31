@@ -1,15 +1,46 @@
 local tealdoc = require("tealdoc")
+local SiteConfig = require("tealdoc.generator.site.config")
 local SiteTypes = require("tealdoc.generator.site.types")
+local lfs = require("lfs")
 
 local record SiteExamples
     prepare: function(
-        settings: SiteTypes.Settings,
+        views: {string: SiteTypes.ApiView},
+        config_directory: string,
         env: tealdoc.Env
-    ): {SiteTypes.Page}, {string: {SiteTypes.PreparedExample}}
+    ): {string: {SiteTypes.PreparedExample}}
 end
 
 local record TealValidator
     validate: function(self, text: string, path: string): {string}
+end
+
+local record ExampleReference
+    source: string
+    region: string
+end
+
+local function example_files(directory: string, files: {string})
+    for name in lfs.dir(directory) do
+        if name ~= "." and name ~= ".." then
+            local path = SiteConfig.join_path(directory, name)
+            local attributes = lfs.attributes(path)
+            if attributes and attributes.mode == "directory" then
+                example_files(path, files)
+            elseif path:match("%.tl$") or path:match("%.lua$") then
+                table.insert(files, path)
+            end
+        end
+    end
+end
+
+local function description_and_code(code: string): string, string
+    local _, description, closing = code:match("^%s*%-%-%[(=*)%[(.-)%](=*)%]%s*\n")
+    if description and closing then
+        local ending = code:find("%]" .. closing .. "%]", 1)
+        return description, code:sub(assert(ending) + #closing + 3):gsub("^%s*\n", "")
+    end
+    return "", code
 end
 
 local function read_file(path: string): string
@@ -79,14 +110,11 @@ local function extract_region(
 end
 
 local function validate_example(
-    example: SiteTypes.Example,
+    example: ExampleReference,
     code: string,
     language: string,
     env: tealdoc.Env
 )
-    if example.check == false then
-        return
-    end
     local errors: {string} = {}
     if language == "teal" then
         local parser = env.parser_registry[".tl"] as TealValidator
@@ -109,71 +137,35 @@ local function validate_example(
 end
 
 function SiteExamples.prepare(
-    settings: SiteTypes.Settings,
+    views: {string: SiteTypes.ApiView},
+    config_directory: string,
     env: tealdoc.Env
-): {SiteTypes.Page}, {string: {SiteTypes.PreparedExample}}
-    local pages: {SiteTypes.Page} = {}
+): {string: {SiteTypes.PreparedExample}}
     local attached: {string: {SiteTypes.PreparedExample}} = {}
-    local paths: {string: boolean} = {}
-    for _, page in ipairs(settings.pages or {}) do
-        table.insert(pages, page)
-        paths[page.path or ""] = true
+    local files: {string} = {}
+    local directory = SiteConfig.join_path(config_directory, "docs/examples")
+    if lfs.attributes(directory, "mode") == "directory" then
+        example_files(directory, files)
     end
-
-    for _, example in ipairs(settings.examples or {}) do
-        local has_path = example.path and example.path ~= ""
-        local has_attachment = example.attach_to and example.attach_to ~= ""
-        assert(
-            has_path ~= has_attachment,
-            "example requires exactly one of path or attach_to"
-        )
-        if has_path then
-            assert(
-                example.title and example.title ~= "",
-                "example title is required"
-            )
-        end
-        assert(
-            example.source and example.source ~= "",
-            "example source is required"
-        )
-        if has_path then
-            assert(
-                not paths[example.path],
-                "example path conflicts with a page: " .. example.path
-            )
-        end
-        local code = read_file(example.source)
-        code = extract_region(code, example.source, example.region)
-        local language = example.language
-        if not language then
-            language = example.source:match("%.tl$") and "teal"
-                or example.source:match("%.lua$") and "lua"
-                or "text"
-        end
-        validate_example(example, code, language, env)
-        if has_attachment then
-            attached[example.attach_to] = attached[example.attach_to] or {}
-            table.insert(attached[example.attach_to], {
-                attach_to = example.attach_to,
-                title = example.title or "Example",
-                source = example.source,
+    table.sort(files)
+    for _, source in ipairs(files) do
+        local text = read_file(source)
+        for region in text:gmatch("%-%-%s*#region%s+(tecs%.[%w%.]+)%s*\n") do
+            local code = extract_region(text, source, region)
+            local description
+            description, code = description_and_code(code)
+            local language = source:match("%.tl$") and "teal" or "lua"
+            validate_example({source = source, region = region}, code, language, env)
+            attached[region] = attached[region] or {}
+            table.insert(attached[region], {
+                title = "Example",
+                description = description,
                 language = language,
                 code = code,
             })
-        else
-            table.insert(pages, {
-                path = example.path,
-                title = example.title,
-                description = example.description,
-                example_source = example.source,
-                example_language = language,
-                example_code = code,
-            })
-            paths[example.path] = true
         end
     end
-    return pages, attached
+    return attached
 end
 
 return SiteExamples

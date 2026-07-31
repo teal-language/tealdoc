@@ -100,7 +100,6 @@ local site_keys: {string: boolean} = {
     license = true,
     footer_links = true,
     redirects = true,
-    examples = true,
     validate_links = true,
     format_generated_code = true,
     constructor_pattern = true,
@@ -127,8 +126,6 @@ local page_keys: {string: boolean} = {
     hero_image_alt = true,
     hero_actions = true,
     features = true,
-    example_source = true,
-    example_language = true,
     canonical = true,
     image = true,
     noindex = true,
@@ -138,17 +135,6 @@ local api_source_keys: {string: boolean} = {
     module = true,
     public = true,
     include = true,
-}
-
-local example_keys: {string: boolean} = {
-    path = true,
-    attach_to = true,
-    region = true,
-    title = true,
-    description = true,
-    source = true,
-    language = true,
-    check = true,
 }
 
 local link_keys: {string: boolean} = {
@@ -271,7 +257,6 @@ function SiteConfig.configure(
     end
     for _, key in ipairs({
         "redirects",
-        "examples",
         "pages",
         "sidebar",
         "sidebar_open",
@@ -351,7 +336,6 @@ function SiteConfig.configure(
         license = values["license"] as string,
         footer_links = {},
         redirects = {},
-        examples = {},
         validate_links = values["validate_links"] ~= false,
         format_generated_code = values["format_generated_code"] == true,
         constructor_pattern = values["constructor_pattern"] as string,
@@ -449,8 +433,6 @@ function SiteConfig.configure(
             "hero_text",
             "hero_image",
             "hero_image_alt",
-            "example_source",
-            "example_language",
             "canonical",
             "image",
         }) do
@@ -681,64 +663,6 @@ function SiteConfig.configure(
             )
         )
     end
-    for index, example_value in ipairs(values["examples"] as {any} or {}) do
-        local name = "tealdoc.site.examples[" .. tostring(index) .. "]"
-        validate_keys(example_value, example_keys, name)
-        local example = example_value as {string: any}
-        local has_path = type(example["path"]) == "string"
-            and example["path"] ~= ""
-        local has_attachment = type(example["attach_to"]) == "string"
-            and example["attach_to"] ~= ""
-        assert(
-            has_path ~= has_attachment,
-            name .. " requires exactly one of path or attach_to"
-        )
-        assert(
-            has_attachment
-                or type(example["title"]) == "string"
-                    and example["title"] ~= "",
-            name .. ".title is required for a page example"
-        )
-        assert(
-            type(example["source"]) == "string" and example["source"] ~= "",
-            name .. ".source is required"
-        )
-        assert(
-            example["description"] == nil
-                or type(example["description"]) == "string",
-            name .. ".description must be a string"
-        )
-        assert(
-            example["language"] == nil or type(example["language"]) == "string",
-            name .. ".language must be a string"
-        )
-        assert(
-            example["region"] == nil or type(example["region"]) == "string",
-            name .. ".region must be a string"
-        )
-        assert(
-            example["check"] == nil or type(example["check"]) == "boolean",
-            name .. ".check must be a boolean"
-        )
-        local normalized_values: {string: any} = {}
-        for key, value in pairs(example) do
-            normalized_values[key] = value
-        end
-        local normalized = normalized_values as SiteTypes.Example
-        if has_path then
-            normalized.path = normalize_route(
-                example["path"],
-                name .. ".path",
-                false
-            )
-        end
-        normalized.source = resolve_file_path(
-            directory,
-            example["source"],
-            name .. ".source"
-        )
-        table.insert(settings.examples, normalized)
-    end
     if values["not_found"] ~= nil then
         local name = "tealdoc.site.not_found"
         validate_keys(values["not_found"], page_keys, name)
@@ -758,8 +682,8 @@ function SiteConfig.configure(
         settings.not_found = normalized
     end
     assert(
-        #settings.pages > 0 or #settings.examples > 0,
-        "tealdoc.site.pages or tealdoc.site.examples is required"
+        #settings.pages > 0,
+        "tealdoc.site.pages is required"
     )
     if values["redirects"] ~= nil then
         assert(

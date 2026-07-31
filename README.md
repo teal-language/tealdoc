@@ -540,20 +540,6 @@ return {
                     api = "my.api",
                 },
             },
-            examples = {
-                {
-                    path = "examples/basic",
-                    title = "Basic usage",
-                    description = "A complete, compiler-checked example.",
-                    source = "examples/basic.tl",
-                },
-                {
-                    attach_to = "my.api.open",
-                    title = "Open a basic value",
-                    source = "examples/all.tl",
-                    region = "open-basic",
-                },
-            },
             before_build = function(context)
                 -- Adjust page metadata before rendering.
             end,
@@ -574,7 +560,7 @@ A site can combine four kinds of content:
 - Teal modules discovered through `sources`;
 - handwritten Markdown selected by page `source` fields;
 - generated API references selected by page `api` fields; and
-- checked Teal or Lua `examples`, either as pages or attached to API items.
+- checked Teal or Lua source regions named by canonical API paths.
 
 Each page can use one or both of `source` and `api`. `api` accepts either one
 module name or an ordered list of modules projected under the page's required
@@ -637,7 +623,6 @@ settings document their complete nested table shape.
 | [`pages`](docs/site_configuration.md#pages) | `{}` | Handwritten and API pages. |
 | [`sidebar`](docs/site_configuration.md#sidebar) | derived | Explicit recursively nested sidebar. |
 | [`sidebar_open`](docs/site_configuration.md#sidebar_open) | all | Sections initially open by path or text. |
-| [`examples`](docs/site_configuration.md#examples) | `{}` | Page and attached examples. |
 | [`validate_links`](docs/site_configuration.md#validate_links) | `true` | Validate internal links and anchors. |
 | [`format_generated_code`](docs/site_configuration.md#format_generated_code) | `false` | Format generated Teal with Cerulean. |
 | [`constructor_pattern`](docs/site_configuration.md#constructor_pattern) | omitted | Lua pattern that classifies constructor functions. |
@@ -645,7 +630,7 @@ settings document their complete nested table shape.
 | [`before_build`](docs/site_configuration.md#before_build) | omitted | Pre-render build hook. |
 | [`after_build`](docs/site_configuration.md#after_build) | omitted | Post-render build hook. |
 
-At least one page or example is required, but Teal sources are not. A
+At least one page is required, but Teal sources are not. A
 Markdown-only site is a supported zero-Teal build.
 
 #### Pages and routes
@@ -659,19 +644,11 @@ Page settings are `path`, required `title`, `description`, `source`, `api`,
 optional `theme`. A feature has required `title` and optional `details`,
 `icon`, and `image`.
 
-##### Example settings
-
-Every example requires `source` and exactly one of `path` or `attach_to`.
-Page examples also require `title`; attached examples default it to
-`"Example"`. Optional settings are `description`, `region`, `language`, and
-`check`. `language` defaults from the source extension and `check` defaults
-to `true`.
-
 ##### Route rules
 
-Page and example paths are clean URL routes rather than filesystem paths.
+Page paths are clean URL routes rather than filesystem paths.
 Leading and trailing slashes and repeated separators normalize away. A route
-cannot contain `.`, `..`, a query, or a fragment. Page, example, and redirect
+cannot contain `.`, `..`, a query, or a fragment. Page and redirect
 sources must remain unique after normalization. Tealdoc rejects a conflict
 before writing page output. Relative redirect destinations use `base`;
 absolute paths and HTTP(S) destinations are preserved.
@@ -825,29 +802,83 @@ hero. Feature `details` accepts Markdown.
 
 #### Checked examples and source regions
 
-`examples` accepts exact source files in two forms. `path` creates an ordinary
-site page. `attach_to` places the example under that canonical public API item
-in its generated reference. Use one or the other. Tealdoc infers `teal` from
-`.tl` and `lua` from `.lua`, or accepts an explicit `language`.
+Tealdoc recursively discovers `.tl` and `.lua` files below `docs/examples`.
+Each `#region` name is the canonical public API item that receives its example.
+The directory is relative to `tlconfig.lua`; no site setting lists files or
+connects an example to an API item.
 
-An optional `region` extracts the lines between matching source comments:
+##### Teal example
+
+Use a canonical API path on both markers. A leading long comment becomes the
+Markdown introduction before the rendered code; Tealdoc does not include that
+comment or either region marker in the code block.
 
 ```teal
--- #region open-basic
+-- #region my.api.open
+--[=[
+Opens a basic value.
+]=]
 local value: string = "example"
 my.api.open(value)
--- #endregion open-basic
+-- #endregion my.api.open
 ```
 
-The markers are omitted from the rendered example. Regions may be nested;
-Tealdoc tracks every open marker so an inner region cannot end an outer
-selection early. CRLF files and trailing whitespace on markers are accepted.
-Tealdoc checks the selected region, not the surrounding file, with the
-project's configured Teal compiler environment; Lua regions receive a syntax
-check. The code a reader sees is the code Tealdoc checked. Set `check = false`
-only for an intentionally incomplete example. Examples are listed explicitly
-rather than discovered with globs, so the site configuration is also the list
-of examples the site publishes.
+The code after the long comment is type-checked in isolation with the
+project's configured Teal compiler environment. It must therefore declare
+everything it uses.
+
+##### Lua example
+
+Lua files work identically and receive a Lua syntax check:
+
+```lua
+-- #region my.api.close
+--[=[
+Closes an open value.
+]=]
+api:close()
+-- #endregion my.api.close
+```
+
+##### Multiple examples in one file
+
+One file may provide examples for any number of API items. Tealdoc attaches
+each region separately and preserves source-file order for multiple examples
+on the same item.
+
+```teal
+-- #region my.api.open
+local first <const> = my.api.open("first")
+-- #endregion my.api.open
+
+-- #region my.api.close
+local second <const> = my.api.open("second")
+second:close()
+-- #endregion my.api.close
+```
+
+##### Nested regions
+
+A selected outer region includes the nested region's code but not its markers.
+The nested region is also attached and checked by itself, so it cannot rely on
+locals declared only by its parent.
+
+```teal
+-- #region my.api.load
+local value <const> = my.api.load(path)
+
+-- #region my.api.load.isReady
+assert(my.api.load(path):isReady())
+-- #endregion my.api.load.isReady
+
+use(value)
+-- #endregion my.api.load
+```
+
+Regions must close in stack order. A missing or mismatched close, a duplicate
+region in one file, or a region whose API path is not rendered is an error.
+CRLF files and trailing whitespace on marker lines are accepted. The code a
+reader sees is the code Tealdoc checked.
 
 #### Markdown content
 
@@ -874,7 +905,7 @@ only added when the configured module page has no handwritten documentation.
 Set `format_generated_code = true` to run synthesized API declarations through
 Cerulean. Tealdoc loads Cerulean from Lua's existing package paths at runtime;
 it remains an optional dependency. The setting also formats authored Teal
-fences and configured Teal examples. Write `` ```teal no-format `` when an
+fences and Teal example regions. Write `` ```teal no-format `` when an
 example's intentional layout must be preserved; Tealdoc removes `no-format`
 from the generated fence.
 
@@ -989,7 +1020,7 @@ The supported GitHub markers are `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and
 #### Build hooks
 
 The two hooks are ordinary trusted Lua functions. Tealdoc validates settings,
-resolves config-relative paths, validates examples, assembles example pages,
+resolves config-relative paths and validates discovered examples,
 and then calls `before_build` before creating the output directory.
 Its context contains `output`, `env`, resolved `settings`, the mutable combined
 `pages` list, and an initially empty `files` list. A hook may adjust page

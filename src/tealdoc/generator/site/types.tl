@@ -39,9 +39,6 @@ local record SiteTypes
         hero_image_alt: string
         hero_actions: {Link}
         features: {Feature}
-        example_source: string
-        example_language: string
-        example_code: string
         canonical: string
         image: string
         noindex: boolean
@@ -52,17 +49,6 @@ local record SiteTypes
         path: string
         items: {SidebarItem}
         collapsed: boolean
-    end
-
-    record Example
-        path: string
-        attach_to: string
-        region: string
-        title: string
-        description: string
-        source: string
-        language: string
-        check: boolean
     end
 
     record Settings
@@ -91,7 +77,6 @@ local record SiteTypes
         license: string
         footer_links: {Link}
         redirects: {string: string}
-        examples: {Example}
         validate_links: boolean
         format_generated_code: boolean
         constructor_pattern: string
@@ -113,9 +98,8 @@ local record SiteTypes
     end
 
     record PreparedExample
-        attach_to: string
         title: string
-        source: string
+        description: string
         language: string
         code: string
     end

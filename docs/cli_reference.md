@@ -200,20 +200,6 @@ return {
                     api = "my.api",
                 },
             },
-            examples = {
-                {
-                    path = "examples/basic",
-                    title = "Basic usage",
-                    description = "A complete, compiler-checked example.",
-                    source = "examples/basic.tl",
-                },
-                {
-                    attach_to = "my.api.open",
-                    title = "Open a basic value",
-                    source = "examples/all.tl",
-                    region = "open-basic",
-                },
-            },
             before_build = function(context)
                 -- Adjust page metadata before rendering.
             end,
@@ -283,7 +269,7 @@ settings document their complete nested table shape.
 | [`before_build`](site_configuration.md#before_build) | omitted | Pre-render build hook. |
 | [`after_build`](site_configuration.md#after_build) | omitted | Post-render build hook. |
 
-At least one page or example is required, but Teal sources are not. A
+At least one page is required, but Teal sources are not. A
 Markdown-only site is a supported zero-Teal build.
 
 Page settings are `path`, required `title`, `description`, `source`, `api`,
@@ -293,15 +279,9 @@ Page settings are `path`, required `title`, `description`, `source`, `api`,
 optional `theme`. A feature has required `title` and optional `details`,
 `icon`, and `image`.
 
-Every example requires `source` and exactly one of `path` or `attach_to`.
-Page examples also require `title`; attached examples default it to
-`"Example"`. Optional settings are `description`, `region`, `language`, and
-`check`. `language` defaults from the source extension and `check` defaults
-to `true`.
-
-Page and example paths are clean URL routes rather than filesystem paths.
+Page paths are clean URL routes rather than filesystem paths.
 Leading and trailing slashes and repeated separators normalize away. A route
-cannot contain `.`, `..`, a query, or a fragment. Page, example, and redirect
+cannot contain `.`, `..`, a query, or a fragment. Page and redirect
 sources must remain unique after normalization. Tealdoc rejects a conflict
 before writing page output. Relative redirect destinations use `base`;
 absolute paths and HTTP(S) destinations are preserved.
@@ -421,18 +401,14 @@ right-hand image over a theme-colored starburst; when it is absent, the right
 column is not emitted. `features` renders the compact feature badges below the
 hero. Feature `details` accepts Markdown.
 
-`examples` accepts exact source files in two forms. `path` creates an ordinary
-site page. `attach_to` places the example under that canonical public API item
-in its generated reference. Use one or the other. Tealdoc infers `teal` from
-`.tl` and `lua` from `.lua`, or accepts an explicit `language`.
-
-An optional `region` extracts the lines between matching source comments:
+Tealdoc discovers Teal and Lua regions below `docs/examples`. A region's
+canonical name selects the generated API item that receives it:
 
 ```teal
--- #region open-basic
+-- #region my.api.open
 local value: string = "example"
 my.api.open(value)
--- #endregion open-basic
+-- #endregion my.api.open
 ```
 
 The markers are omitted from the rendered example. Regions may be nested;

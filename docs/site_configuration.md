@@ -456,36 +456,6 @@ entries absent from its new output plan and removes directories only when they
 become empty. It never prunes untracked files, rejects an unowned file at a
 planned path, and replaces the manifest only after link validation succeeds.
 
-## examples
-
-Optional ordered array, defaulting to `{}`. Each entry requires `source` and
-exactly one of `path` or `attach_to`. A `path` creates a complete example page;
-`attach_to` adds the checked example to a generated API item.
-
-```lua
-examples = {
-    {
-        path = "examples/client",
-        title = "HTTP client",
-        description = "Make a typed request.",
-        source = "examples/client.tl",
-        region = "basic-request",
-    },
-    {
-        attach_to = "my.http.Client.get",
-        title = "Request a document",
-        source = "examples/client.tl",
-        region = "get-document",
-        language = "teal",
-        check = true,
-    },
-}
-```
-
-Example fields are `path`, `attach_to`, `region`, `title`, `description`,
-`source`, `language`, and `check`. `language` defaults from `.tl` or `.lua`;
-`check` defaults to `true`.
-
 ## validate_links
 
 Optional boolean, defaulting to `true`. After the build and `after_build` hook,
@@ -500,8 +470,8 @@ validate_links = false
 
 Optional boolean, defaulting to `false`. When enabled, Tealdoc formats the Teal
 declarations it synthesizes for API references with Cerulean before syntax
-highlighting them. It also formats handwritten Teal fences and configured Teal
-examples. Add `no-format` after a fence's `teal` language when an example's
+highlighting them. It also formats handwritten Teal fences and Teal example
+regions. Add `no-format` after a fence's `teal` language when an example's
 intentional layout must be preserved; Tealdoc removes the marker from its
 output:
 

@@ -109,34 +109,6 @@ function SiteApi.source_markdown(
     formatters?: SiteTypes.CodeFormatters
 ): string
     local format_source = formatters and formatters.source or nil
-    if page.example_source then
-        local code = page.example_code or read_file(page.example_source)
-        local language = page.example_language
-        if not language then
-            language = page.example_source:match("%.tl$") and "teal"
-                or page.example_source:match("%.lua$") and "lua"
-                or "text"
-        end
-        if language == "teal" and format_source then
-            code = format_source(code)
-        end
-        local fence = "```"
-        while code:find(fence, 1, true) do
-            fence = fence .. "`"
-        end
-        local output = "# " .. page.title .. "\n\n"
-        if page.description then
-            output = output .. page.description .. "\n\n"
-        end
-        return output ..
-            fence ..
-            language ..
-            "\n" ..
-            code:gsub("\n*$", "") ..
-            "\n" ..
-            fence ..
-            "\n"
-    end
     if not page.source then
         return ""
     end
@@ -694,7 +666,7 @@ function SiteApi.markdown(
             used_examples[item_path] = true
             local following = markdown:find("\n<a id=\"", ending + 1, true)
             local insertion = following or (#markdown + 1)
-            local blocks: {string} = {}
+            local blocks: {string} = {"\n### Examples\n"}
             for _, example in ipairs(examples) do
                 local code = example.code
                 if example.language == "teal" and format_source then
@@ -706,9 +678,8 @@ function SiteApi.markdown(
                 end
                 table.insert(
                     blocks,
-                    "\n### " ..
-                        example.title ..
-                        "\n\n" ..
+                    "\n" ..
+                        (example.description ~= "" and example.description .. "\n\n" or "") ..
                         fence ..
                         example.language ..
                         "\n" ..
