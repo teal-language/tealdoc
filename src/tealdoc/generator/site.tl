@@ -2069,7 +2069,7 @@ local function submodule_summary(
     end)
 
     local output: {string} = {
-        "**Submodules**\n\n",
+        "### Submodules\n\n",
         "| Submodule | Description |\n",
         "| --- | --- |\n",
     }

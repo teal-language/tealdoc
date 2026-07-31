@@ -923,7 +923,7 @@ function SiteApi.summary(
             if #output > 0 then
                 table.insert(output, "\n")
             end
-            table.insert(output, "**" .. heading .. "**\n\n")
+            table.insert(output, "### " .. heading .. "\n\n")
             if metadata ~= "none" then
                 table.insert(
                     output,

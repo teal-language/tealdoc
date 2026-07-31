@@ -497,9 +497,10 @@ format_generated_code = true
 ## constructor_pattern
 
 Optional non-empty string. Ordinary public functions whose names match this
-Lua pattern appear under Constructors. Generated API references order their
-groups as Constructors, Types, Functions, Macros, then Values. Methods and
-metamethods remain under Functions; Teal macros appear under Macros.
+Lua pattern appear under Constructors. Under `Module contents`, generated API
+references render nested sections in this order: Constructors, Types, Functions,
+Macros, then Values. Methods and metamethods remain under Functions; Teal macros
+appear under Macros.
 
 ```lua
 constructor_pattern = "^new"

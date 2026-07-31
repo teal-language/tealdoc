@@ -460,9 +460,9 @@ example's intentional layout must be preserved; Tealdoc removes `no-format`
 from the generated fence.
 
 Set `constructor_pattern = "^new"` to collect matching public functions under
-Constructors. Generated references order their groups as Constructors, Types,
-Functions, Macros, then Values. Methods and metamethods remain under Functions;
-Teal macros appear under Macros.
+Constructors. Under `Module contents`, generated references render nested
+sections in this order: Constructors, Types, Functions, Macros, then Values.
+Methods and metamethods remain under Functions; Teal macros appear under Macros.
 
 Documentation comments can cross-link public types with ordinary Markdown by
 using a `tealdoc:` destination:

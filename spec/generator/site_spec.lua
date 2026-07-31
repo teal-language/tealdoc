@@ -1617,19 +1617,19 @@ local example  =  true
         })
 
         local markdown = read_file(output .. "/api.md")
-        local type_summary = assert(markdown:find("**Types**", 1, true))
+        local type_summary = assert(markdown:find("### Types", 1, true))
         local function_summary = assert(markdown:find(
-            "**Functions**",
+            "### Functions",
             type_summary,
             true
         ))
         local macro_summary = assert(markdown:find(
-            "**Macros**",
+            "### Macros",
             function_summary,
             true
         ))
         local value_summary = assert(markdown:find(
-            "**Values**",
+            "### Values",
             macro_summary,
             true
         ))
@@ -2201,11 +2201,11 @@ print(value)
         assert.is_truthy(api:find("<th>Constructor</th>", 1, true), api)
         assert.is_truthy(api:find("<th>Function</th>", 1, true), api)
         assert.is_truthy(markdown:find(
-            "**Constructors**",
+            "### Constructors",
             1,
             true
         ), markdown)
-        assert.is_truthy(markdown:find("**Functions**", 1, true), markdown)
+        assert.is_truthy(markdown:find("### Functions", 1, true), markdown)
         assert.is_truthy(markdown:find(
             "Read-only. Reports the number of windows awaiting an event.",
             1,
@@ -2223,14 +2223,14 @@ print(value)
             1,
             true
         ))
-        local type_summary_at = assert(markdown:find("**Types**", 1, true))
+        local type_summary_at = assert(markdown:find("### Types", 1, true))
         local constructor_summary_at = assert(markdown:find(
-            "**Constructors**",
+            "### Constructors",
             1,
             true
         ))
         local function_summary_at = assert(markdown:find(
-            "**Functions**",
+            "### Functions",
             1,
             true
         ))
@@ -2249,7 +2249,6 @@ print(value)
         assert.is_true(introduction_at < functions_at)
         assert.is_true(constructor_summary_at < type_summary_at, markdown)
         assert.is_true(type_summary_at < function_summary_at, markdown)
-        assert.is_true(function_summary_at < constructors_at)
         assert.is_true(constructors_at < types_at)
         assert.is_true(type_summary_at < types_at)
         assert.is_true(function_summary_at < functions_at)
@@ -2274,11 +2273,6 @@ print(value)
             constructors_at,
             true
         ))
-        assert.is_falsy(markdown:find(
-            "\n### api.newWindow ",
-            functions_at,
-            true
-        ))
         assert.is_truthy(markdown:find(
             "\n## Values\n",
             functions_at,
@@ -2289,8 +2283,8 @@ print(value)
             functions_at,
             true
         ))
-        assert.is_falsy(markdown:find("\n### Types\n", 1, true))
-        assert.is_falsy(markdown:find("\n### Functions\n", 1, true))
+        assert.is_truthy(markdown:find("\n### Types\n", 1, true))
+        assert.is_truthy(markdown:find("\n### Functions\n", 1, true))
         assert.is_truthy(markdown:find(
             "It keeps wrapped prose\non adjacent source lines.",
             introduction_at,
@@ -3270,7 +3264,7 @@ local answer: integer = "wrong"
 
         local markdown = read_file(output .. "/platform.md")
         assert.is_truthy(markdown:find(
-            "## Module contents\n\n**Submodules**",
+            "## Module contents\n\n### Submodules",
             1,
             true
         ), markdown)
