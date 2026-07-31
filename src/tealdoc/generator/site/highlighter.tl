@@ -138,7 +138,10 @@ local function is_declaration_name(tokens: {tl.Token}, index: integer): boolean
             or token.tk == "type"
         then
             return true
-        elseif token.kind == "identifier" or token.tk == "." then
+        elseif (
+            token.kind == "identifier"
+            and token.tk ~= "is"
+        ) or token.tk == "." then
             cursor = cursor - 1
         else
             return false

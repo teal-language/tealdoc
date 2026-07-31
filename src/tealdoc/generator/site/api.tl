@@ -298,6 +298,9 @@ function SiteApi.type_links(
                     add_reference(reference)
                 end
             end
+            for _, reference in ipairs(item.inherit_references or {}) do
+                add_reference(reference)
+            end
             local target_url = item.alias_target
                 and MarkdownGenerator.resolve_type_url(
                     env,

@@ -184,8 +184,8 @@ return [[
 .tealdoc-content .tealdoc-code-block[data-lang]::before {
     position: absolute;
     z-index: 1;
-    top: var(--tealdoc-code-lang-top);
-    right: var(--tealdoc-code-lang-right);
+    top: 5px;
+    right: 10px;
     padding: var(--tealdoc-code-lang-padding);
     background: var(--tealdoc-code-background);
     color: var(--tealdoc-code-lang-color);

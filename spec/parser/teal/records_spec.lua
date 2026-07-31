@@ -1194,7 +1194,11 @@ describe("teal support in tealdoc: records", function()
                         y = 3,
                         x = 1,
                     },
-                    inherits = { "MyInterface" }
+                    inherits = { "MyInterface" },
+                    inherit_references = util.type_references(
+                        "MyInterface",
+                        "$test~MyInterface"
+                    )
                 }
             })
         end)
@@ -1249,7 +1253,11 @@ describe("teal support in tealdoc: records", function()
                         y = 4,
                         x = 1,
                     },
-                    inherits = { "MyInterface" }
+                    inherits = { "MyInterface" },
+                    inherit_references = util.type_references(
+                        "MyInterface",
+                        "$test~MyInterface"
+                    )
                 },
             })
         end)
@@ -1322,7 +1330,11 @@ describe("teal support in tealdoc: records", function()
                         y = 4,
                         x = 1,
                     },
-                    inherits = { "MyInterface" }
+                    inherits = { "MyInterface" },
+                    inherit_references = util.type_references(
+                        "MyInterface",
+                        "$test~MyInterface"
+                    )
                 }
             })
         end)
@@ -1364,7 +1376,8 @@ describe("teal support in tealdoc: records", function()
                         y = 3,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 },
                 ["$test~C"] = {
                     kind = "type",
@@ -1379,7 +1392,8 @@ describe("teal support in tealdoc: records", function()
                         y = 5,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 },
                 ["$test~MyRecord"] = {
                     kind = "type",
@@ -1394,7 +1408,12 @@ describe("teal support in tealdoc: records", function()
                         y = 7,
                         x = 1,
                     },
-                    inherits = { "B", "A", "C" }
+                    inherits = { "B", "A", "C" },
+                    inherit_references = {
+                        { name = "B", path = "$test~B" },
+                        { name = "A", path = "$test~A" },
+                        { name = "C", path = "$test~C" },
+                    }
                 }
             })
         end)
@@ -1418,7 +1437,11 @@ describe("teal support in tealdoc: records", function()
                         y = 2,
                         x = 1,
                     },
-                    inherits = { "{MyRecord}" }
+                    inherits = { "{MyRecord}" },
+                    inherit_references = util.type_references(
+                        "MyRecord",
+                        "$test~MyRecord"
+                    )
                 }
             })
         end)
@@ -1475,6 +1498,7 @@ describe("teal support in tealdoc: records", function()
                         x = 1,
                     },
                     inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A"),
                 }
             })
         end)
@@ -1535,6 +1559,7 @@ describe("teal support in tealdoc: records", function()
                         x = 1,
                     },
                     inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A"),
                 },
                 ["$test~MyRecord.myField"] = {
                     kind = "variable",

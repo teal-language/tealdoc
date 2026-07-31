@@ -938,12 +938,26 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
         if not declaration.inherits then
             declaration.inherits = {}
         end
+        if not declaration.inherit_references then
+            declaration.inherit_references = {}
+        end
+        local function add_inherited_type(iface: tl.Type)
+            table.insert(
+                declaration.inherits,
+                type_to_string(state.type_report, iface)
+            )
+            for _, reference in ipairs(
+                type_references_for_type(iface, state) or {}
+            ) do
+                table.insert(declaration.inherit_references, reference)
+            end
+        end
         for _, iface in ipairs(t.interface_list) do
             if iface is tl.NominalType then
                 local resolved = iface.resolved
                 if not visited_typeids[resolved.typeid] then
                     visited_typeids[resolved.typeid] = true
-                    table.insert(declaration.inherits, type_to_string(state.type_report, iface))
+                    add_inherited_type(iface)
 
                     if resolved is tl.RecordLikeType then
                         for field_name, _ in pairs(resolved.fields) do
@@ -957,7 +971,7 @@ record_like_visitor = function(t: tl.RecordLikeType, declaration: tealdoc.TypeIt
                     end
                 end
             elseif iface is tl.ArrayType then
-                table.insert(declaration.inherits, type_to_string(state.type_report, iface))
+                add_inherited_type(iface)
             end
         end
     end

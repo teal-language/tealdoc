@@ -315,6 +315,8 @@ local record tealdoc
 
         --- Names of inherited types
         inherits: {string}
+        --- Named types contained in inherited type expressions.
+        inherit_references: {TypeReference}
     end
 
     --- Process a file with the given path using the parsers registered in the environment.

@@ -1120,7 +1120,8 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 3,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 }
             })
         end)
@@ -1175,7 +1176,8 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 4,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 },
             })
         end)
@@ -1248,7 +1250,8 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 4,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 }
             })
         end)
@@ -1290,7 +1293,8 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 3,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 },
                 ["$test~C"] = {
                     kind = "type",
@@ -1305,7 +1309,8 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 5,
                         x = 1,
                     },
-                    inherits = { "A" }
+                    inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A")
                 },
                 ["$test~MyInterface"] = {
                     kind = "type",
@@ -1320,7 +1325,12 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 7,
                         x = 1,
                     },
-                    inherits = { "B", "A", "C" }
+                    inherits = { "B", "A", "C" },
+                    inherit_references = {
+                        { name = "B", path = "$test~B" },
+                        { name = "A", path = "$test~A" },
+                        { name = "C", path = "$test~C" },
+                    }
                 }
             })
         end)
@@ -1344,7 +1354,11 @@ describe("teal support in tealdoc: interfaces", function()
                         y = 2,
                         x = 1,
                     },
-                    inherits = { "{MyInterface}" }
+                    inherits = { "{MyInterface}" },
+                    inherit_references = util.type_references(
+                        "MyInterface",
+                        "$test~MyInterface"
+                    )
                 }
             })
         end)
@@ -1401,6 +1415,7 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 1,
                     },
                     inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A"),
                 }
             })
         end)
@@ -1461,6 +1476,7 @@ describe("teal support in tealdoc: interfaces", function()
                         x = 1,
                     },
                     inherits = { "A" },
+                    inherit_references = util.type_references("A", "$test~A"),
                 },
                 ["$test~MyInterface.myField"] = {
                     kind = "variable",

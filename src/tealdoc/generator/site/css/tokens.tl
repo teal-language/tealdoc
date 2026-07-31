@@ -60,8 +60,6 @@ return [[
     --tealdoc-code-tab-padding: 0.45rem 0.75rem;
     --tealdoc-code-lang-color: var(--tealdoc-text-faint);
     --tealdoc-code-lang-font-size: 0.68rem;
-    --tealdoc-code-lang-top: 2px;
-    --tealdoc-code-lang-right: 0.75rem;
     --tealdoc-code-lang-padding: 0 0 0.2rem 0.4rem;
     --tealdoc-inline-code-font-size: 0.91em;
     --tealdoc-inline-code-padding: 0.1em 0.35em;

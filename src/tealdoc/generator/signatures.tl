@@ -127,10 +127,14 @@ function signatures.for_type(ctx: Generator.Phase.Context, item: tealdoc.TypeIte
             end
         end
         ctx.builder:text(attr("typeargs"), "<", table.concat(typeargs, ", "), ">")
+    end
 
-        if item.inherits and #item.inherits > 0 then
-            ctx.builder:text(attr("inherits"), " is ", table.concat(item.inherits, ", "))
-        end
+    if item.inherits and #item.inherits > 0 then
+        ctx.builder:text(
+            attr("inherits"),
+            " is ",
+            table.concat(item.inherits, ", ")
+        )
     end
 end
 

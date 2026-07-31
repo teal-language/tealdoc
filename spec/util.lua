@@ -51,15 +51,19 @@ function util.registry_for_text(text, filename)
     return env.registry
 end
 
+function util.type_references(type_name, path)
+    return {
+        {
+            name = type_name,
+            path = path,
+        },
+    }
+end
+
 function util.referenced_type(type_name, path)
     return {
         type = type_name,
-        type_references = {
-            {
-                name = type_name,
-                path = path,
-            },
-        },
+        type_references = util.type_references(type_name, path),
     }
 end
 

@@ -616,6 +616,11 @@ function SiteView.prepare(
             local type_item = expand_private_alias(path, item)
             item = type_item
             include_typeargs(type_item.typeargs)
+            for _, reference in ipairs(
+                type_item.inherit_references or {}
+            ) do
+                include_reference(reference)
+            end
         end
         for _, child in ipairs(item.children or {}) do
             scan(child)

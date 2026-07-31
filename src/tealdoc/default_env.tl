@@ -626,6 +626,58 @@ function DefaultEnv.init(): tealdoc.Env
     local type_param_columns: {string} = {"Name", "Constraint", "Description"}
     local param_columns: {string} = {"Name", "Type", "Description"}
     local return_columns: {string} = {"Type", "Description"}
+    local interface_columns: {string} = {"Interface"}
+
+    local function interfaces_table(
+        ctx: Generator.Phase.Context,
+        item: tealdoc.TypeItem
+    )
+        ctx.builder:table(interface_columns, function(
+            row: function(...: function)
+        )
+            for _, inherited in ipairs(item.inherits) do
+                row(function()
+                    markdown_type(
+                        ctx,
+                        inherited,
+                        item.inherit_references
+                    )
+                end)
+            end
+        end)
+    end
+
+    local interfaces_phase: Generator.Phase = {
+        name = "interfaces",
+        run = function(
+            ctx: Generator.Phase.Context,
+            item: tealdoc.Item
+        )
+            assert(item is tealdoc.TypeItem)
+            if not item.inherits or #item.inherits == 0 then
+                return
+            end
+
+            ctx.builder:h4(attr("header"), "Interfaces")
+            interfaces_table(ctx, item)
+        end
+    }
+
+    local markdown_interfaces_phase: Generator.Phase = {
+        name = "markdown_interfaces",
+        run = function(
+            ctx: Generator.Phase.Context,
+            item: tealdoc.Item
+        )
+            assert(item is tealdoc.TypeItem)
+            if not item.inherits or #item.inherits == 0 then
+                return
+            end
+
+            markdown_section(ctx, item, "Interfaces")
+            interfaces_table(ctx, item)
+        end
+    }
 
     local type_params_phase: Generator.Phase = {
         name = "type_params",
@@ -885,6 +937,7 @@ function DefaultEnv.init(): tealdoc.Env
         markdown_header_phase,
         text_phase,
         type_signature_phase,
+        markdown_interfaces_phase,
         markdown_type_params_phase
     }
     MarkdownGenerator.item_phases["enumvalue"] = {markdown_header_phase, text_phase}
@@ -893,7 +946,13 @@ function DefaultEnv.init(): tealdoc.Env
     HTMLGenerator.item_phases["module"] = {module_header_phase, detailed_signature_phase}
     HTMLGenerator.item_phases["function"] = {header_phase, function_signature_phase, text_phase, type_params_phase, function_params_phase, function_returns_phase}
     HTMLGenerator.item_phases["variable"] = {header_phase, variable_signature_phase, text_phase}
-    HTMLGenerator.item_phases["type"] = {header_phase, detailed_signature_phase, text_phase, type_params_phase}
+    HTMLGenerator.item_phases["type"] = {
+        header_phase,
+        detailed_signature_phase,
+        text_phase,
+        interfaces_phase,
+        type_params_phase
+    }
     HTMLGenerator.item_phases["enumvalue"] = {header_phase, text_phase}
     HTMLGenerator.item_phases["markdown"] = {text_phase}
 

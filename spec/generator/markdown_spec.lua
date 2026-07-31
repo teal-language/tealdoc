@@ -100,6 +100,15 @@ describe("Markdown generator", function()
             end
 
             local record api
+                interface Readable
+                end
+
+                interface Writable
+                end
+
+                interface ReadWrite is Readable, Writable
+                end
+
                 type Options = types.Options
                 type PublicOptions = types.Options
                 Payload: Payload
@@ -216,6 +225,21 @@ describe("Markdown generator", function()
         ), linked_markdown)
         assert.is_truthy(linked_markdown:find(
             "```teal\nrecord api.Payload\n    value: string\nend\n```",
+            1,
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "```teal\ninterface api.ReadWrite is Readable, Writable\n" ..
+                "end\n```",
+            1,
+            true
+        ), linked_markdown)
+        assert.is_truthy(linked_markdown:find(
+            "### Interfaces\n\n" ..
+                "| Interface |\n" ..
+                "| --- |\n" ..
+                "| [`Readable`](#api.Readable) |\n" ..
+                "| [`Writable`](#api.Writable) |",
             1,
             true
         ), linked_markdown)

@@ -258,9 +258,18 @@ describe("Site generator", function()
             {
                 ["api.Options.window"] =
                     "/modules/api/#api.Options.window",
+                BaseOptions = "/modules/api/#api.BaseOptions",
                 Window = "/modules/window/",
             }
         )
+        assert.is_truthy(member:find(
+            '<a class="tealdoc-code-link" ' ..
+                'href="/modules/api/#api.BaseOptions">' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "BaseOptions</span></a>",
+            1,
+            true
+        ), member)
         assert.is_truthy(member:find(
             '<a class="tealdoc-code-link tealdoc-code-link-variable" ' ..
                 'href="/modules/api/#api.Options.window">' ..
@@ -540,6 +549,16 @@ describe("Site generator", function()
                 --- A listener only its public alias documents.
                 type EventListener = function<E is Event>(event: E)
 
+                interface ReadableStream
+                end
+
+                interface WritableStream
+                end
+
+                interface ReadWriteStream is
+                    ReadableStream, WritableStream
+                end
+
                 --- A scalar component only its public alias documents.
                 interface ScalarComponent<T>
                     --- The value stored when no value is supplied.
@@ -586,6 +605,10 @@ describe("Site generator", function()
 
                 --- A public listener linked to its definition.
                 type Listener = targets.Listener
+
+                type ReadableStream = internal.ReadableStream
+                type WritableStream = internal.WritableStream
+                type ReadWriteStream = internal.ReadWriteStream
 
                 --- A private generic interface projected under this alias.
                 type ScalarComponent<T> = internal.ScalarComponent<T>
@@ -696,6 +719,39 @@ describe("Site generator", function()
             1,
             true
         ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "interface public.shapes.ReadWriteStream is " ..
+                "ReadableStream, WritableStream",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_markdown:find(
+            "#### Interfaces\n\n" ..
+                "| Interface |\n" ..
+                "| --- |\n" ..
+                "| [`ReadableStream`](" ..
+                "/shapes/#public.shapes.ReadableStream) |\n" ..
+                "| [`WritableStream`](" ..
+                "/shapes/#public.shapes.WritableStream) |",
+            1,
+            true
+        ), shapes_markdown)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link" ' ..
+                'href="/shapes/#public.shapes.ReadableStream">' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "ReadableStream</span></a>",
+            1,
+            true
+        ), shapes_html)
+        assert.is_truthy(shapes_html:find(
+            '<a class="tealdoc-code-link" ' ..
+                'href="/shapes/#public.shapes.WritableStream">' ..
+                '<span class="token class-name tealdoc-token-type">' ..
+                "WritableStream</span></a>",
+            1,
+            true
+        ), shapes_html)
         assert.is_truthy(shapes_markdown:find(
             "public.shapes.ScalarComponent.scalarDefault",
             1,
@@ -2613,8 +2669,14 @@ print(value)
             1,
             true
         ))
+        assert.is_falsy(css:find("--tealdoc-code-lang-top", 1, true))
+        assert.is_falsy(css:find("--tealdoc-code-lang-right", 1, true))
         assert.is_truthy(css:find(
-            "--tealdoc-code-lang-top: 2px",
+            ".tealdoc-content .tealdoc-code-block[data-lang]::before {\n" ..
+                "    position: absolute;\n" ..
+                "    z-index: 1;\n" ..
+                "    top: 5px;\n" ..
+                "    right: 10px;",
             1,
             true
         ))
