@@ -38,7 +38,7 @@ local function description_and_code(code: string): string, string
     local _, description, closing = code:match("^%s*%-%-%[(=*)%[(.-)%](=*)%]%s*\n")
     if description and closing then
         local ending = code:find("%]" .. closing .. "%]", 1)
-        return description, code:sub(assert(ending) + #closing + 3):gsub("^%s*\n", "")
+        return description, (code:sub(assert(ending) + #closing + 3):gsub("^%s*\n", ""))
     end
     return "", code
 end
@@ -137,7 +137,7 @@ local function validate_example(
 end
 
 function SiteExamples.prepare(
-    views: {string: SiteTypes.ApiView},
+    _views: {string: SiteTypes.ApiView},
     config_directory: string,
     env: tealdoc.Env
 ): {string: {SiteTypes.PreparedExample}}
@@ -152,7 +152,7 @@ function SiteExamples.prepare(
         local text = read_file(source)
         for region in text:gmatch("%-%-%s*#region%s+(tecs%.[%w%.]+)%s*\n") do
             local code = extract_region(text, source, region)
-            local description
+            local description = ""
             description, code = description_and_code(code)
             local language = source:match("%.tl$") and "teal" or "lua"
             validate_example({source = source, region = region}, code, language, env)
