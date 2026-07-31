@@ -257,6 +257,21 @@ function DefaultEnv.init(): tealdoc.Env
         end
     }
 
+    local function is_method(item: tealdoc.Item): boolean
+        return item is tealdoc.FunctionItem
+            and item.params ~= nil
+            and item.params[1] ~= nil
+            and item.params[1].name == "self"
+    end
+
+    local function method_path(path: string, item: tealdoc.Item): string
+        if is_method(item) then
+            local method = path:gsub("%.([^%.]+)$", ":%1")
+            return method
+        end
+        return path
+    end
+
     local header_phase: Generator.Phase = {
         name = "header",
         run = function(ctx: Generator.Phase.Context, item: tealdoc.Item)
@@ -264,9 +279,12 @@ function DefaultEnv.init(): tealdoc.Env
             -- should we construct the display path in parser?
             if ctx.path_mode == "full" then
                 local display_path = path:gsub("%$[^%.]*%.", "")
-                ctx.builder:h2(attr("path"), display_path)
+                ctx.builder:h2(attr("path"), method_path(display_path, item))
             else
-                ctx.builder:h2(attr("path"), strip_module_prefix(item.path, ctx.module_name))
+                ctx.builder:h2(
+                    attr("path"),
+                    method_path(strip_module_prefix(item.path, ctx.module_name), item)
+                )
             end
         end
     }
@@ -274,9 +292,9 @@ function DefaultEnv.init(): tealdoc.Env
     local function display_path(ctx: Generator.Phase.Context, item: tealdoc.Item): string
         if ctx.path_mode == "full" then
             local path = item.path:gsub("%$[^%.]*%.", "")
-            return path
+            return method_path(path, item)
         end
-        return strip_module_prefix(item.path, ctx.module_name)
+        return method_path(strip_module_prefix(item.path, ctx.module_name), item)
     end
 
     local function overload_parent(ctx: Generator.Phase.Context, item: tealdoc.Item): tealdoc.Item

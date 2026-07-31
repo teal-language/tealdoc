@@ -892,10 +892,10 @@ The same Teal and Lua syntax highlighting applies to labeled fences.
 
 #### Generated API references
 
-Generated reference headings keep canonical item names unchanged and add a
-compact semantic badge such as `method`, `function`, `field`, `record`, or
-`enum`. Tealdoc treats a callable whose first parsed parameter is `self` as a
-method; record variables are fields. Each generated module reference starts
+Generated reference headings write an instance method with a colon before its
+name, such as `Future:wait`, and add a compact semantic badge such as `method`,
+`function`, `field`, `record`, or `enum`. Tealdoc treats a callable whose first
+parsed parameter is `self` as a method; record variables are fields. Each generated module reference starts
 with a linked API table using the same kinds. Its description is the first
 documentation sentence, shortened to 120 characters with `...` when needed.
 The section heading includes the public module name, such as

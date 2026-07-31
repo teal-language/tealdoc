@@ -57,6 +57,37 @@ describe("HTML generator", function()
         assert.is_truthy(html:find("number, {any : any}", 1, true))
     end)
 
+    it("writes a colon before an instance method in its heading", function()
+        local env = DefaultEnv.init()
+        tealdoc.process_text([[
+            local record api
+                --- Closes this API.
+                close: function(self: api)
+            end
+
+            return api
+        ]], "api.tl", env)
+
+        local builder = HTMLBuilder.init()
+        local ctx = {
+            builder = builder,
+            module_name = "api",
+            path_mode = "full",
+            env = env,
+        }
+
+        HTMLGenerator.item_phases["function"][1].run(
+            ctx,
+            env.registry["api.close"]
+        )
+
+        assert.is_truthy(builder:build():find(
+            "<h2>api:close</h2>",
+            1,
+            true
+        ))
+    end)
+
     it("links type aliases to declarations in other modules", function()
         local env = DefaultEnv.init()
         env.modules = {"tecs.init", "tecs.types"}

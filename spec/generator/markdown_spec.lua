@@ -121,6 +121,9 @@ describe("Markdown generator", function()
                 --- Performs one update.
                 update: function()
 
+                --- Closes this API.
+                close: function(self: api)
+
                 --- Copies options.
                 copy: function(options: types.Options): types.Options
 
@@ -162,6 +165,8 @@ describe("Markdown generator", function()
             true
         ))
         local identity_heading = assert(markdown:find("## api.identity", 1, true))
+        assert.is_truthy(markdown:find("## api:close", 1, true))
+        assert.is_falsy(markdown:find("## api.close", 1, true))
         assert.is_falsy(markdown:find("tealdoc-kind-badge", 1, true))
         local identity_text = assert(markdown:find("Returns a value unchanged.", identity_heading, true))
         local identity_signature = assert(markdown:find(
