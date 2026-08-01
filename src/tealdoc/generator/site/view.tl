@@ -266,25 +266,46 @@ function SiteView.prepare(
     local root_children: {string} = {}
     local module_texts: {string} = {}
 
-    local function has_documented_target(path: string): boolean
-        for _, candidate_page in ipairs(pages or {page}) do
-            for _, source in ipairs(sources(candidate_page)) do
-                if path == source.module
-                    or path:sub(1, #source.module + 1) ==
-                        source.module .. "."
-                then
-                    if #(source.include or {}) == 0 then
+    local function page_documents_target(
+        candidate_page: SiteTypes.Page,
+        path: string
+    ): boolean
+        for _, source in ipairs(sources(candidate_page)) do
+            if path == source.module
+                or path:sub(1, #source.module + 1) ==
+                    source.module .. "."
+            then
+                if #(source.include or {}) == 0 then
+                    return true
+                end
+                local remainder = path:sub(#source.module + 2)
+                local first = remainder:match("^([^.]+)")
+                    or remainder
+                for _, name in ipairs(source.include) do
+                    if name == first then
                         return true
                     end
-                    local remainder = path:sub(#source.module + 2)
-                    local first = remainder:match("^([^.]+)")
-                        or remainder
-                    for _, name in ipairs(source.include) do
-                        if name == first then
-                            return true
-                        end
-                    end
                 end
+            end
+        end
+        return false
+    end
+
+    local function has_documented_target(path: string): boolean
+        for _, candidate_page in ipairs(pages or {page}) do
+            if page_documents_target(candidate_page, path) then
+                return true
+            end
+        end
+        return false
+    end
+
+    local function has_other_documented_target(path: string): boolean
+        for _, candidate_page in ipairs(pages or {page}) do
+            if candidate_page.path ~= page.path
+                and page_documents_target(candidate_page, path)
+            then
+                return true
             end
         end
         return false
@@ -483,8 +504,13 @@ function SiteView.prepare(
             and mounted_from[candidate_path]
             and projected.registry[candidate_path]
             or nil
+        -- A type rendered on another page keeps that public destination even
+        -- when this page projects a same-named private subtype. Matching the
+        -- subtype by basename would otherwise turn its inherited type into a
+        -- self-link.
         if target
             and candidate
+            and not has_other_documented_target(reference.path)
             and same_public_item(candidate, target, env)
             and not (
                 candidate is tealdoc.TypeItem

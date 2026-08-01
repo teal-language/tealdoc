@@ -863,6 +863,71 @@ describe("Site generator", function()
         os.remove(guide)
     end)
 
+    it("keeps an inherited same-name type linked to its own page", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        tealdoc.process_text([[
+            local record internal
+                --- A readable endpoint.
+                interface Reader
+                    --- Reads one value.
+                    read: function(self: Reader): string
+                end
+
+                interface ProcessReader is Reader
+                    --- Reads without waiting.
+                    readAvailable: function(self: ProcessReader): string
+                end
+            end
+
+            return internal
+        ]], "internal.tl", env)
+        tealdoc.process_text([[
+            local type internal = require("internal")
+            local record Process
+                --- A process reader.
+                type Reader = internal.ProcessReader
+            end
+
+            return Process
+        ]], "Process.tl", env)
+
+        local output = os.tmpname()
+        os.remove(output)
+        SiteGenerator.build(output, env, {
+            title = "Inherited link",
+            pages = {
+                {path = "", title = "Home"},
+                {
+                    path = "io",
+                    title = "I/O",
+                    api = {
+                        {
+                            module = "internal",
+                            include = {"Reader"},
+                        },
+                    },
+                    public = "tecs.io",
+                },
+                {
+                    path = "process",
+                    title = "Process",
+                    api = "Process",
+                    public = "tecs.io.Process",
+                },
+            },
+        })
+
+        local html = read_file(output .. "/process/index.html")
+        assert.is_truthy(html:find(
+            '<a href="/io/#tecs.io.Reader"><code>Reader</code></a>',
+            1,
+            true
+        ), html)
+
+        remove_tree(output)
+    end)
+
     it("carries a union type through a parameter table to the page", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
