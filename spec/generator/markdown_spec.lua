@@ -73,6 +73,34 @@ describe("Markdown generator", function()
         assert.is_truthy(markdown:find("visibility._VERSION", 1, true))
     end)
 
+    it("omits undocumented enum values while retaining tagged values", function()
+        local env = DefaultEnv.init()
+        env.no_warnings_on_missing = true
+        env:add_tag({
+            name = "deprecated",
+            has_param = false,
+            has_description = false,
+            handle = function()
+            end,
+        })
+        tealdoc.process_text([[
+            --- Valid states.
+            global enum Status
+                "undocumented"
+                --- A documented value.
+                "documented"
+                --- @deprecated
+                "deprecated"
+            end
+        ]], "status.tl", env)
+
+        local markdown = MarkdownGenerator.render(env)
+
+        assert.is_falsy(markdown:find('### &quot;undocumented&quot;', 1, true))
+        assert.is_truthy(markdown:find('### &quot;documented&quot;', 1, true))
+        assert.is_truthy(markdown:find('### &quot;deprecated&quot;', 1, true))
+    end)
+
     it("renders signatures as fenced Teal code", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true

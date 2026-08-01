@@ -368,6 +368,13 @@ local function visit_item(generator: Generator.Base, module_name: string, item: 
         return
     end
 
+    -- Enum declarations list every possible value in their signature. Only
+    -- values with a documentation comment (which may consist solely of tags)
+    -- need a separate rendered entry.
+    if item.kind == "enumvalue" and not env.documented_items[item] then
+        return
+    end
+
     if generator.on_item_start then
         generator:on_item_start(item, module_name, env)
     end

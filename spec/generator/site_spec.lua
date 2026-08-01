@@ -509,7 +509,7 @@ describe("Site generator", function()
             true
         ), html)
         assert.is_truthy(html:find('id="public.api.Status"', 1, true), html)
-        assert.is_truthy(html:find(
+        assert.is_falsy(html:find(
             'id="public.api.Status.&quot;ready&quot;"',
             1,
             true
