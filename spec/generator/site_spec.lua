@@ -867,26 +867,47 @@ describe("Site generator", function()
         local env = DefaultEnv.init()
         env.no_warnings_on_missing = true
         tealdoc.process_text([[
-            local record internal
+            local interface Reader
+                --- Reads one value.
+                read: function(self: Reader): string
+            end
+            local record types
                 --- A readable endpoint.
-                interface Reader
-                    --- Reads one value.
-                    read: function(self: Reader): string
-                end
-
-                interface ProcessReader is Reader
-                    --- Reads without waiting.
-                    readAvailable: function(self: ProcessReader): string
-                end
+                type Reader = Reader
             end
 
-            return internal
-        ]], "internal.tl", env)
+            return types
+        ]], "types.tl", env)
         tealdoc.process_text([[
-            local type internal = require("internal")
+            local type types = require("types")
+            local type Reader = types.Reader
+            local interface ProcessReader is Reader
+                --- Reads without waiting.
+                readAvailable: function(self: ProcessReader): string
+            end
+            local record processtypes
+                type ProcessReader = ProcessReader
+            end
+
+            return processtypes
+        ]], "processtypes.tl", env)
+        -- `process_text` compiles each fixture independently, so supply the
+        -- imported inheritance metadata a project-wide parse produces.
+        local process_reader = assert(
+            env.registry["$processtypes~ProcessReader"]
+        )
+        process_reader.inherits = {"Reader"}
+        process_reader.inherit_references = {
+            {
+                name = "Reader",
+                path = "$processtypes~Reader",
+            },
+        }
+        tealdoc.process_text([[
+            local type processtypes = require("processtypes")
             local record Process
                 --- A process reader.
-                type Reader = internal.ProcessReader
+                type Reader = processtypes.ProcessReader
             end
 
             return Process
@@ -903,7 +924,7 @@ describe("Site generator", function()
                     title = "I/O",
                     api = {
                         {
-                            module = "internal",
+                            module = "types",
                             include = {"Reader"},
                         },
                     },

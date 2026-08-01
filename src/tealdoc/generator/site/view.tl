@@ -311,6 +311,35 @@ function SiteView.prepare(
         return false
     end
 
+    local function other_documented_alias(path: string): string
+        local seen: {string: boolean} = {}
+        while path and not seen[path] do
+            seen[path] = true
+            if has_other_documented_target(path) then
+                return path
+            end
+            local item = env.registry[path]
+            if item and item is tealdoc.TypeItem
+                and item.type_kind == "type"
+                and item.alias_target
+            then
+                path = item.alias_target
+            else
+                break
+            end
+        end
+        local canonical = path
+        for candidate_path, candidate in pairs(env.registry) do
+            if candidate is tealdoc.TypeItem
+                and has_other_documented_target(candidate_path)
+                and canonical_alias(candidate, env) == canonical
+            then
+                return candidate_path
+            end
+        end
+        return nil
+    end
+
     local function mount(
         source_path: string,
         source_prefix: string,
@@ -507,10 +536,10 @@ function SiteView.prepare(
         -- A type rendered on another page keeps that public destination even
         -- when this page projects a same-named private subtype. Matching the
         -- subtype by basename would otherwise turn its inherited type into a
-        -- self-link.
+        -- self-link. The compiler may resolve a file-local alias past the
+        -- exported alias, so restore that documented source path too.
         if target
             and candidate
-            and not has_other_documented_target(reference.path)
             and same_public_item(candidate, target, env)
             and not (
                 candidate is tealdoc.TypeItem
@@ -519,6 +548,11 @@ function SiteView.prepare(
                 and target.type_kind ~= "type"
             )
         then
+            local documented = other_documented_alias(reference.path)
+            if documented then
+                reference.path = documented
+                return
+            end
             source_to_public[reference.path] = candidate_path
             return
         end
@@ -594,6 +628,13 @@ function SiteView.prepare(
         definition.visibility = item.visibility
         definition.text = item.text or definition.text
         definition.typeargs = item.typeargs or definition.typeargs
+        definition.inherit_references = {}
+        for _, reference in ipairs(target.inherit_references or {}) do
+            table.insert(definition.inherit_references, {
+                name = reference.name,
+                path = reference.path,
+            })
+        end
         definition.children = {}
         projected.registry[path] = definition
         source_to_public[target_path] = path
