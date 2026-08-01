@@ -54,10 +54,14 @@ return [[
         top: var(--tealdoc-header-height);
         right: 0;
         left: 0;
+        max-height: calc(100vh - var(--tealdoc-header-height));
+        max-height: calc(100dvh - var(--tealdoc-header-height));
+        overflow-y: auto;
         padding: 0.8rem 1rem 1rem;
         border-bottom: 1px solid var(--tealdoc-border);
         background: var(--tealdoc-background);
         box-shadow: 0 14px 30px rgb(0 0 0 / 12%);
+        overscroll-behavior: contain;
     }
 
     .tealdoc-mobile-top-nav {
